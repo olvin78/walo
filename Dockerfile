@@ -9,8 +9,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential libpq-dev gcc curl \
     && rm -rf /var/lib/apt/lists/*
 
-ARG REQUIREMENTS_FILE=requirements.prod.txt
-COPY ${REQUIREMENTS_FILE} /app/requirements.txt
-RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
+COPY requirements.prod.txt /app/requirements.prod.txt
+
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r /app/requirements.prod.txt
 
 COPY . /app/
