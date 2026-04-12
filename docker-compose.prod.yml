@@ -1,25 +1,51 @@
-version: "3.9"
-
 services:
   web:
     build:
       context: .
       args:
         REQUIREMENTS_FILE: requirements.prod.txt
+
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+
     ports:
-      - "8040:8000"
+      - "127.0.0.1:8040:8000"
+
     env_file:
       - .env.prod
+
     depends_on:
       - db
 
+    volumes:
+      - ${APP_DATA_DIR:-./deploy-data}/staticfiles:/app/staticfiles
+      - ${APP_DATA_DIR:-./deploy-data}/media:/app/media
+
+    restart: always
+    init: true
+    stop_grace_period: 30s
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   db:
     image: postgres:16
-    volumes:
-      - db_data:/var/lib/postgresql/data
+
     env_file:
       - .env.prod
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+    restart: always
 
 volumes:
   db_data:
