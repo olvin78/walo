@@ -1,0 +1,18 @@
+:root {
+    --bg-main: #0f172a;
+    --bg-secondary: #111827;
+
+    --primary: #22c55e;
+    --primary-dark: #16a34a;
+
+    --text-main: #f8fafc;
+    --text-muted: #cbd5e1;
+
+    --card-bg: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+
+    /* Mantener variables originales de diseño para compatibilidad inicial si es necesario */
+    --accent: var(--primary);
+    --accent-2: #5ae0ff;
+    --stroke: var(--border);
+}

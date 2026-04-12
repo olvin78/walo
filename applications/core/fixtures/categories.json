@@ -1,0 +1,277 @@
+[
+  {
+    "model": "core.category",
+    "pk": 1,
+    "fields": {
+      "name": "Alimentos y Bebidas",
+      "icon": "icon-food",
+      "description": "comida, bebida, supermercado, snacks, pan, frutas, verduras",
+      "image": null,
+      "slug": "alimentos-bebidas"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 2,
+    "fields": {
+      "name": "Hogar y Cocina",
+      "icon": "icon-home",
+      "description": "hogar, cocina, utensilios, limpieza, organizacion, textiles",
+      "image": null,
+      "slug": "hogar-cocina"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 3,
+    "fields": {
+      "name": "Belleza y Cuidado Personal",
+      "icon": "icon-beauty",
+      "description": "cosmeticos, maquillaje, cuidado personal, perfumes, cabello, skincare",
+      "image": null,
+      "slug": "belleza-cuidado-personal"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 4,
+    "fields": {
+      "name": "Salud y Farmacia",
+      "icon": "icon-health",
+      "description": "medicina, farmacia, vitaminas, cuidado salud",
+      "image": null,
+      "slug": "salud-farmacia"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 5,
+    "fields": {
+      "name": "Tecnologia y Celulares",
+      "icon": "icon-tech",
+      "description": "celulares, smartphones, laptops, computadoras, accesorios, gadgets",
+      "image": null,
+      "slug": "tecnologia-celulares"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 6,
+    "fields": {
+      "name": "Electrodomesticos",
+      "icon": "icon-appliance",
+      "description": "refrigeradora, lavadora, cocina, microondas, aire acondicionado",
+      "image": null,
+      "slug": "electrodomesticos"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 7,
+    "fields": {
+      "name": "Moda y Accesorios",
+      "icon": "icon-fashion",
+      "description": "ropa, moda, accesorios, bolsos, relojes",
+      "image": null,
+      "slug": "moda-accesorios"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 8,
+    "fields": {
+      "name": "Calzado",
+      "icon": "icon-shoes",
+      "description": "zapatos, tenis, sandalias, botas",
+      "image": null,
+      "slug": "calzado"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 9,
+    "fields": {
+      "name": "Bebes y Ninos",
+      "icon": "icon-baby",
+      "description": "bebe, ninos, panales, juguetes, ropa bebe",
+      "image": null,
+      "slug": "bebes-ninos"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 10,
+    "fields": {
+      "name": "Muebles y Decoracion",
+      "icon": "icon-furniture",
+      "description": "muebles, sillas, mesas, decoracion, hogar",
+      "image": null,
+      "slug": "muebles-decoracion"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 11,
+    "fields": {
+      "name": "Vehiculos y Repuestos",
+      "icon": "icon-vehicle",
+      "description": "carros, motos, vehiculos, repuestos, llantas",
+      "image": null,
+      "slug": "vehiculos-repuestos"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 12,
+    "fields": {
+      "name": "Servicios",
+      "icon": "icon-services",
+      "description": "servicios, tecnico, reparacion, limpieza, belleza, delivery",
+      "image": null,
+      "slug": "servicios"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 13,
+    "fields": {
+      "name": "Educacion y Cursos",
+      "icon": "icon-education",
+      "description": "educacion, cursos, clases, tutorias, idiomas",
+      "image": null,
+      "slug": "educacion-cursos"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 14,
+    "fields": {
+      "name": "Deportes y Ocio",
+      "icon": "icon-sports",
+      "description": "deportes, gimnasio, ocio, bicicletas, camping",
+      "image": null,
+      "slug": "deportes-ocio"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 15,
+    "fields": {
+      "name": "Herramientas y Construccion",
+      "icon": "icon-tools",
+      "description": "herramientas, construccion, ferreteria, materiales",
+      "image": null,
+      "slug": "herramientas-construccion"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 16,
+    "fields": {
+      "name": "Mascotas",
+      "icon": "icon-pets",
+      "description": "mascotas, perros, gatos, alimento mascotas, accesorios",
+      "image": null,
+      "slug": "mascotas"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 17,
+    "fields": {
+      "name": "Inmuebles",
+      "icon": "icon-realestate",
+      "description": "casas, apartamentos, alquiler, venta",
+      "image": null,
+      "slug": "inmuebles"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 18,
+    "fields": {
+      "name": "Empleos",
+      "icon": "icon-jobs",
+      "description": "empleos, trabajos, vacantes, servicios profesionales",
+      "image": null,
+      "slug": "empleos"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 19,
+    "fields": {
+      "name": "Restaurantes y Comida Preparada",
+      "icon": "icon-restaurant",
+      "description": "restaurantes, comida preparada, delivery, comida rapida, bebidas",
+      "image": null,
+      "slug": "restaurantes-comida-preparada"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 20,
+    "fields": {
+      "name": "Agro y Campo",
+      "icon": "icon-agro",
+      "description": "agricola, ganado, insumos, semillas, herramientas de campo",
+      "image": null,
+      "slug": "agro-campo"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 21,
+    "fields": {
+      "name": "Ferreteria y Materiales",
+      "icon": "icon-hardware",
+      "description": "ferreteria, materiales, tornillos, pintura, herramientas",
+      "image": null,
+      "slug": "ferreteria-materiales"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 22,
+    "fields": {
+      "name": "Papeleria y Oficina",
+      "icon": "icon-office",
+      "description": "papeleria, oficina, utiles, impresoras, suministros",
+      "image": null,
+      "slug": "papeleria-oficina"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 23,
+    "fields": {
+      "name": "Arte y Manualidades",
+      "icon": "icon-art",
+      "description": "arte, manualidades, materiales, costura, bisuteria",
+      "image": null,
+      "slug": "arte-manualidades"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 24,
+    "fields": {
+      "name": "Eventos y Fiestas",
+      "icon": "icon-events",
+      "description": "eventos, fiestas, decoracion, alquiler, catering",
+      "image": null,
+      "slug": "eventos-fiestas"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 25,
+    "fields": {
+      "name": "Turismo y Viajes",
+      "icon": "icon-travel",
+      "description": "turismo, viajes, hospedaje, tours, transporte",
+      "image": null,
+      "slug": "turismo-viajes"
+    }
+  }
+]

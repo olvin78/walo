@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Explorar | Walo Marketplace{% endblock %}
+{% block body_class %}page-home page-explore{% endblock %}
+
+{% block content %}
+<div class="walo-container">
+  <!-- Cabecera de Exploración Minimalista -->
+  <header class="explore-header-pro">
+    <div class="header-main-search">
+      <div class="search-label">🔍 Descubre lo mejor de Nicaragua</div>
+      <form action="{% url 'explore' %}" method="GET" class="search-box-explore" id="exploreForm">
+        <div class="input-focus-group">
+          <input type="text" name="q" placeholder="Buscar iPhone, Vehículos, Hogar..." value="{{ query|default:'' }}" aria-label="Buscar productos">
+          
+          <!-- Botón de Abrir Filtros -->
+          <button type="button" class="btn-toggle-filters" onclick="toggleFilters()">
+            <span>FILTROS</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9v6l4 2v-8l8-9z"></path></svg>
+          </button>
+
+          <button type="submit" class="btn-search-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>BUSCAR</span>
+          </button>
+        </div>
+
+        <!-- Panel de Filtros Reconstruido -->
+        <div class="filter-panel-v4" id="filterPanel">
+          <!-- FILA 1: Controles Principales -->
+          <div class="filter-top-grid">
+            <div class="filter-group-v4">
+              <label>Rango de Precio (C$)</label>
+              <div class="price-inputs-row">
+                  <input type="number" name="min_price" placeholder="Mínimo" class="filter-input-pro" value="{{ min_price|default:'' }}">
+                  <input type="number" name="max_price" placeholder="Máximo" class="filter-input-pro" value="{{ max_price|default:'' }}">
+              </div>
+            </div>
+
+            <div class="filter-group-v4">
+              <label>Ubicación</label>
+              <select name="location" class="filter-input-pro">
+                <option value="">Todo Nicaragua</option>
+                <option value="Managua" {% if loc == 'Managua' %}selected{% endif %}>Managua</option>
+                <option value="Leon" {% if loc == 'Leon' %}selected{% endif %}>León</option>
+                <option value="Granada" {% if loc == 'Granada' %}selected{% endif %}>Granada</option>
+                <option value="Masaya" {% if loc == 'Masaya' %}selected{% endif %}>Masaya</option>
+                <option value="Esteli" {% if loc == 'Esteli' %}selected{% endif %}>Estelí</option>
+                <option value="Matagalpa" {% if loc == 'Matagalpa' %}selected{% endif %}>Matagalpa</option>
+              </select>
+            </div>
+
+            <div class="filter-group-v4">
+              <label>Ordenar por</label>
+              <select name="sort" class="filter-input-pro">
+                <option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Más recientes</option>
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Precio: Menor a Mayor</option>
+                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Precio: Mayor a Menor</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- FILA 2: Slider de Distancia (Full Width) -->
+          <div class="filter-distance-row">
+            <div class="distance-header">
+                <label>Cercanía Máxima: <span id="radiusVal" style="color:var(--primary); font-weight: 900;">{{ radius|default:'500' }}</span> km</label>
+                <span class="range-hint">0 - 500 km</span>
+            </div>
+            <input type="range" name="radius" min="0" max="500" step="10" class="distance-slider" value="{{ radius|default:'0' }}" 
+                   oninput="document.getElementById('radiusVal').innerText = this.value">
+            <input type="hidden" name="user_lat" id="userLat" value="{{ request.GET.user_lat }}">
+            <input type="hidden" name="user_lng" id="userLng" value="{{ request.GET.user_lng }}">
+          </div>
+
+          <!-- FILA 3: Acciones -->
+          <div class="filter-actions-v4">
+            <a href="{% url 'explore' %}" class="btn-reset-v4">Restablecer filtros</a>
+            <button type="submit" class="btn-apply-v4">APLICAR FILTROS</button>
+          </div>
+        </div>
+
+        <!-- Preservar categoría actual al filtrar -->
+        {% if current_category %}
+          <input type="hidden" name="category" value="{{ current_category.slug }}">
+        {% endif %}
+        {% if current_subcategory %}
+          <input type="hidden" name="subcategory" value="{{ current_subcategory.slug }}">
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Categorías Estilo Quick-Pills (Navegación Rápida) -->
+    <nav class="explore-categories-bar">
+      <div class="stories-scroll">
+        <a href="{% url 'explore' %}" class="story-btn {% if not current_category %}active{% endif %}">
+          <div class="story-circle-pro">⚡</div>
+          <p>Todo</p>
+        </a>
+
+        {% for cat in all_categories %}
+        <a href="{% url 'explore' %}?category={{ cat.slug }}" class="story-btn {% if current_category.id == cat.id or parent_category.id == cat.id %}active{% endif %}">
+          <div class="story-circle-pro">{{ cat.icon }}</div>
+          <p>{{ cat.name }} </p>
+        </a>
+        {% endfor %}
+      </div>
+    </nav>
+
+    <!-- Subcategorías Dinámicas (Diseño igual al carrusel principal) -->
+    {% if subcategories and not hide_subcategories %}
+    <nav class="explore-subcategories-bar" style="border-top: 1px solid rgba(255,255,255,0.05); margin-top: 5px;">
+        <div class="stories-scroll">
+            <a href="{% url 'explore' %}?category={{ parent_category.slug }}&subcategory=all" class="story-btn {% if current_category.id == parent_category.id and not current_subcategory %}active{% endif %}">
+                <div class="story-circle-pro">🏠</div>
+                <p>Ver Todo</p>
+            </a>
+            {% for sub in subcategories %}
+            <a href="{% url 'explore' %}?category={{ parent_category.slug }}&subcategory={{ sub.slug }}" class="story-btn {% if current_subcategory.id == sub.id %}active{% endif %}">
+                <div class="story-circle-pro">{{ sub.icon }}</div>
+                <p>{{ sub.name }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </nav>
+    {% endif %}
+  </header>
+
+  <style>
+    /* EXPLORE HEADER PRO */
+    .explore-header-pro { padding: 60px 0 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .search-label { font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--primary); margin-bottom: 25px; opacity: 0.8; }
+    
+    .search-box-explore { max-width: 950px; margin: 0 auto 50px; }
+    .input-focus-group { 
+      display: flex; align-items: center; background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 28px;
+      transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .input-focus-group:focus-within { background: #fff; border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    
+    .input-focus-group input { flex: 1; background: transparent; border: none; padding: 15px 25px; font-size: 1.2rem; color: #fff; outline: none; font-weight: 500; }
+    .input-focus-group:focus-within input { color: #000; }
+    
+    .btn-search-icon { 
+      background: var(--primary); color: #000; border: none; padding: 0 25px; 
+      border-radius: 18px; display: flex; align-items: center; gap: 10px; 
+      font-weight: 900; cursor: pointer; transition: 0.2s; margin-left: 15px;
+      height: 52px; font-size: 0.8rem;
+    }
+    .btn-search-icon svg { width: 18px; height: 18px; }
+    .btn-search-icon:hover { transform: scale(0.96); opacity: 0.9; }
+
+    /* CATEGORIES BAR (HORIZONTAL SCROLL) */
+    .explore-categories-bar { width: 100%; margin: 0 auto; padding: 0 20px; }
+    .stories-scroll { 
+      display: flex; 
+      gap: 25px; 
+      overflow-x: auto; 
+      padding: 20px 0 10px; 
+      justify-content: flex-start;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      cursor: default;
+    }
+
+    /* Mostrar barra sutil solo en desktop para guiar al usuario */
+    @media (min-width: 769px) {
+      .stories-scroll::-webkit-scrollbar { height: 4px; display: block; }
+      .stories-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+      .stories-scroll::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.2); border-radius: 10px; }
+      .stories-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+    }
+    
+    /* En móvil seguimos ocultándola para limpieza */
+    @media (max-width: 768px) {
+      .stories-scroll::-webkit-scrollbar { display: none; }
+    }
+    
+    .story-btn { 
+      display: flex; flex-direction: column; align-items: center; gap: 12px; 
+      text-decoration: none; min-width: 95px; flex-shrink: 0; 
+      scroll-snap-align: start;
+      cursor: pointer;
+    }
+    .story-circle-pro { width: 64px; height: 64px; background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.08); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; transition: 0.3s; }
+    .story-btn:hover .story-circle-pro, .story-btn.active .story-circle-pro { transform: translateY(-3px); border-color: var(--primary); background: rgba(34, 197, 94, 0.1); color: var(--primary); box-shadow: 0 10px 20px rgba(34, 197, 94, 0.1); }
+    .story-btn p { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.5); transition: 0.3s; }
+    .story-btn.active p { color: #fff; }
+
+    /* SUBCATEGORIES BAR */
+    .explore-subcategories-bar { 
+      padding: 10px 20px 25px; 
+      margin-top: -10px;
+    }
+    .sub-scroll { 
+      display: flex; 
+      gap: 12px; 
+      overflow-x: auto; 
+      scrollbar-width: none;
+    }
+    .sub-scroll::-webkit-scrollbar { display: none; }
+    
+    .sub-pill { 
+      background: rgba(255,255,255,0.04); 
+      border: 1px solid rgba(255,255,255,0.08); 
+      padding: 10px 20px; 
+      border-radius: 50px; 
+      color: rgba(255,255,255,0.6); 
+      text-decoration: none; 
+      font-size: 0.9rem; 
+      font-weight: 600; 
+      white-space: nowrap;
+      transition: 0.3s;
+    }
+    .sub-pill:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .sub-pill.active { 
+      background: var(--primary); 
+      color: #000; 
+      border-color: var(--primary);
+      box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-toggle-filters { 
+      background: rgba(34, 197, 94, 0.1); color: var(--primary); border: 1px solid rgba(34, 197, 94, 0.3); 
+      padding: 0 25px; border-radius: 18px; display: flex; align-items: center; gap: 10px; 
+      font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.3s; 
+      height: 52px; margin-left: 10px;
+    }
+    .btn-toggle-filters:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+
+    /* FILTER PANEL V4 - LUXURY TECH RECONSTRUCTED */
+    .filter-panel-v4 { 
+      overflow: hidden; max-height: 0; opacity: 0;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      background: #0d1117; border-radius: 32px; 
+      margin-top: 24px; border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+      display: flex; flex-direction: column; gap: 40px;
+    }
+    .filter-panel-v4.is-active { max-height: 800px; opacity: 1; padding: 45px; margin-top: 35px; }
+    
+    .filter-top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+    .filter-group-v4 { display: flex; flex-direction: column; gap: 15px; }
+    .filter-group-v4 label { font-size: 0.75rem; font-weight: 900; color: rgba(255,255,255,0.4); letter-spacing: 2px; text-transform: uppercase; }
+    
+    .price-inputs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    
+    .filter-input-pro { 
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); 
+      padding: 16px 20px; border-radius: 18px; color: #fff; font-weight: 600; 
+      outline: none; font-size: 1rem; transition: 0.3s; width: 100%;
+    }
+    .filter-input-pro:focus { border-color: var(--primary); background: rgba(34,197,94,0.05); }
+
+    /* Fix para opciones invisibles (Blanco sobre Blanco) */
+    .filter-input-pro option {
+      background: #1a1d26;
+      color: #fff;
+      padding: 10px;
+    }
+
+    /* Distance Row */
+    .filter-distance-row { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
+    .distance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .range-hint { font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 700; }
+
+    .distance-slider { 
+      appearance: none; -webkit-appearance: none; width: 100%; height: 8px; 
+      background: rgba(255,255,255,0.08); border-radius: 10px; outline: none;
+    }
+    .distance-slider::-webkit-slider-thumb { 
+      -webkit-appearance: none; width: 28px; height: 28px; 
+      background: var(--primary); border-radius: 50%; cursor: pointer;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); border: 4px solid #fff; transition: 0.3s;
+    }
+
+    .filter-actions-v4 { display: flex; justify-content: flex-end; align-items: center; gap: 30px; padding-top: 10px; }
+    .btn-apply-v4 { background: var(--primary); color: #000; border: none; padding: 18px 45px; border-radius: 20px; font-weight: 900; cursor: pointer; transition: 0.3s; font-size: 1rem; }
+    .btn-apply-v4:hover { transform: scale(1.02) translateY(-2px); box-shadow: 0 15px 40px rgba(34,197,94,0.4); }
+    .btn-reset-v4 { color: rgba(255,255,255,0.4); text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: 0.2s; }
+    .btn-reset-v4:hover { color: #fff; }
+
+    @media (min-width: 769px) {
+        .input-focus-group input { flex: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .stories-scroll { justify-content: flex-start; padding-left: 20px; gap: 20px; }
+      
+      .explore-header-pro { padding: 30px 0 20px; }
+
+      /* Search Mobile - Stacking Perfecto */
+      .input-focus-group { 
+        flex-direction: column; 
+        align-items: stretch; 
+        padding: 15px; 
+        border-radius: 24px; 
+        gap: 12px; 
+      }
+      .input-focus-group input { 
+        width: 100%; 
+        border-bottom: 
+        1px solid rgba(255,255,255,0.08); 
+        padding-bottom: 12px; 
+        margin-bottom: 5px;
+        text-align: center;
+      }
+      .btn-toggle-filters, .btn-search-icon { 
+        width: 100% !important; 
+        margin-left: 0 !important; 
+        height: 54px; 
+        justify-content: center; 
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Fix urgente para el icono gigante */
+      .btn-toggle-filters svg, .btn-search-icon svg { 
+        width: 18px !important; 
+        height: 18px !important; 
+        flex-shrink: 0;
+      }
+      
+      /* Fix definitivo para selectores locos en movil */
+      .filter-panel-v4 { backdrop-filter: none !important; transition: none !important; } 
+      
+      .filter-input-pro { 
+        appearance: auto !important; 
+        -webkit-appearance: auto !important; 
+        background: #1a1d26 !important;
+        color: #fff !important;
+      }
+      
+      .filter-panel-v4.is-active { padding: 30px 20px; gap: 30px; }
+      .filter-top-grid { grid-template-columns: 1fr; gap: 25px; }
+      .price-inputs-row { grid-template-columns: 1fr 1fr; }
+      
+      .filter-actions-v4 { flex-direction: column; width: 100%; gap: 20px; }
+      .btn-apply-v4 { width: 100%; order: 1; }
+      .btn-reset-v4 { order: 2; width: 100%; justify-content: center; }
+    }
+    
+    /* Evitar que los estilos de option rompan la seleccion nativa */
+    @media (max-width: 768px) {
+        .filter-input-pro option { background: #fff !important; color: #000 !important; }
+    }
+  </style>
+
+  <!-- Catálogo de Productos -->
+  <section class="section-products">
+    <div class="walo-container">
+      <div class="section-header">
+        <h2>
+          {% if current_category %}
+            Anuncios en {{ current_category.name }}
+          {% elif query %}
+            Resultados para "{{ query }}"
+          {% else %}
+            Productos Recientes
+          {% endif %}
+        </h2>
+        {% if current_category or query or min_price or max_price or loc %}
+          <a href="{% url 'explore' %}" style="color: var(--primary); font-weight: 600;">Limpiar filtros ✕</a>
+        {% endif %}
+      </div>
+
+    <div class="products-grid">
+      {% for listing in listings %}
+      <a href="{{ listing.get_absolute_url }}" class="product-card">
+        {% if listing.image %}
+        <img src="{{ listing.image.url }}" alt="{{ listing.title }}" class="product-img">
+        {% else %}
+        <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img">
+        {% endif %}
+        <div class="product-info">
+          <div class="product-price">C$ {{ listing.price }}</div>
+          <div class="product-title">{{ listing.title }}</div>
+          <div class="product-footer">
+            <span class="product-location">📍 {{ listing.location }}</span>
+            <button class="btn-favorite {% if listing.id in user_favorites %}active{% endif %}" 
+                    onclick="event.preventDefault(); toggleFav(this, {{ listing.id }});" 
+                    aria-label="Añadir a favoritos">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div style="grid-column: 1/-1; text-align: center; padding: 60px;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">🔍</div>
+        <h3>No hay resultados</h3>
+        <p style="color: var(--text-muted);">Intenta ajustar tu búsqueda o categoría.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<script>
+function toggleFilters() {
+    const panel = document.getElementById('filterPanel');
+    panel.classList.toggle('is-active');
+    
+    // Al abrir filtros, pedimos permiso de ubicación si no lo tenemos
+    if (panel.classList.contains('is-active') && !document.getElementById('userLat').value) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('userLat').value = pos.coords.latitude;
+                document.getElementById('userLng').value = pos.coords.longitude;
+            });
+        }
+    }
+}
+
+function toggleFav(btn, id) {
+    fetch(`/favoritos/toggle/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_favorite) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        })
+        .catch(err => {
+            window.location.href = "/admin/login/"; 
+        });
+}
+</script>
+{% endblock %}

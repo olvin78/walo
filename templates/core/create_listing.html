@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Crear Anuncio Pro | Walo{% endblock %}
+
+{% block content %}
+<div class="publish-studio" style="min-height: 100vh; background: #000; color: #fff; padding: 40px 0; font-family: 'Space Grotesk', sans-serif;">
+    <div class="walo-container">
+        
+        <!-- Header Pro -->
+        <div class="studio-header" style="margin-bottom: 60px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 30px;">
+            <div class="header-left">
+                <span style="background: var(--primary); color: #000; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 15px; display: inline-block;">Walo Studio</span>
+                <h1 style="font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; margin: 0; line-height: 1;">Nueva <span style="color: var(--primary);">Oferta</span></h1>
+            </div>
+            <div class="header-right" style="text-align: right;">
+                <p style="color: var(--text-muted); margin: 0; font-weight: 500;">Estado de Publicación</p>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <span id="publish-status" style="font-weight: 800; color: #fff;">Borrador</span>
+                    <div style="width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; box-shadow: 0 0 10px #fbbf24;"></div>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="publish-form">
+            {% csrf_token %}
+            <div class="studio-layout" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: start;">
+                
+                <!-- Columna 1: Studio Preview (Live Preview) -->
+                <div class="studio-preview-sticky" style="position: sticky; top: 120px;">
+                    <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 30px; font-weight: 800;">Vista Previa en Tiempo Real</h3>
+                    
+                    <div class="preview-card-wrapper" style="perspective: 1000px;">
+                        <!-- La Tarjeta Walo de lujo -->
+                        <div class="listing-preview-card" style="width: 100%; max-width: 400px; aspect-ratio: 3/4; background: #111; border-radius: 30px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 40px 100px rgba(0,0,0,0.8); transition: 0.5s;">
+                            <img id="preview-img" src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7; filter: grayscale(20%); transition: 0.5s;">
+                            
+                            <div class="card-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 30px;">
+                                <div class="card-badge" style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 5px 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; font-weight: 700;">
+                                    <span id="preview-category">Categoría</span>
+                                </div>
+                                
+                                <h2 id="preview-title" style="font-size: 1.8rem; margin-bottom: 5px; font-weight: 900; line-height: 1.1;">Título del Anuncio</h2>
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div class="price-tag" style="font-size: 1.5rem; font-weight: 900; color: var(--primary);">
+                                        C$ <span id="preview-price">0.00</span>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">📍 <span id="preview-location">Ubicación</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 40px; padding: 25px; background: rgba(34, 197, 94, 0.03); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(34, 197, 94, 0.1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">💡</div>
+                            <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); margin: 0;">Un título corto y descriptivo aumenta la posibilidad de clic en un 40%.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna 2: The Studio Form -->
+                <div class="studio-form-container">
+                    
+                    <!-- Sección 1: Impacto Visual -->
+                    <div style="margin-bottom: 50px;">
+                        <h4 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; font-weight: 900;">01. Impacto Visual</h4>
+                        <div class="input-luxury-group">
+                            <div class="upload-zone-pro" onclick="document.getElementById('image-input').click()" style="width: 100%; border: 2px dashed rgba(255,255,255,0.1); border-radius: 24px; padding: 60px; text-align: center; background: rgba(255,255,255,0.02); cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.borderColor='var(--primary)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='rgba(255,255,255,0.1)'">
+                                <div id="upload-icon" style="font-size: 3rem; margin-bottom: 15px;">🖼️</div>
+                                <h5 style="margin: 0; font-size: 1.2rem; font-weight: 800;">Subir Imagen del Producto</h5>
+                                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Arrastra o haz clic para subir una foto de alta calidad.</p>
+                            </div>
+                            <input type="file" name="image" id="image-input" accept="image/*" style="display: none;" onchange="handleStudioImage(this)">
+                        </div>
+                    </div>
+
+                    <!-- Sección 2: Información Técnica -->
+                    <div style="margin-bottom: 50px;">
+                        <h4 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 25px; font-weight: 900;">02. Ficha Técnica</h4>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 30px;">
+                            <!-- Input Título de Lujo -->
+                            <div class="studio-input-block">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Título que atrapa</label>
+                                <input type="text" name="title" id="form-title" required maxlength="200" placeholder="¿Qué estás vendiendo?" 
+                                       style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 2rem; font-weight: 900; color: #fff; padding: 10px 0; outline: none; transition: 0.3s;"
+                                       onfocus="this.style.borderBottomColor='var(--primary)'"
+                                       onblur="this.style.borderBottomColor='rgba(255,255,255,0.1)'"
+                                       oninput="updateStudioPreview()">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                                <!-- Input Precio -->
+                                <div class="studio-input-block">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Precio (C$)</label>
+                                    <input type="number" name="price" id="form-price" required step="0.01" placeholder="0.00"
+                                           style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.8rem; font-weight: 900; color: var(--primary); padding: 10px 0; outline: none; transition: 0.3s;"
+                                           onfocus="this.style.borderBottomColor='var(--primary)'"
+                                           onblur="this.style.borderBottomColor='rgba(255,255,255,0.1)'"
+                                           oninput="updateStudioPreview()">
+                                </div>
+                                <!-- Select Categoría -->
+                                <div class="studio-input-block">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Clasificación</label>
+                                    <select name="category" id="form-category" required 
+                                            style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.2rem; font-weight: 800; color: #fff; padding: 10px 0; outline: none; transition: 0.3s; cursor: pointer; appearance: none;"
+                                            onchange="updateStudioPreview()">
+                                        <option value="" disabled selected>Selecciona una...</option>
+                                        {% for cat in categories %}
+                                            <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="studio-input-block">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Subcategoría</label>
+                                <select name="subcategory" id="form-subcategory"
+                                        style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.1rem; font-weight: 800; color: #fff; padding: 10px 0; outline: none; transition: 0.3s; cursor: pointer; appearance: none;">
+                                    <option value="">Selecciona una categoría primero</option>
+                                    {% for sub in subcategories %}
+                                        <option value="{{ sub.id }}" data-category="{{ sub.category_id }}">{{ sub.icon }} {{ sub.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Input Ubicación -->
+                            <div class="form-group-pro">
+                                <label for="location" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Punto de Venta</label>
+                                <div style="position: relative;">
+                                    <input type="text" name="location" id="form-location" value="{{ user.profile.location }}" placeholder="Ej: Boaco, Calle San Miguel"
+                                           style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.2rem; font-weight: 700; color: #fff; padding: 10px 45px; outline: none; transition: 0.3s;"
+                                           onfocus="this.style.borderBottomColor='var(--primary)'"
+                                           onblur="this.style.borderBottomColor='rgba(255,255,255,0.1)'"
+                                           oninput="updateStudioPreview()">
+                                    <span style="position: absolute; left: 0; top: 52%; transform: translateY(-50%); color: var(--primary); font-size: 1.2rem;">📍</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección 3: Preferencias de Pago -->
+                    <div style="margin-bottom: 50px;">
+                        <h4 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 25px; font-weight: 900;">03. Preferencias de Pago</h4>
+                        <div class="payment-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <label class="payment-option">
+                                <input type="checkbox" name="payment_methods" value="Efectivo" checked onchange="updateStudioPreview()">
+                                <div class="payment-card">
+                                    <span class="pay-icon">💵</span>
+                                    <span class="pay-name">Efectivo</span>
+                                </div>
+                            </label>
+                            <label class="payment-option">
+                                <input type="checkbox" name="payment_methods" value="Transferencia" onchange="updateStudioPreview()">
+                                <div class="payment-card">
+                                    <span class="pay-icon">🏦</span>
+                                    <span class="pay-name">Banco</span>
+                                </div>
+                            </label>
+                            <label class="payment-option">
+                                <input type="checkbox" name="payment_methods" value="Apps de Pago" onchange="updateStudioPreview()">
+                                <div class="payment-card">
+                                    <span class="pay-icon">📱</span>
+                                    <span class="pay-name">Apps Movil</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Sección 4: Narrativa -->
+                    <div style="margin-bottom: 60px;">
+                        <h4 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 25px; font-weight: 900;">04. Historia y Detalles</h4>
+                        <div class="studio-input-block">
+                            <textarea name="description" id="form-description" required rows="5" placeholder="Cuenta la historia de este producto..."
+                                      style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; font-size: 1.1rem; color: #fff; padding: 25px; outline: none; transition: 0.3s; resize: none; line-height: 1.6;"
+                                      onfocus="this.style.borderColor='var(--primary)'; this.style.background='rgba(255,255,255,0.05)'"
+                                      onblur="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.background='rgba(255,255,255,0.03)'"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Form Footer -->
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <a href="{% url 'explore' %}" style="color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 0.9rem; transition: 0.3s;" onmouseover="this.style.color='#fff'">Cancelar</a>
+                        <button type="submit" class="studio-publish-btn" style="background: var(--primary); border: none; padding: 22px 60px; border-radius: 40px; color: #000; font-weight: 900; font-size: 1.2rem; letter-spacing: 1px; cursor: pointer; box-shadow: 0 20px 50px rgba(34, 197, 94, 0.4); display: flex; align-items: center; gap: 15px; transition: 0.4s;">
+                            Emitir Oferta <span style="font-size: 1.5rem;">🚀</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+function handleStudioImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-img').src = e.target.result;
+            document.getElementById('preview-img').style.opacity = '1';
+            document.getElementById('preview-img').style.filter = 'none';
+            document.getElementById('upload-icon').innerText = '✅';
+            updatePublishScore();
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function updateStudioPreview() {
+    const title = document.getElementById('form-title').value;
+    const price = document.getElementById('form-price').value;
+    const cat = document.getElementById('form-category');
+    const location = document.getElementById('form-location').value;
+    
+    document.getElementById('preview-title').innerText = title || "Título del Anuncio";
+    document.getElementById('preview-price').innerText = price ? parseFloat(price).toLocaleString('es-NI', {minimumFractionDigits: 2}) : "0.00";
+    document.getElementById('preview-location').innerText = location || "Ubicación";
+    
+    if (cat.selectedIndex > 0) {
+        document.getElementById('preview-category').innerText = cat.options[cat.selectedIndex].text;
+    }
+    filterSubcategories();
+    updatePublishScore();
+}
+
+function filterSubcategories() {
+    const catValue = document.getElementById('form-category').value;
+    const subSelect = document.getElementById('form-subcategory');
+    if (!subSelect) {
+        return;
+    }
+
+    const options = Array.from(subSelect.options);
+    let hasVisible = false;
+
+    options.forEach((opt, index) => {
+        if (index === 0) {
+            return;
+        }
+        const match = opt.dataset.category === catValue;
+        opt.hidden = !match;
+        opt.disabled = !match;
+        if (match) {
+            hasVisible = true;
+        }
+    });
+
+    if (!catValue) {
+        subSelect.options[0].text = "Selecciona una categoría primero";
+        subSelect.value = "";
+        return;
+    }
+
+    subSelect.options[0].text = hasVisible ? "Selecciona una subcategoría (opcional)" : "Sin subcategorías";
+    if (subSelect.value && subSelect.selectedOptions[0].hidden) {
+        subSelect.value = "";
+    }
+}
+
+function updatePublishScore() {
+    const title = document.getElementById('form-title').value.length;
+    const desc = document.getElementById('form-description').value.length;
+    const hasImg = document.getElementById('image-input').files.length > 0;
+    
+    const statusText = document.getElementById('publish-status');
+    if (hasImg && title > 10 && desc > 20) {
+        statusText.innerText = "Excelente";
+        statusText.style.color = "var(--primary)";
+    } else if (title > 0 || hasImg) {
+        statusText.innerText = "En Progreso";
+        statusText.style.color = "#fbbf24";
+    }
+}
+
+// Interacción de botones pro
+const btn = document.querySelector('.studio-publish-btn');
+if(btn) {
+    btn.onmouseenter = () => btn.style.transform = 'translateY(-5px) scale(1.02)';
+    btn.onmouseleave = () => btn.style.transform = 'translateY(0) scale(1)';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    filterSubcategories();
+});
+</script>
+
+<style>
+    .listing-preview-card:hover { transform: rotateY(5deg) rotateX(5deg) scale(1.02); }
+    ::placeholder { color: rgba(255,255,255,0.2) !important; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    
+    .studio-publish-btn:active { transform: scale(0.95) !important; filter: brightness(0.8); }
+
+    .payment-option { cursor: pointer; }
+    .payment-option input { display: none; }
+    .payment-card { 
+        background: rgba(255,255,255,0.02); 
+        border: 1px solid rgba(255,255,255,0.06); 
+        border-radius: 16px; 
+        padding: 15px 10px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        gap: 8px; 
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pay-icon { font-size: 1.5rem; }
+    .pay-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    
+    .payment-option input:checked + .payment-card {
+        background: rgba(34, 197, 94, 0.08);
+        border-color: var(--primary);
+        box-shadow: 0 10px 30px rgba(34, 197, 94, 0.15);
+        transform: translateY(-3px);
+    }
+    .payment-option input:checked + .payment-card .pay-name { color: var(--primary); }
+    .payment-option input:checked + .payment-card .pay-icon { transform: scale(1.1); transition: 0.3s; }
+    
+    @media (max-width: 900px) {
+        .studio-layout { grid-template-columns: 1fr !important; gap: 40px !important; }
+        .studio-preview-sticky { position: relative !important; top: 0 !important; }
+        .studio-header h1 { font-size: 2.5rem !important; }
+    }
+</style>
+{% endblock %}

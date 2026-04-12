@@ -1,0 +1,552 @@
+[
+  {
+    "model": "core.subcategory",
+    "pk": 1,
+    "fields": {
+      "category": 1,
+      "name": "Supermercado y Despensa",
+      "icon": "icon-grocery",
+      "description": "supermercado, despensa, granos, productos basicos",
+      "slug": "supermercado-despensa"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 2,
+    "fields": {
+      "category": 1,
+      "name": "Bebidas y Licores",
+      "icon": "icon-drink",
+      "description": "bebidas, jugos, gaseosas, cervezas, licores",
+      "slug": "bebidas-licores"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 3,
+    "fields": {
+      "category": 2,
+      "name": "Utensilios de Cocina",
+      "icon": "icon-kitchen",
+      "description": "utensilios, ollas, sartenes, cubiertos",
+      "slug": "utensilios-cocina"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 4,
+    "fields": {
+      "category": 2,
+      "name": "Limpieza del Hogar",
+      "icon": "icon-clean",
+      "description": "limpieza, detergentes, organizacion, hogar",
+      "slug": "limpieza-hogar"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 5,
+    "fields": {
+      "category": 3,
+      "name": "Maquillaje",
+      "icon": "icon-makeup",
+      "description": "maquillaje, cosmeticos, belleza",
+      "slug": "maquillaje"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 6,
+    "fields": {
+      "category": 3,
+      "name": "Cuidado del Cabello",
+      "icon": "icon-hair",
+      "description": "cabello, shampoo, tratamiento, salon",
+      "slug": "cuidado-cabello"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 7,
+    "fields": {
+      "category": 4,
+      "name": "Medicinas",
+      "icon": "icon-medicine",
+      "description": "medicinas, farmacia, recetas",
+      "slug": "medicinas"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 8,
+    "fields": {
+      "category": 4,
+      "name": "Vitaminas y Suplementos",
+      "icon": "icon-vitamins",
+      "description": "vitaminas, suplementos, salud",
+      "slug": "vitaminas-suplementos"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 9,
+    "fields": {
+      "category": 5,
+      "name": "Celulares",
+      "icon": "icon-phone",
+      "description": "celulares, smartphones, accesorios",
+      "slug": "celulares"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 10,
+    "fields": {
+      "category": 5,
+      "name": "Computo y Laptops",
+      "icon": "icon-laptop",
+      "description": "computadoras, laptops, monitores",
+      "slug": "computo-laptops"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 11,
+    "fields": {
+      "category": 6,
+      "name": "Linea Blanca",
+      "icon": "icon-fridge",
+      "description": "refrigeradoras, lavadoras, cocinas",
+      "slug": "linea-blanca"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 12,
+    "fields": {
+      "category": 6,
+      "name": "Pequenos Electro",
+      "icon": "icon-appliance",
+      "description": "licuadoras, cafeteras, microondas",
+      "slug": "pequenos-electro"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 13,
+    "fields": {
+      "category": 7,
+      "name": "Ropa",
+      "icon": "icon-clothes",
+      "description": "ropa, moda, camisas, pantalones",
+      "slug": "ropa"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 14,
+    "fields": {
+      "category": 7,
+      "name": "Accesorios y Bolsos",
+      "icon": "icon-bag",
+      "description": "accesorios, bolsos, relojes",
+      "slug": "accesorios-bolsos"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 15,
+    "fields": {
+      "category": 8,
+      "name": "Deportivo",
+      "icon": "icon-sneaker",
+      "description": "tenis, deportivo, running",
+      "slug": "calzado-deportivo"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 16,
+    "fields": {
+      "category": 8,
+      "name": "Casual y Formal",
+      "icon": "icon-shoes",
+      "description": "casual, formal, sandalias, botas",
+      "slug": "calzado-casual-formal"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 17,
+    "fields": {
+      "category": 9,
+      "name": "Ropa y Accesorios Bebe",
+      "icon": "icon-baby",
+      "description": "bebe, ropa bebe, accesorios",
+      "slug": "ropa-accesorios-bebe"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 18,
+    "fields": {
+      "category": 9,
+      "name": "Juguetes",
+      "icon": "icon-toys",
+      "description": "juguetes, ninos, didacticos",
+      "slug": "juguetes"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 19,
+    "fields": {
+      "category": 10,
+      "name": "Muebles",
+      "icon": "icon-furniture",
+      "description": "muebles, sillas, mesas, camas",
+      "slug": "muebles"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 20,
+    "fields": {
+      "category": 10,
+      "name": "Decoracion",
+      "icon": "icon-decor",
+      "description": "decoracion, lamparas, cuadros",
+      "slug": "decoracion"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 21,
+    "fields": {
+      "category": 11,
+      "name": "Carros",
+      "icon": "icon-car",
+      "description": "carros, autos, vehiculos",
+      "slug": "carros"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 22,
+    "fields": {
+      "category": 11,
+      "name": "Motos y Repuestos",
+      "icon": "icon-moto",
+      "description": "motos, repuestos, llantas",
+      "slug": "motos-repuestos"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 23,
+    "fields": {
+      "category": 12,
+      "name": "Tecnicos y Reparacion",
+      "icon": "icon-tools",
+      "description": "tecnicos, reparacion, servicio tecnico",
+      "slug": "tecnicos-reparacion"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 24,
+    "fields": {
+      "category": 12,
+      "name": "Belleza y Estetica",
+      "icon": "icon-beauty",
+      "description": "belleza, estetica, salon",
+      "slug": "belleza-estetica"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 25,
+    "fields": {
+      "category": 13,
+      "name": "Clases Particulares",
+      "icon": "icon-education",
+      "description": "clases, tutorias, refuerzo",
+      "slug": "clases-particulares"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 26,
+    "fields": {
+      "category": 13,
+      "name": "Cursos Online",
+      "icon": "icon-course",
+      "description": "cursos, online, capacitacion",
+      "slug": "cursos-online"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 27,
+    "fields": {
+      "category": 14,
+      "name": "Gimnasio y Fitness",
+      "icon": "icon-fitness",
+      "description": "gimnasio, fitness, pesas",
+      "slug": "gimnasio-fitness"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 28,
+    "fields": {
+      "category": 14,
+      "name": "Bicicletas y Outdoor",
+      "icon": "icon-bike",
+      "description": "bicicletas, camping, outdoor",
+      "slug": "bicicletas-outdoor"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 29,
+    "fields": {
+      "category": 15,
+      "name": "Herramientas",
+      "icon": "icon-tools",
+      "description": "herramientas, taladros, equipos",
+      "slug": "herramientas"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 30,
+    "fields": {
+      "category": 15,
+      "name": "Materiales de Construccion",
+      "icon": "icon-bricks",
+      "description": "materiales, cemento, arena, bloques",
+      "slug": "materiales-construccion"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 31,
+    "fields": {
+      "category": 16,
+      "name": "Alimento para Mascotas",
+      "icon": "icon-petfood",
+      "description": "alimento, mascotas, perros, gatos",
+      "slug": "alimento-mascotas"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 32,
+    "fields": {
+      "category": 16,
+      "name": "Accesorios y Cuidado",
+      "icon": "icon-pets",
+      "description": "accesorios, cuidado, veterinaria",
+      "slug": "accesorios-cuidado-mascotas"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 33,
+    "fields": {
+      "category": 17,
+      "name": "Venta",
+      "icon": "icon-sale",
+      "description": "venta, casas, terrenos",
+      "slug": "inmuebles-venta"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 34,
+    "fields": {
+      "category": 17,
+      "name": "Alquiler",
+      "icon": "icon-rent",
+      "description": "alquiler, renta, apartamentos",
+      "slug": "inmuebles-alquiler"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 35,
+    "fields": {
+      "category": 18,
+      "name": "Oficios",
+      "icon": "icon-work",
+      "description": "oficios, tecnicos, operarios",
+      "slug": "empleos-oficios"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 36,
+    "fields": {
+      "category": 18,
+      "name": "Profesionales",
+      "icon": "icon-briefcase",
+      "description": "profesionales, administrativos, ventas",
+      "slug": "empleos-profesionales"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 37,
+    "fields": {
+      "category": 19,
+      "name": "Comida Rapida",
+      "icon": "icon-fastfood",
+      "description": "comida rapida, hamburguesas, pizza",
+      "slug": "comida-rapida"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 38,
+    "fields": {
+      "category": 19,
+      "name": "Comida Casera",
+      "icon": "icon-homefood",
+      "description": "comida casera, almuerzos, platos",
+      "slug": "comida-casera"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 39,
+    "fields": {
+      "category": 20,
+      "name": "Ganado",
+      "icon": "icon-cattle",
+      "description": "ganado, reses, animales",
+      "slug": "ganado"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 40,
+    "fields": {
+      "category": 20,
+      "name": "Insumos Agricolas",
+      "icon": "icon-seeds",
+      "description": "insumos, semillas, fertilizantes",
+      "slug": "insumos-agricolas"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 41,
+    "fields": {
+      "category": 21,
+      "name": "Ferreteria",
+      "icon": "icon-hardware",
+      "description": "ferreteria, clavos, tornillos",
+      "slug": "ferreteria"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 42,
+    "fields": {
+      "category": 21,
+      "name": "Pinturas y Acabados",
+      "icon": "icon-paint",
+      "description": "pintura, acabados, brochas",
+      "slug": "pinturas-acabados"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 43,
+    "fields": {
+      "category": 22,
+      "name": "Utiles Escolares",
+      "icon": "icon-school",
+      "description": "utiles, cuadernos, lapices",
+      "slug": "utiles-escolares"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 44,
+    "fields": {
+      "category": 22,
+      "name": "Suministros de Oficina",
+      "icon": "icon-office",
+      "description": "oficina, papeleria, impresoras",
+      "slug": "suministros-oficina"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 45,
+    "fields": {
+      "category": 23,
+      "name": "Materiales de Arte",
+      "icon": "icon-art",
+      "description": "pintura, lienzos, pinceles",
+      "slug": "materiales-arte"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 46,
+    "fields": {
+      "category": 23,
+      "name": "Costura y Tejido",
+      "icon": "icon-sewing",
+      "description": "costura, tejido, hilos",
+      "slug": "costura-tejido"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 47,
+    "fields": {
+      "category": 24,
+      "name": "Decoracion",
+      "icon": "icon-events",
+      "description": "decoracion, fiestas, globos",
+      "slug": "eventos-decoracion"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 48,
+    "fields": {
+      "category": 24,
+      "name": "Alquiler de Equipos",
+      "icon": "icon-rent",
+      "description": "alquiler, sillas, mesas, sonido",
+      "slug": "alquiler-equipos"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 49,
+    "fields": {
+      "category": 25,
+      "name": "Hospedaje",
+      "icon": "icon-hotel",
+      "description": "hotel, hostal, hospedaje",
+      "slug": "hospedaje"
+    }
+  },
+  {
+    "model": "core.subcategory",
+    "pk": 50,
+    "fields": {
+      "category": 25,
+      "name": "Tours y Transporte",
+      "icon": "icon-travel",
+      "description": "tours, transporte, viajes",
+      "slug": "tours-transporte"
+    }
+  }
+]

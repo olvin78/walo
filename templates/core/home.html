@@ -1,0 +1,676 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Walo | Compra y venta online en Nicaragua{% endblock %}
+{% block meta_description %}Walo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios gratis, encuentra ofertas locales y conecta con compradores reales.{% endblock %}
+{% block og_title %}Walo | Compra y venta online en Nicaragua{% endblock %}
+{% block og_description %}Compra y vende en Nicaragua con Walo. Marketplace local con ofertas reales cerca de ti.{% endblock %}
+{% block twitter_title %}Walo | Compra y venta online en Nicaragua{% endblock %}
+{% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Publica anuncios y encuentra ofertas.{% endblock %}
+{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{% endblock %}
+{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{% endblock %}
+{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/walo_hero_bg_nicaragua.png' %}{% endblock %}
+{% block body_class %}page-home-pro{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Walo",
+    "url": "{{ request.scheme }}://{{ request.get_host }}/",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "{{ request.scheme }}://{{ request.get_host }}/explorar/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+</script>
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Walo",
+    "url": "{{ request.scheme }}://{{ request.get_host }}/"
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- DISEÑO FULL-STACK PRO: FOCO EN UX, CONVERSIÓN Y ESTÉTICA -->
+<div class="pro-landing">
+
+    <!-- 1. HERO SEARCH (REMODELADO PRO) -->
+    <section class="section-hero">
+        <div class="hero-bg-wrapper">
+            <img src="{% static 'img/walo_hero_bg_nicaragua.png' %}" alt="Marketplace Walo en Nicaragua" class="hero-ken-burns" fetchpriority="high">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="container hero-container">
+            <div class="hero-content">
+                <span class="badge-safe">🚀 EL MARKETPLACE MÁS SEGURO DE NICARAGUA</span>
+                <h1>Todo lo que buscas, <br> <span class="text-primary">más cerca que nunca.</span></h1>
+                <p>Miles de productos verificados. Sin trampas, sin comisiones.</p>
+                
+                <div class="search-box-impact">
+                    <form action="{% url 'explore' %}" method="GET" class="search-form-pro">
+                        <div class="input-group-pro">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" name="q" placeholder="¿Qué buscas? (Ej: iPhone, Vehículos, Hogar...)" required>
+                            <button type="submit" class="btn-search-impact">BUSCAR AHORA</button>
+                        </div>
+                    </form>
+                    <div class="search-suggestions">
+                        Populares: 
+                        <a href="{% url 'explore' %}?q=Celulares">Celulares</a>
+                        <a href="{% url 'explore' %}?q=Vehículos">Vehículos</a>
+                        <a href="{% url 'explore' %}?q=Moda">Moda</a>
+                        <a href="{% url 'explore' %}?q=Deportes">Deportes</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .pro-landing {
+        background: #0b0f1a; color: #fff; font-family: 'Inter', sans-serif;
+    }
+
+    /* HERO NICARAGUA REDESIGN */
+    .section-hero {
+        position: relative;
+        min-height: 65vh; /* Altura más cómoda */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 80px 0;
+    }
+
+    .hero-bg-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+    .hero-ken-burns {
+        width: 100%; height: 100%; object-fit: cover;
+        animation: kenburns 30s infinite alternate ease-in-out;
+    }
+
+    @keyframes kenburns {
+        from { transform: scale(1.05); }
+        to { transform: scale(1.15) translate(-1%, -1%); }
+    }
+
+    .hero-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, 
+            rgba(0,0,0,0.85) 0%, 
+            rgba(0,0,0,0.5) 50%,
+            #0b0f1a 100%
+        );
+        z-index: 1;
+    }
+
+    .hero-container { 
+        position: relative; z-index: 10; 
+        display: flex; flex-direction: column; 
+        align-items: center; justify-content: center;
+        text-align: center; width: 100%;
+    }
+    .hero-content { width: 100%; max-width: 900px; }
+
+    </style>
+
+    <!-- 2. HISTORIAS / CATEGORÍAS (APP-FIRST FEEL) -->
+    <section class="section-stories-discovery">
+        <div class="walo-container">
+            <div class="stories-scroll" id="storiesScroll">
+                <a href="{% url 'signup' %}" class="story-btn yours">
+                    <div class="story-circle-pro"><span>+</span></div>
+                    <p>Vender</p>
+                </a>
+                {% for cat in categories %}
+                <a href="{% url 'explore' %}?category={{ cat.slug }}" class="story-btn">
+                    <div class="story-circle-pro"><span>{{ cat.icon }}</span></div>
+                    <p>{{ cat.name }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function scrollStories(direction) {
+            const container = document.getElementById('storiesScroll');
+            const scrollAmount = 300;
+            container.scrollBy({
+                left: direction * scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+
+    <!-- 3. BENTO GRID (PRODUCTO & BENEFICIOS) -->
+    <section class="section-bento">
+        <div class="walo-container">
+            <div class="bento-grid-pro">
+                <!-- Bloque Venta Grande -->
+                <div class="bento-item bento-main-cta">
+                    <div class="bento-pattern"></div>
+                    <div class="bento-content">
+                        <h2>Convierte lo que no usas en <span class="text-primary">Efectivo.</span></h2>
+                        <p>Publicar es gratis, vender es rápido. Únete a miles de personas que ya lo hacen.</p>
+                        
+                        <div class="bento-pills">
+                            <span class="p-pill">✨ 100% Gratis</span>
+                            <span class="p-pill">🚀 Venta Rápida</span>
+                            <span class="p-pill">🛡️ Seguro</span>
+                        </div>
+
+                        <a href="{% url 'signup' %}" class="btn-pro-white">Empezar a Vender ahora</a>
+                    </div>
+                    <div class="bento-visual-pro">
+                        <img src="{% static 'img/walo_items_to_sell_premium.png' %}" alt="Vender productos online en Nicaragua" loading="lazy">
+                    </div>
+                </div>
+
+                <!-- Bloque Seguridad -->
+                <div class="bento-item bento-glass-safety">
+                    <div class="bento-content">
+                        <h3>Tratos de confianza</h3>
+                        <p>Seguridad y cercanía en cada intercambio en Nicaragua.</p>
+                        <img src="{% static 'img/walo_community_deal.png' %}" alt="Tratos seguros en Nicaragua" class="bento-img-mini" loading="lazy">
+                    </div>
+                </div>
+
+                <!-- Bloque Comunidad -->
+                <div class="bento-item bento-stats">
+                    <div class="bento-content">
+                        <div class="stat-num">+5K</div>
+                        <p>Usuarios activos en Nicaragua</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. EL MARKETPLACE (FEED) -->
+    <section class="section-feed">
+        <div class="walo-container">
+            <div class="feed-header">
+                <h2>Recién llegados a Walo</h2>
+                <a href="{% url 'explore' %}" class="link-pro">Ver todo el mercado →</a>
+            </div>
+            <div class="feed-grid-pro">
+                {% for list in latest_listings %}
+                <div class="item-card-pro">
+                    <a href="{{ list.get_absolute_url }}" class="card-link">
+                        <div class="card-img-wrapper">
+                            <img src="{% if list.image %}{{ list.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ list.title }} en {{ list.location }}" loading="lazy">
+                            <div class="card-badge-loc">{{ list.location }}</div>
+                        </div>
+                        <div class="card-body-pro">
+                            <div class="card-price">C$ {{ list.price }}</div>
+                            <h3 class="card-title-pro">{{ list.title }}</h3>
+                        </div>
+                    </a>
+                </div>
+                {% empty %}
+                <p class="text-center" style="grid-column: 1/-1; padding: 40px; color: var(--text-muted);">Aún no hay anuncios. ¡Sé el primero en publicar!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. GESTIÓN PRO: Herramientas para el usuario -->
+    <section class="section-pro-tools">
+        <div class="walo-container">
+            <div class="tools-grid-pro">
+                <div class="tools-text">
+                    <span class="pro-tag">SOLUCIONES PRO</span>
+                    <h2>Gestiona tus ventas con control total.</h2>
+                    <p>En Walo no solo publicas; tienes un panel completo para cerrar tratos con éxito.</p>
+                    <ul class="tools-list">
+                        <li><strong>Chat en Tiempo Real:</strong> Habla con compradores al instante.</li>
+                        <li><strong>Favoritos:</strong> Mira quién está interesado en tus cosas.</li>
+                        <li><strong>Perfil Verificado:</strong> Construye tu reputación y vende más rápido.</li>
+                    </ul>
+                    <a href="{% url 'signup' %}" class="btn-primary-glow">CREAR MI CUENTA GRATIS</a>
+                </div>
+                <div class="tools-visual-card">
+                    <img src="{% static 'img/walo_dashboard_mockup.png' %}" alt="Panel de ventas de Walo" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.1);">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. PRUEBA SOCIAL: Historias de Éxito -->
+    <section class="section-testimonials">
+        <div class="walo-container">
+            <div class="section-header-centered">
+                <span class="pro-tag">COMUNIDAD</span>
+                <h2>Historias Reales en Walo.</h2>
+                <p>Miles de nicaragüenses ya están transformando su forma de comprar y vender.</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testi-user">
+                        <div class="testi-avatar">
+                            <img src="{% static 'img/testi_carlos.png' %}" alt="Carlos en Managua" loading="lazy">
+                        </div>
+                        <div class="testi-meta">
+                            <strong>@carlos_mga</strong>
+                            <span>Managua</span>
+                        </div>
+                    </div>
+                    <p class="testi-text">"Ayer publiqué mi laptop vieja y hoy ya cerramos el trato en Metrocentro. ¡Súper rápido y seguro!"</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testi-user">
+                        <div class="testi-avatar">
+                            <img src="{% static 'img/testi_elena.png' %}" alt="Elena en Leon" loading="lazy">
+                        </div>
+                        <div class="testi-meta">
+                            <strong>@elena_leon</strong>
+                            <span>León</span>
+                        </div>
+                    </div>
+                    <p class="testi-text">"Lo que más me gusta es el chat directo. Pude hablar con el vendedor y aclarar todas mis dudas antes de ir."</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testi-user">
+                        <div class="testi-avatar">
+                            <img src="{% static 'img/testi_jorge.png' %}" alt="Jorge en Esteli" loading="lazy">
+                        </div>
+                        <div class="testi-meta">
+                            <strong>@jorge_estelí</strong>
+                            <span>Estelí</span>
+                        </div>
+                    </div>
+                    <p class="testi-text">"Encontré unos zapatos que buscaba hace meses a mitad de precio. La comunidad es muy amable."</p>
+                </div>
+            </div>
+        </div>
+
+    <!-- 7. CONFIANZA & CERCANÍA (HUMAN-FIRST) -->
+    <section class="section-trust-human">
+        <div class="walo-container">
+            <div class="trust-human-flex">
+                <div class="trust-human-text">
+                    <span class="friendly-tag">CONFÍANZA Walo</span>
+                    <h2>Gente real, <br>tratos seguros.</h2>
+                    <p>Walo es más que un marketplace; es una comunidad donde nos cuidamos entre todos. Conoce a quién le compras y vende con tranquilidad.</p>
+                    
+                    <ul class="human-checks">
+                        <li><strong>Identidad Verificada:</strong> Perfiles reales con fotos y reputación transparente.</li>
+                        <li><strong>Gente de tu Ciudad:</strong> Compra y vende a personas de tu propio barrio o ciudad.</li>
+                        <li><strong>Ayuda siempre lista:</strong> Un equipo humano detrás para lo que necesites.</li>
+                    </ul>
+                    <a href="{% url 'signup' %}" class="btn-human-primary">ÚNETE A LA COMUNIDAD</a>
+                </div>
+                <div class="trust-human-visual">
+                    <div class="human-photo-wrapper">
+                        <img src="{% static 'img/walo_safe_deal_community.png' %}" alt="Trato seguro en Nicaragua" class="trust-main-img" loading="lazy">
+                        <div class="floating-badge-human">
+                            <span class="fb-icon">✓</span>
+                            <div class="fb-text">
+                                <strong>Verificación Humana</strong>
+                                <span>Entorno Seguro</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .pro-landing {
+        background: #0b0f1a;
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* HERO CINEMATIC REDESIGN */
+    .section-hero {
+        position: relative;
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        padding: 120px 0;
+    }
+
+    .hero-bg-wrapper {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 0;
+    }
+
+    .hero-ken-burns {
+        width: 100%; height: 100%; object-fit: cover;
+        animation: kenburns 20s infinite alternate linear;
+    }
+
+    @keyframes kenburns {
+        from { transform: scale(1); }
+        to { transform: scale(1.15) translate(10px, -10px); }
+    }
+
+    .hero-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, 
+            rgba(11, 15, 26, 0.7) 0%, 
+            rgba(11, 15, 26, 0.4) 50%,
+            rgb(11, 15, 26) 100%
+        );
+        z-index: 1;
+    }
+
+    .hero-container { position: relative; z-index: 10; text-align: center; }
+    
+    .badge-safe {
+        display: inline-block;
+        padding: 8px 16px; border-radius: 100px;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        color: var(--primary); font-weight: 800; font-size: 0.8rem;
+        letter-spacing: 2px; margin-bottom: 30px;
+    }
+
+    .section-hero h1 {
+        font-size: clamp(3rem, 10vw, 6rem);
+        font-weight: 950; line-height: 0.95; letter-spacing: -4px;
+        margin-bottom: 25px; color: #fff;
+    }
+
+    .section-hero p {
+        font-size: 1.3rem; color: rgba(255,255,255,0.7);
+        margin-bottom: 50px; font-weight: 500;
+    }
+
+    /* SEARCH IMPACT */
+    .search-box-impact { max-width: 850px; margin: 0 auto; position: relative; }
+    .search-form-pro {
+        background: #fff; padding: 8px; border-radius: 32px;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+        transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .search-form-pro:focus-within { transform: scale(1.03); }
+
+    .input-group-pro { display: flex; align-items: center; gap: 15px; padding-left: 20px; }
+    .search-icon { font-size: 1.4rem; filter: grayscale(1); }
+    .input-group-pro input {
+        flex: 1; border: none; background: transparent; padding: 20px 0;
+        font-size: 1.2rem; font-weight: 600; color: #111; outline: none;
+    }
+    .btn-search-impact {
+        background: var(--primary); color: #000; border: none;
+        padding: 0 40px; border-radius: 25px; font-weight: 900;
+        height: 65px; cursor: pointer; transition: 0.3s;
+    }
+    .btn-search-impact:hover { transform: scale(0.98); background: #10b981; }
+    
+    .search-suggestions { margin-top: 25px; color: rgba(255,255,255,0.4); font-weight: 600; }
+    .search-suggestions a { color: #fff; text-decoration: none; margin: 0 10px; opacity: 0.8; transition: 0.2s; }
+    .search-suggestions a:hover { color: var(--primary); opacity: 1; }
+
+    .search-suggestions { margin-top: 25px; font-size: 1rem; color: rgba(255,255,255,0.4); }
+    .search-suggestions a { color: #fff; text-decoration: none; margin: 0 10px; font-weight: 600; transition: 0.2s; }
+    .search-suggestions a:hover { color: var(--primary); }
+
+    /* STORIES */
+    .section-stories-discovery { padding: 40px 0; border-bottom: 1px solid var(--glass-border); }
+    .stories-scroll {
+        display: flex; gap: 30px; overflow-x: auto; padding: 20px 0; justify-content: center;
+        scrollbar-width: thin; scrollbar-color: var(--primary) transparent;
+    }
+    @media (max-width: 992px) { .stories-scroll { justify-content: flex-start; padding-left: 20px; } }
+    .stories-scroll::-webkit-scrollbar { height: 4px; }
+    .stories-scroll::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.3); border-radius: 10px; }
+    
+    .story-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; min-width: 80px; }
+    .story-circle-pro {
+        width: 70px; height: 70px; background: var(--glass-bg); border: 2px solid var(--glass-border);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; transition: 0.3s;
+    }
+    .story-btn:hover .story-circle-pro { transform: scale(1.05); border-color: var(--primary); }
+    .story-btn.yours .story-circle-pro { background: var(--primary); color: #000; border: none; font-weight: 900; }
+    .story-btn p { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+    /* BENTO GRID */
+    .section-bento { padding: 80px 0; }
+    .bento-grid-pro { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+    .bento-item { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 32px; padding: 40px; position: relative; overflow: hidden; }
+    .bento-main-cta { 
+        grid-row: span 2; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(0,0,0,1)); 
+        overflow: hidden; 
+        position: relative; 
+    }
+    .bento-main-cta h2 { font-size: 2.5rem; font-weight: 950; margin-bottom: 20px; }
+    .btn-pro-white { background: #fff; color: #000; padding: 18px 40px; border-radius: 16px; font-weight: 800; text-decoration: none; transition: 0.3s; display: inline-block; }
+    
+    .bento-pattern {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 30px 30px; opacity: 0.5; pointer-events: none;
+    }
+    .bento-content { position: relative; z-index: 2; }
+    .bento-pills { display: flex; gap: 12px; margin: 25px 0 35px; flex-wrap: wrap; }
+    .p-pill {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        padding: 6px 16px; border-radius: 100px; font-size: 0.85rem;
+        font-weight: 700; color: rgba(255,255,255,0.8);
+    }
+
+    .bento-visual-pro {
+        position: absolute; right: 0; bottom: 0;
+        width: 60%; height: 100%;
+        display: flex; align-items: flex-end; justify-content: flex-end;
+        pointer-events: none; opacity: 0.7; z-index: 1;
+    }
+    .bento-visual-pro img {
+        width: 100%; height: 100%; object-fit: contain;
+        transform: rotate(-3deg) translate(20px, 20px);
+        mask-image: linear-gradient(to right, transparent, black 40%);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 40%);
+        transition: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .bento-item:hover .bento-visual-pro img { transform: rotate(0) translate(0, 0) scale(1.05); opacity: 0.95; }
+    .bento-img-mini { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; margin-top: 30px; }
+    .bento-stats { text-align: center; background: var(--primary); color: #000; display: flex; flex-direction: column; justify-content: center; }
+    .stat-num { font-size: 3.5rem; font-weight: 900; }
+
+    /* FEED */
+    .section-feed { padding: 80px 0; }
+    .feed-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+    .feed-grid-pro { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+    .item-card-pro { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 24px; overflow: hidden; transition: 0.3s; }
+    .item-card-pro:hover { transform: translateY(-10px); border-color: var(--primary); }
+    .card-img-wrapper { position: relative; aspect-ratio: 1; }
+    .card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .card-badge-loc { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; }
+    .card-body-pro { padding: 20px; }
+    .card-price { font-size: 1.4rem; font-weight: 900; color: var(--primary); }
+
+    /* PRO TOOLS */
+    .section-pro-tools { padding: 120px 0; background: linear-gradient(to top, rgba(34, 197, 94, 0.05), transparent); }
+    .tools-grid-pro { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .pro-tag { color: var(--primary); font-weight: 800; font-size: 0.8rem; letter-spacing: 2px; }
+    .tools-text h2 { font-size: 3rem; font-weight: 900; margin: 20px 0; }
+    .tools-list { list-style: none; padding: 0; margin-bottom: 50px; }
+    .tools-list li { margin-bottom: 15px; padding-left: 25px; position: relative; }
+    .tools-list li::before { content: '✔'; position: absolute; left: 0; color: var(--primary); }
+    .tools-visual-card { border-radius: 40px; overflow: hidden; border: 1px solid var(--glass-border); background: #111; height: 400px; }
+
+    /* TESTIMONIALS */
+    .section-header-centered { text-align: center; margin-bottom: 60px; }
+    .section-header-centered h2 { font-size: 3.5rem; font-weight: 900; }
+    .section-testimonials { padding: 100px 0 150px; background: radial-gradient(circle at bottom, rgba(34,197,94,0.05) 0%, transparent 50%); }
+    .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+    .testimonial-card { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 40px; border-radius: 32px; transition: 0.3s; }
+    .testi-user { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+    .testi-avatar { 
+        width: 60px; height: 60px; 
+        background: #222; border-radius: 50%; 
+        overflow: hidden; border: 2px solid var(--primary);
+    }
+    .testi-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .testi-meta strong { display: block; font-size: 1rem; }
+    .testi-meta span { font-size: 0.85rem; color: var(--primary); font-weight: 700; }
+    .testi-text { font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.7); font-style: italic; }
+
+
+    /* TRUST BALANCED SECTION */
+    .section-trust-human { 
+        padding: 180px 0 120px; /* Más margen arriba para separar de los testimonios */
+        background: #0b1120; 
+        border-top: 1px solid var(--glass-border); 
+        margin-top: 50px;
+    }
+    .trust-human-flex { display: flex; align-items: center; gap: 80px; }
+    
+    .trust-human-text { flex: 1.2; }
+    .friendly-tag { color: var(--primary); font-weight: 800; font-size: 0.85rem; letter-spacing: 2px; }
+    .trust-human-text h2 { font-size: 3.5rem; font-weight: 950; margin: 20px 0; line-height: 1; color: #fff; }
+    .trust-human-text p { font-size: 1.2rem; color: rgba(255,255,255,0.6); margin-bottom: 40px; }
+    
+    .human-checks { list-style: none; padding: 0; margin-bottom: 50px; }
+    .human-checks li { margin-bottom: 20px; font-size: 1.1rem; position: relative; padding-left: 35px; color: rgba(255,255,255,0.8); }
+    .human-checks li::before { content: '✔️'; position: absolute; left: 0; color: var(--primary); }
+
+    .btn-human-primary, .btn-primary-glow {
+        background: var(--primary); color: #000; padding: 20px 45px;
+        border-radius: 20px; font-weight: 900; text-decoration: none;
+        display: inline-block; transition: 0.3s; 
+        box-shadow: 0 10px 40px rgba(34, 197, 94, 0.2);
+        border: none; cursor: pointer;
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    .btn-human-primary:hover, .btn-primary-glow:hover { 
+        transform: translateY(-5px); 
+        background: #10b981; 
+        box-shadow: 0 15px 50px rgba(34, 197, 94, 0.4);
+    }
+
+    .trust-human-visual { flex: 0.8; display: flex; justify-content: center; position: relative; }
+    .human-photo-wrapper { position: relative; width: 100%; max-width: 500px; }
+    .trust-main-img { 
+        width: 100%; border-radius: 40px; 
+        box-shadow: 0 40px 100px rgba(0,0,0,0.3);
+        transform: rotate(2deg); transition: 0.5s;
+    }
+    .human-photo-wrapper:hover .trust-main-img { transform: rotate(0) scale(1.02); }
+    
+    .floating-badge-human {
+        position: absolute; bottom: 30px; left: -20px;
+        background: rgba(34,197,94,0.9); backdrop-filter: blur(10px);
+        padding: 15px 25px; border-radius: 20px; color: #000;
+        display: flex; align-items: center; gap: 15px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .fb-icon { width: 35px; height: 35px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+    .fb-text strong { display: block; font-size: 0.9rem; }
+    .fb-text span { font-size: 0.75rem; font-weight: 700; opacity: 0.8; }
+
+    /* ============================================================
+       THE ULTIMATE MOBILE POLISH (PIXEL PERFECT)
+       ============================================================ */
+    @media (max-width: 768px) {
+        .container, .walo-container { padding: 0 25px; }
+
+        /* 1. Hero Refinement */
+        .section-hero { min-height: 70vh; padding: 40px 0 80px; }
+        .section-hero h1 { 
+            font-size: 2.6rem; 
+            letter-spacing: -2px; 
+            line-height: 1.1; 
+            text-wrap: balance;
+        }
+        .badge-safe { font-size: 0.7rem; padding: 6px 12px; margin-bottom: 20px; }
+        
+        /* Search IMPACT Mobile */
+        .search-box-impact { width: 100%; }
+        .search-form-pro { border-radius: 24px; padding: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .input-group-pro { flex-direction: column; padding-left: 0; gap: 15px; }
+        .search-icon { display: none; } /* Limpiamos ruido visual */
+        .input-group-pro input { 
+            width: 100%; 
+            font-size: 1.1rem; 
+            text-align: center; 
+            height: 40px;
+            color: #000;
+        }
+        .btn-search-impact { 
+            width: 100%; 
+            height: 58px; 
+            border-radius: 16px; 
+            font-size: 1rem;
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+        }
+
+        /* 2. Stories Smooth */
+        .story-btn p { font-size: 0.7rem; opacity: 0.8; }
+        .section-stories-discovery { padding: 30px 0; }
+
+        /* 3. Bento Pro Mobile - EL ARREGLO */
+        .bento-grid-pro { grid-template-columns: 1fr !important; gap: 20px; }
+        .bento-item { padding: 35px 24px; border-radius: 24px; }
+        .bento-main-cta h2 { font-size: 1.8rem; line-height: 1.2; }
+        .bento-visual-pro { position: relative; width: 100%; height: 180px; margin-top: 20px; opacity: 1; }
+        .bento-visual-pro img { transform: none; mask-image: none; -webkit-mask-image: none; object-fit: contain; }
+        .btn-pro-white { width: 100%; text-align: center; padding: 18px; font-size: 0.9rem; }
+
+        /* 4. Products Feed */
+        .feed-grid-pro { gap: 15px; }
+        .item-card-pro { border-radius: 20px; }
+        .card-body-pro { padding: 15px; }
+        .card-price { font-size: 1.2rem; }
+
+        /* 5. Tools & Trust Focus - EL ARREGLO */
+        .tools-grid-pro { grid-template-columns: 1fr !important; gap: 40px !important; text-align: center; }
+        .tools-text h2, .trust-human-text h2, .section-header-centered h2 { 
+            font-size: 2.2rem; 
+            line-height: 1.1; 
+        }
+        .tools-list { text-align: left; }
+        .tools-list li, .human-checks li { font-size: 1rem; line-height: 1.4; }
+        .btn-primary-glow, .btn-human-primary { width: 100%; text-align: center; padding: 18px; margin: 0 auto; }
+        .tools-visual-card { height: 300px; border-radius: 24px; width: 100%; }
+        
+        .trust-human-flex { flex-direction: column !important; gap: 50px !important; text-align: center; }
+        .human-photo-wrapper { margin: 0 auto; }
+    }
+
+    @media (max-width: 480px) {
+        .feed-grid-pro { grid-template-columns: 1fr; }
+        .section-hero h1 { font-size: 2.2rem; }
+    }
+</style>
+
+{% if not user.is_authenticated %}
+<script>
+  (function () {
+    const loginUrl = "{% url 'account_login' %}";
+    document.querySelectorAll('a').forEach((link) => {
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+      link.setAttribute('href', loginUrl);
+    });
+  })();
+</script>
+{% endif %}
+{% endblock %}

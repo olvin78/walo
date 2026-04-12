@@ -1,0 +1,14 @@
+body {
+    font-family: "Space Grotesk", "Sora", sans-serif;
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Sora", sans-serif;
+    font-weight: 700;
+}
+
+.walo-container {
+    width: min(1320px, 96%);
+    margin: 0 auto;
+}

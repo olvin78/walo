@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Chat con {{ other_user.username }} | Walo{% endblock %}
+
+{% block flash_messages %}{% endblock %}
+
+{% block content %}
+<div class="walo-container" style="padding: 40px 0; max-width: 800px;">
+  <!-- Cabecera del Chat -->
+  <div class="chat-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <a href="{% url 'inbox' %}" style="text-decoration: none; font-size: 1.2rem;">⬅️</a>
+      <div>
+        <h2 style="font-size: 1.2rem;">Chat con {{ other_user.username }}</h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">Sobre: {{ conversation.listing.title }}</p>
+      </div>
+    </div>
+    {% if conversation.listing.image %}
+      <img src="{{ conversation.listing.image.url }}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+    {% endif %}
+  </div>
+
+  <!-- Ventana de Mensajes -->
+  <div id="chat-window" style="height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px; background: var(--bg-secondary); border-radius: 20px; border: 1px solid var(--border);">
+    {% for message in messages %}
+      <div class="message {% if message.sender == request.user %}me{% else %}other{% endif %}" 
+           style="max-width: 75%; padding: 12px 18px; border-radius: 20px; {% if message.sender == request.user %}align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px;{% else %}align-self: flex-start; background: #fff; color: #000; border-bottom-left-radius: 4px;{% endif %}">
+        {{ message.text }}
+        <div style="font-size: 0.7rem; margin-top: 4px; opacity: 0.8;">{{ message.created_at|date:"H:i" }}</div>
+      </div>
+    {% empty %}
+      <div style="text-align: center; padding: 40px; color: var(--text-muted);">Inicia la conversación preguntando algo sobre el producto.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Formulario de Envío -->
+  <form method="POST" style="margin-top: 20px; display: flex; gap: 10px;">
+    {% csrf_token %}
+    <input type="text" name="text" placeholder="Escribe un mensaje..." required 
+           style="flex: 1; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border); background: #fff; outline: none;">
+    <button type="submit" class="cmp-btn cmp-btn-primary" style="padding: 10px 25px;">Enviar</button>
+  </form>
+</div>
+
+<script>
+  const chatWindow = document.getElementById('chat-window');
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+</script>
+{% endblock %}

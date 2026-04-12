@@ -1,0 +1,117 @@
+.cmp-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+}
+
+.cmp-navbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    position: relative;
+}
+
+.cmp-navbar .logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-main);
+}
+
+.cmp-navbar-menu {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-size: 0.95rem;
+}
+
+.cmp-navbar-menu a {
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.cmp-navbar-menu a:hover {
+    color: var(--text-main);
+}
+
+/* Ocultar el botón estilo menú en desktop si queremos uno principal fuera, 
+   pero el usuario pidió que esté dentro. Así que lo estilizamos como botón. */
+.nav-mobile-cta {
+    margin-left: 12px;
+}
+
+/* Hamburger Menu Toggle */
+.cmp-navbar-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 110;
+}
+
+.cmp-navbar-toggle span {
+    display: block;
+    width: 24px;
+    height: 2.5px;
+    background-color: var(--text-main);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .cmp-navbar-toggle {
+        display: flex;
+    }
+
+    .cmp-navbar-menu {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100vh;
+        background: var(--bg-main);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        transition: transform 0.4s ease, left 0.4s ease;
+        z-index: 105;
+        background: radial-gradient(circle at bottom left, #1e293b, var(--bg-main));
+    }
+
+    .cmp-navbar-menu.is-active {
+        left: 0;
+    }
+
+    .cmp-navbar-menu a {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .nav-mobile-cta {
+        margin: 12px 0 0 0;
+        width: 80%;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    /* Animación Hamburguesa */
+    .cmp-navbar-toggle.is-active span:nth-child(1) {
+        transform: translateY(7.5px) rotate(45deg);
+    }
+    .cmp-navbar-toggle.is-active span:nth-child(2) {
+        opacity: 0;
+    }
+    .cmp-navbar-toggle.is-active span:nth-child(3) {
+        transform: translateY(-7.5px) rotate(-45deg);
+    }
+}
