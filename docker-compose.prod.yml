@@ -13,6 +13,9 @@ services:
     env_file:
       - .env.prod
 
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings
+
     depends_on:
       - db
 
