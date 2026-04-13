@@ -2,6 +2,16 @@
 {% load static %}
 
 {% block title %}Explorar | Walo Marketplace{% endblock %}
+{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{% url 'explore' %}{% endblock %}
+{% block robots %}
+  {% if query or min_price or max_price or loc or radius or current_category or current_subcategory %}
+    noindex, follow
+  {% elif sort and sort != '-created_at' %}
+    noindex, follow
+  {% else %}
+    index, follow
+  {% endif %}
+{% endblock %}
 {% block body_class %}page-home page-explore{% endblock %}
 
 {% block content %}

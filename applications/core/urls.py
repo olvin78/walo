@@ -3,18 +3,22 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .views import (add_review, category_detail, chat_view, create_listing,
                     delete_conversation, delete_story, edit_profile, explore,
-                    favorites_view, home, inbox_view, listing_detail,
+                    favorites_view, home, inbox_view, listing_detail, listing_detail_slug,
                     make_offer, signup, start_conversation, toggle_favorite,
                     toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug,
-                    terms_view, privacy_view, cookies_view, legal_notice_view, save_marketing_consent)
+                    terms_view, privacy_view, cookies_view, legal_notice_view, save_marketing_consent,
+                    city_landing, city_category_landing)
 
 urlpatterns = [
     path("", home, name="home"),
     path("registro/", signup, name="signup"),
     path("explorar/", explore, name="explore"),
     path("publicar/", create_listing, name="create_listing"),
+    path("ciudad/<slug:city_slug>/", city_landing, name="city_landing"),
+    path("ciudad/<slug:city_slug>/categoria/<slug:category_slug>/", city_category_landing, name="city_category_landing"),
     path("categoria/<slug:slug>/", category_detail, name="category_detail"),
-    path("anuncio/<int:listing_id>/", listing_detail, name="listing_detail"),
+    path("anuncio/<int:listing_id>-<slug:slug>/", listing_detail_slug, name="listing_detail"),
+    path("anuncio/<int:listing_id>/", listing_detail, name="listing_detail_legacy"),
     path("anuncio/<int:listing_id>/comentar/", add_review, name="add_review"),
     path("anuncio/<int:listing_id>/oferta/", make_offer, name="make_offer"),
     path("favoritos/", favorites_view, name="favorites"),

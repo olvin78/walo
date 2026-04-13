@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.db.models import Q
 from django.contrib import messages
 from django.conf import settings
@@ -17,6 +17,22 @@ import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
 from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent
+
+CITY_LANDINGS = {
+    "managua": "Managua",
+    "leon": "León",
+    "granada": "Granada",
+    "masaya": "Masaya",
+    "esteli": "Estelí",
+    "matagalpa": "Matagalpa",
+}
+
+
+def get_city_name_or_404(city_slug: str) -> str:
+    city_name = CITY_LANDINGS.get(city_slug)
+    if not city_name:
+        raise Http404
+    return city_name
 
 def home(request):
     """
@@ -241,10 +257,6 @@ def explore(request):
     # Obtener categorías principales respetando el orden manual definido en el admin
     all_categories = Category.objects.annotate(num_listings=Count('listings')).order_by('order', '-num_listings')
     
-    # Límite de cortesía para invitados (4 resultados)
-    if not request.user.is_authenticated:
-        listings = listings[:4]
-
     # Manejo de favoritos del usuario
     user_favorites = []
     if request.user.is_authenticated:
@@ -267,6 +279,41 @@ def explore(request):
         'user_favorites': user_favorites,
     }
     return render(request, 'core/explore.html', context)
+
+
+def city_landing(request, city_slug):
+    city_name = get_city_name_or_404(city_slug)
+    # NOTE: location is free text. We match by substring for this phase.
+    listings = Listing.objects.filter(is_active=True, location__icontains=city_name).order_by("-created_at")
+    has_results = listings.exists()
+    context = {
+        "city_slug": city_slug,
+        "city_name": city_name,
+        "category": None,
+        "listings": listings,
+        "has_results": has_results,
+    }
+    return render(request, "core/city_landing.html", context)
+
+
+def city_category_landing(request, city_slug, category_slug):
+    city_name = get_city_name_or_404(city_slug)
+    category = get_object_or_404(Category, slug=category_slug)
+    # NOTE: location is free text. We match by substring for this phase.
+    listings = Listing.objects.filter(
+        is_active=True,
+        location__icontains=city_name,
+        category=category,
+    ).order_by("-created_at")
+    has_results = listings.exists()
+    context = {
+        "city_slug": city_slug,
+        "city_name": city_name,
+        "category": category,
+        "listings": listings,
+        "has_results": has_results,
+    }
+    return render(request, "core/city_landing.html", context)
 
 @login_required
 def create_listing(request):
@@ -306,7 +353,7 @@ def create_listing(request):
                 payment_methods=payment_methods
             )
             messages.success(request, "¡Tu anuncio ha sido publicado con éxito!")
-            return redirect('listing_detail', listing_id=listing.id)
+            return redirect(listing.get_absolute_url())
         except Exception as e:
             messages.error(request, f"Hubo un error al publicar: {str(e)}")
             return redirect('create_listing')
@@ -315,28 +362,34 @@ def create_listing(request):
     subcategories = Subcategory.objects.select_related('category').all()
     return render(request, 'core/create_listing.html', {'categories': categories, 'subcategories': subcategories})
 
-@login_required
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
     listings = category.listings.filter(is_active=True).order_by("-created_at")
     context = {"category": category, "listings": listings}
     return render(request, "core/category_detail.html", context)
 
-@login_required
-def listing_detail(request, listing_id):
+def listing_detail_slug(request, listing_id, slug):
     listing = get_object_or_404(Listing, id=listing_id, is_active=True)
+    if slug != listing.slug:
+        return redirect(listing.get_absolute_url(), permanent=True)
+
     is_favorite = False
     if request.user.is_authenticated:
         is_favorite = listing.favorites.filter(id=request.user.id).exists()
-    
+
     reviews = listing.reviews.all().order_by('-created_at')
-    
+
     context = {
         "listing": listing,
         "is_favorite": is_favorite,
         "reviews": reviews,
     }
     return render(request, "core/listing_detail.html", context)
+
+
+def listing_detail(request, listing_id):
+    listing = get_object_or_404(Listing, id=listing_id, is_active=True)
+    return redirect(listing.get_absolute_url(), permanent=True)
 
 @login_required
 def favorites_view(request):
@@ -456,7 +509,7 @@ def start_conversation(request, listing_id):
     # Si el usuario es el dueño, le avisamos con un mensaje
     if listing.user == request.user:
         messages.info(request, "Este es tu propio anuncio. No puedes enviarte mensajes a ti mismo.")
-        return redirect('listing_detail', listing_id=listing_id)
+        return redirect(listing.get_absolute_url())
     
     # Intentar obtener una conversación existente entre estos dos usuarios para este anuncio
     conversation = Conversation.objects.filter(listing=listing).filter(participants=request.user).filter(participants=listing.user).first()
@@ -561,7 +614,7 @@ def add_review(request, listing_id):
     if request.method == 'POST':
         listing = get_object_or_404(Listing, id=listing_id)
         Review.objects.create(listing=listing, user=request.user, text=request.POST.get('text'), rating=request.POST.get('rating', 5))
-        return redirect('listing_detail', listing_id=listing_id)
+        return redirect(listing.get_absolute_url())
     return redirect('home')
 
 @login_required
@@ -580,7 +633,7 @@ def make_offer(request, listing_id):
         Message.objects.create(conversation=conversation, sender=request.user, text=full_message)
         conversation.save() # Actualiza updated_at
         return redirect('inbox')
-    return redirect('listing_detail', listing_id=listing_id)
+    return redirect(listing.get_absolute_url())
 
 def signup(request):
     if request.method == 'POST':

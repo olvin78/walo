@@ -55,12 +55,20 @@
     <section class="section-header" style="margin-bottom: 30px;">
       <h1>{{ category.name }}</h1>
       <p style="color: var(--text-muted);">Encuentra anuncios recientes en esta categoria.</p>
+      <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+        <a href="{% url 'city_category_landing' 'managua' category.slug %}" style="color: var(--primary); text-decoration: none; font-weight: 700;">Managua</a>
+        <a href="{% url 'city_category_landing' 'leon' category.slug %}" style="color: var(--primary); text-decoration: none; font-weight: 700;">León</a>
+        <a href="{% url 'city_category_landing' 'granada' category.slug %}" style="color: var(--primary); text-decoration: none; font-weight: 700;">Granada</a>
+        <a href="{% url 'city_category_landing' 'masaya' category.slug %}" style="color: var(--primary); text-decoration: none; font-weight: 700;">Masaya</a>
+        <a href="{% url 'city_category_landing' 'esteli' category.slug %}" style="color: var(--primary); text-decoration: none; font-weight: 700;">Estelí</a>
+        <a href="{% url 'city_category_landing' 'matagalpa' category.slug %}" style="color: var(--primary); text-decoration: none; font-weight: 700;">Matagalpa</a>
+      </div>
     </section>
 
     <section class="section-products">
       <div class="products-grid">
         {% for listing in listings %}
-        <div class="product-card">
+        <a href="{{ listing.get_absolute_url }}" class="product-card">
           {% if listing.image %}
           <img src="{{ listing.image.url }}" alt="{{ listing.title }} en {{ listing.location }}" class="product-img" loading="lazy">
           {% else %}
@@ -71,7 +79,7 @@
             <div class="product-title">{{ listing.title }}</div>
             <div class="product-location">📍 {{ listing.location }}</div>
           </div>
-        </div>
+        </a>
         {% empty %}
         <div style="grid-column: 1/-1; text-align: center; padding: 60px;">
           <div style="font-size: 3rem; margin-bottom: 20px;">📦</div>

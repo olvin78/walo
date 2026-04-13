@@ -1,683 +1,876 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Walo | Compra y venta online en Nicaragua{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Walo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios, encuentra ofertas y conecta con personas cerca de ti.{% endblock %}" />
-    <meta name="robots" content="{% block robots %}index, follow{% endblock %}" />
-    <link rel="canonical" href="{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}" />
-    <meta property="og:site_name" content="Walo" />
-    <meta property="og:title" content="{% block og_title %}Walo | Compra y venta online en Nicaragua{% endblock %}" />
-    <meta property="og:description" content="{% block og_description %}Compra y vende online en Nicaragua con Walo. Marketplace local con anuncios reales cerca de ti.{% endblock %}" />
-    <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
-    <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}" />
-    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endblock %}" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="{% block twitter_title %}Walo | Compra y venta online en Nicaragua{% endblock %}" />
-    <meta name="twitter:description" content="{% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Encuentra ofertas cerca de ti.{% endblock %}" />
-    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endblock %}" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&family=Montserrat:wght@800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="{% static 'css/walo.css' %}" />
-    {% block extra_head %}{% endblock %}
-  </head>
-  <body class="{% block body_class %}page-home{% endblock %}">
-    <nav class="cmp-navbar">
-      <div class="walo-container cmp-navbar-inner">
-        <a href="/" class="logo">WALO <span style="font-size: 0.7em; opacity: 0.5; margin: 0 5px;">·</span> <span style="font-size: 0.6em; font-weight: 400; opacity: 0.7; letter-spacing: 2px;">NICARAGUA</span> <span class="logo-spark">✦</span></a>
 
-        <div class="cmp-navbar-menu" id="navbar-menu">
-          <a href="{% url 'home' %}"><i data-lucide="home" class="nav-icon"></i> Inicio</a>
-          <a href="{% url 'explore' %}"><i data-lucide="search" class="nav-icon"></i> Explorar</a>
-          
-          {% if user.is_authenticated %}
-            <a href="{% url 'inbox' %}"><i data-lucide="mail" class="nav-icon"></i> Mensajes</a>
-            <a href="{% url 'favorites' %}"><i data-lucide="heart" class="nav-icon"></i> Favoritos</a>
-            <a href="/publicar/"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
-            
-            <div class="cmp-navbar-dropdown" id="config-dropdown">
-              <button class="dropdown-trigger" onclick="toggleConfigSubmenu(event)">
-                <i data-lucide="settings" class="nav-icon"></i> Configuraciones <span class="arrow">▾</span>
-              </button>
-              <div class="dropdown-menu" id="config-submenu">
-                <a href="{% url 'user_profile' user.username %}"><i data-lucide="user" class="sub-icon"></i> Mi Perfil</a>
-                <a href="{% url 'edit_profile' %}"><i data-lucide="edit-3" class="sub-icon"></i> Editar mi perfil</a>
-                <a href="{% url 'account_change_password' %}"><i data-lucide="key" class="sub-icon"></i> Cambiar contraseña</a>
-                <form action="{% url 'account_logout' %}" method="post">
-                  {% csrf_token %}
-                  <button type="submit"><i data-lucide="log-out" class="sub-icon"></i> Cerrar sesión</button>
-                </form>
-              </div>
-            </div>
-          {% else %}
-            <a href="{% url 'account_login' %}"><i data-lucide="log-in" class="nav-icon"></i> Entrar</a>
-            <a href="{% url 'account_signup' %}" class="cmp-btn cmp-btn-primary nav-cta-mobile"><i data-lucide="rocket" class="nav-icon"></i> Registrarse</a>
-            <a href="{% url 'account_login' %}"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
-          {% endif %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Walo | Compra y venta online en Nicaragua{% endblock %}</title>
+  <meta name="description"
+    content="{% block meta_description %}Walo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios, encuentra ofertas y conecta con personas cerca de ti.{% endblock %}" />
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}" />
+  <link rel="canonical" href="{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}" />
+  <meta property="og:site_name" content="Walo" />
+  <meta property="og:title" content="{% block og_title %}Walo | Compra y venta online en Nicaragua{% endblock %}" />
+  <meta property="og:description"
+    content="{% block og_description %}Compra y vende online en Nicaragua con Walo. Marketplace local con anuncios reales cerca de ti.{% endblock %}" />
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
+  <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}" />
+  <meta property="og:image"
+    content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endblock %}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title"
+    content="{% block twitter_title %}Walo | Compra y venta online en Nicaragua{% endblock %}" />
+  <meta name="twitter:description"
+    content="{% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Encuentra ofertas cerca de ti.{% endblock %}" />
+  <meta name="twitter:image"
+    content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endblock %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&family=Montserrat:wght@800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/walo.css' %}" />
+  {% block extra_head %}{% endblock %}
+  <style>
+    /* Bug Report Styles */
+    .report-bug-trigger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 15px;
+      font-family: inherit;
+    }
 
-          {% if user.is_authenticated %}
-            <button class="report-bug-trigger" onclick="openBugModal()">⚠️ Reportar</button>
-          {% endif %}
-        </div>
+    .report-bug-trigger:hover {
+      background: rgba(239, 68, 68, 0.2);
+      transform: translateY(-2px);
+    }
 
-        <!-- Botón Hamburguesa a la Derecha -->
-        <button class="cmp-navbar-toggle" id="navbar-toggle" aria-label="Abrir menú">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </div>
-    </nav>
+    .bug-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
+    }
 
-    <!-- Bug Report Modal -->
-    <div id="bug-modal" class="bug-modal-overlay">
-      <div class="bug-modal-content">
-        <button class="close-bug-modal" onclick="closeBugModal()">&times;</button>
-        <h3>¡Ayúdanos a mejorar! 🛠️</h3>
-        <p>¿Algo no funciona como debería? Explícanos qué está pasando y lo revisaremos cuanto antes.</p>
-        <form action="{% url 'report_bug' %}" method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div class="bug-form-group">
-            <label>Describe el fallo:</label>
-            <textarea name="description" placeholder="Ej: No puedo subir fotos en el formulario de publicación..." required></textarea>
-          </div>
-          <div class="bug-form-group">
-            <label>Captura de pantalla (opcional):</label>
-            <div class="custom-file-upload">
-              <input type="file" name="screenshot" id="bug-screenshot" accept="image/*" onchange="updateFileName(this)">
-              <label for="bug-screenshot" class="file-upload-label">
-                <span class="upload-icon">📸</span>
-                <span id="bug-file-label">Seleccionar imagen...</span>
-              </label>
-            </div>
-          </div>
-          <button type="submit" class="cmp-btn cmp-btn-primary" style="width: 100%; margin-top: 15px;">ENVIAR REPORTE</button>
-        </form>
-      </div>
-    </div>
+    .bug-modal-overlay.is-active {
+      display: flex;
+    }
 
-    <main>
-      {% block flash_messages %}
-        {% if messages %}
-          <div class="walo-container" style="margin-top: 20px;">
-            {% for message in messages %}
-              <div style="padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; background: {% if message.tags == 'error' %}#ef4444{% else %}#161b22{% endif %}; color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
-                {{ message }}
-                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem;">&times;</button>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endblock %}
-      {% block content %}{% endblock %}
-    </main>
+    .bug-modal-content {
+      background: #161b22;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 500px;
+      width: 100%;
+      position: relative;
+      animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-    <footer class="footer">
-      <div class="walo-container">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <a href="/" class="logo">WALO <span class="logo-spark">✦</span></a>
-            <p style="margin-top: 15px; color: var(--text-muted); line-height: 1.6; font-size: 0.95rem;">
-              El marketplace de confianza en Nicaragua. Compra, vende y conecta con tu comunidad local de forma segura y rápida.
-            </p>
-          </div>
-          
-          <div class="footer-column">
-            <h4 style="color: #fff; margin-bottom: 20px; font-size: 1.1rem;">Plataforma</h4>
-            <div class="footer-links" style="display: flex; flex-direction: column; gap: 12px;">
-              <a href="{% url 'home' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Inicio</a>
-              <a href="{% url 'explore' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Explorar</a>
-              <a href="{% url 'inbox' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Mensajes</a>
-              <a href="{% url 'favorites' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Mis Favoritos</a>
-            </div>
-          </div>
-          
-          <div class="footer-column">
-            <h4 style="color: #fff; margin-bottom: 20px; font-size: 1.1rem;">Soporte</h4>
-            <div class="footer-links" style="display: flex; flex-direction: column; gap: 12px;">
-              <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Centro de Ayuda</a>
-              <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Reglas de Seguridad</a>
-              <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Consejos para Vender</a>
-              <button onclick="openBugModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; text-align: left; padding: 0; font-family: inherit; transition: 0.3s;">Reportar un Fallo</button>
-            </div>
-          </div>
-          
-          <div class="footer-column">
-            <h4 style="color: #fff; margin-bottom: 20px; font-size: 1.1rem;">Legal</h4>
-            <div class="footer-links" style="display: flex; flex-direction: column; gap: 12px;">
-              <a href="{% url 'terms' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Términos de Servicio</a>
-              <a href="{% url 'privacy' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Privacidad</a>
-              <a href="{% url 'cookies' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Política de Cookies</a>
-              <a href="{% url 'legal_notice' %}" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Aviso Legal</a>
-            </div>
-          </div>
-        </div>
-        
-        <div class="footer-bottom" style="margin-top: 60px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-          <p style="color: var(--text-muted); font-size: 0.85rem;">&copy; 2026 Walo. Hecho con ❤️ en Nicaragua para vos.</p>
-          <div class="footer-socials" style="display: flex; gap: 20px;">
-            <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="facebook" style="width: 20px;"></i></a>
-            <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="instagram" style="width: 20px;"></i></a>
-            <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="twitter" style="width: 20px;"></i></a>
-          </div>
-        </div>
-      </div>
-    </footer>
-
-    <!-- Lucide Icons Library -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-      // Initialize Lucide Icons
-      lucide.createIcons();
-
-      const toggle = document.getElementById('navbar-toggle');
-      const menu = document.getElementById('navbar-menu');
-
-      if (toggle && menu) {
-        toggle.addEventListener('click', () => {
-          toggle.classList.toggle('is-active');
-          menu.classList.toggle('is-active');
-          document.body.style.overflow = menu.classList.contains('is-active') ? 'hidden' : 'auto';
-        });
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
       }
 
-      function toggleConfigSubmenu(e) {
-        e.stopPropagation();
-        const submenu = document.getElementById('config-submenu');
-        const arrow = document.querySelector('.dropdown-trigger .arrow');
-        submenu.classList.toggle('is-active');
-        arrow.style.transform = submenu.classList.contains('is-active') ? 'rotate(180deg)' : 'rotate(0)';
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .close-bug-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .bug-modal-content h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .bug-modal-content p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .bug-form-group {
+      margin-bottom: 15px;
+    }
+
+    .bug-form-group label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .bug-form-group textarea {
+      width: 100%;
+      min-height: 120px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      color: #fff;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+    }
+
+    .bug-form-group textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .bug-form-group input[type="file"] {
+      width: 100%;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .custom-file-upload {
+      position: relative;
+      width: 100%;
+    }
+
+    .custom-file-upload input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .file-upload-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.9rem;
+    }
+
+    .file-upload-label:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .upload-icon {
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      .report-bug-trigger {
+        margin: 20px 0;
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+      }
+    }
+
+    /* --- Estilos del Logo Monumental con Detalles --- */
+    .logo {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      text-decoration: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      letter-spacing: -2px;
+      text-transform: uppercase;
+      position: relative;
+      transition: 0.3s ease;
+    }
+
+    .logo::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 0;
+      width: 35px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      box-shadow: 0 0 15px var(--primary);
+    }
+
+    .logo-spark {
+      color: var(--primary);
+      font-size: 1.2rem;
+      margin-left: 5px;
+      margin-top: -15px;
+      text-shadow: 0 0 10px var(--primary);
+    }
+
+    .logo:hover {
+      letter-spacing: 1px;
+    }
+
+    .logo:hover .logo-spark {
+      transform: scale(1.5) rotate(45deg);
+      transition: 0.4s;
+    }
+
+    .logo span {
+      transform: none !important;
+      margin: 0 !important;
+      color: inherit !important;
+      font-size: inherit !important;
+    }
+
+    /* --- Estilos del Dropdown de Configuraciones --- */
+    .cmp-navbar-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-trigger {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+    }
+
+    .dropdown-trigger:hover {
+      color: var(--text-main);
+    }
+
+    .dropdown-trigger .arrow {
+      font-size: 0.8rem;
+      opacity: 0.6;
+      transition: transform 0.3s ease;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      min-width: 180px;
+      padding: 8px 0;
+      margin-top: 15px;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      animation: slideDown 0.2s ease;
+    }
+
+    .dropdown-menu.is-active {
+      display: flex;
+    }
+
+    .dropdown-menu a {
+      padding: 12px 20px !important;
+      font-size: 0.95rem !important;
+      color: var(--text-main) !important;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .dropdown-menu a:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary) !important;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
       }
 
-      // Cerrar dropdown al hacer clic fuera
-      document.addEventListener('click', () => {
-        const submenu = document.getElementById('config-submenu');
-        const arrow = document.querySelector('.dropdown-trigger .arrow');
-        if (submenu && submenu.classList.contains('is-active')) {
-          submenu.classList.remove('is-active');
-          if (arrow) arrow.style.transform = 'rotate(0)';
-        }
-      });
-    </script>
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-    <style>
-      /* --- Estilos del Logo Monumental con Detalles --- */
-      .logo {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 2.8rem;
-        font-weight: 900;
-        text-decoration: none;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        letter-spacing: -2px;
-        text-transform: uppercase;
-        position: relative;
-        transition: 0.3s ease;
-      }
-      .logo::after {
-        content: '';
-        position: absolute;
-        bottom: 2px;
-        left: 0;
-        width: 35px;
-        height: 4px;
-        background: var(--primary);
-        border-radius: 2px;
-        box-shadow: 0 0 15px var(--primary);
-      }
-      .logo-spark {
-        color: var(--primary);
-        font-size: 1.2rem;
-        margin-left: 5px;
-        margin-top: -15px;
-        text-shadow: 0 0 10px var(--primary);
-      }
-      .logo:hover {
-        letter-spacing: 1px;
-      }
-      .logo:hover .logo-spark {
-        transform: scale(1.5) rotate(45deg);
-        transition: 0.4s;
-      }
-      /* Eliminamos span adicionales para este estilo */
-      .logo span { transform: none !important; margin: 0 !important; color: inherit !important; font-size: inherit !important; }
-
-      /* --- Estilos del Dropdown de Configuraciones --- */
+    @media (max-width: 768px) {
       .cmp-navbar-dropdown {
-        position: relative;
-        display: inline-block;
+        width: 100%;
+        margin: 0;
+        padding: 0;
       }
 
       .dropdown-trigger {
-        background: transparent;
-        border: none;
-        color: var(--text-muted);
-        font-family: inherit;
-        font-size: 0.95rem;
-        font-weight: 500;
-        cursor: pointer;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #fff;
+        width: 100%;
+        justify-content: center;
         padding: 0;
+        margin: 0;
         display: flex;
         align-items: center;
-        gap: 6px;
-        transition: color 0.2s ease;
-      }
-
-      .dropdown-trigger:hover {
-        color: var(--text-main);
+        background: transparent;
+        border: none;
+        position: relative;
       }
 
       .dropdown-trigger .arrow {
-        font-size: 0.8rem;
-        opacity: 0.6;
-        transition: transform 0.3s ease;
-      }
-
-      @media (max-width: 768px) {
-        .cmp-navbar-dropdown {
-          width: 100%;
-          margin: 0;
-          padding: 0;
-        }
-
-        .dropdown-trigger {
-          font-size: 1.4rem;
-          font-weight: 600;
-          color: #fff;
-          width: 100%;
-          justify-content: center;
-          padding: 0;
-          margin: 0;
-          display: flex;
-          align-items: center;
-          background: transparent;
-          border: none;
-          position: relative;
-        }
-        
-        /* La flecha no debe mover el texto del centro */
-        .dropdown-trigger .arrow { 
-          font-size: 1.1rem; 
-          position: absolute;
-          right: 20px;
-          opacity: 0.5;
-        }
-        
-        .dropdown-menu {
-          position: static;
-          background: transparent;
-          box-shadow: none;
-          max-height: 0;
-          overflow: hidden;
-          transition: max-height 0.4s ease, margin 0.3s ease;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 25px;
-          width: 100%;
-          opacity: 0;
-        }
-        .dropdown-menu.is-active { 
-          max-height: 400px; 
-          opacity: 1; 
-          margin-top: 30px;
-          margin-bottom: 10px;
-        }
-        .dropdown-menu a { 
-          font-size: 1.2rem !important; 
-          opacity: 0.7; 
-          color: #fff !important;
-          font-weight: 500;
-        }
+        font-size: 1.1rem;
+        position: absolute;
+        right: 20px;
+        opacity: 0.5;
       }
 
       .dropdown-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        min-width: 180px;
-        padding: 8px 0;
-        margin-top: 15px;
-        display: none;
+        position: static;
+        background: transparent;
+        box-shadow: none;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease, margin 0.3s ease;
+        display: flex;
         flex-direction: column;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        z-index: 1000;
-        animation: slideDown 0.2s ease;
+        align-items: center;
+        gap: 25px;
+        width: 100%;
+        opacity: 0;
+        padding-left: 0;
+        margin-top: 0;
       }
 
       .dropdown-menu.is-active {
+        max-height: 400px;
+        opacity: 1;
+        margin-top: 30px;
+        margin-bottom: 10px;
         display: flex;
       }
 
       .dropdown-menu a {
+        font-size: 1.2rem !important;
+        opacity: 0.7;
+        color: #fff !important;
+        font-weight: 500;
         padding: 12px 20px !important;
-        font-size: 0.95rem !important;
-        color: var(--text-main) !important;
-        text-decoration: none;
-        transition: background 0.2s;
       }
+    }
 
-      .dropdown-menu a:hover {
-        background: rgba(255,255,255,0.05);
-        color: var(--primary) !important;
-      }
+    /* --- Estilos Cookies --- */
+    .cookie-banner-wrapper {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      z-index: 10000;
+      width: calc(100% - 40px);
+      max-width: 500px;
+      background: rgba(22, 27, 34, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 15px 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      visibility: hidden;
+    }
 
-      @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+    .cookie-banner-wrapper.is-active {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
 
-      /* Adaptación para Móvil */
-      @media (max-width: 768px) {
-        .cmp-navbar-dropdown {
-            width: 100%;
-        }
-        .dropdown-trigger {
-            width: 100%;
-            justify-content: space-between;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .dropdown-menu {
-            position: static;
-            width: 100%;
-            background: transparent;
-            box-shadow: none;
-            border: none;
-            margin-top: 0;
-            padding-left: 20px;
-        }
-        .dropdown-menu.is-active {
-            display: flex;
-        }
-      }
-      /* Bug Report Styles */
-      .report-bug-trigger {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-left: 15px;
-        font-family: inherit;
-      }
-      .report-bug-trigger:hover {
-        background: rgba(239, 68, 68, 0.2);
-        transform: translateY(-2px);
-      }
-      .bug-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        backdrop-filter: blur(8px);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        padding: 20px;
-      }
-      .bug-modal-overlay.is-active { display: flex; }
-      .bug-modal-content {
-        background: #161b22;
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 30px;
-        border-radius: 20px;
-        max-width: 500px;
-        width: 100%;
-        position: relative;
-        animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      @keyframes modalFadeIn {
-        from { opacity: 0; transform: scale(0.95) translateY(10px); }
-        to { opacity: 1; transform: scale(1) translateY(0); }
-      }
-      .close-bug-modal {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 1.5rem;
-        cursor: pointer;
-      }
-      .bug-modal-content h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 10px; color: #fff; }
-      .bug-modal-content p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
-      .bug-form-group { margin-bottom: 15px; }
-      .bug-form-group label { display: block; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; }
-      .bug-form-group textarea {
-        width: 100%;
-        min-height: 120px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 12px;
-        padding: 12px;
-        color: #fff;
-        font-family: inherit;
-        resize: vertical;
-        outline: none;
-      }
-      .bug-form-group textarea:focus { border-color: var(--primary); }
-      .bug-form-group input[type="file"] {
-        width: 100%;
-        color: var(--text-muted);
-        font-size: 0.85rem;
-      }
-      .custom-file-upload {
-        position: relative;
-        width: 100%;
-      }
-      .custom-file-upload input[type="file"] {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        border: 0;
-      }
-      .file-upload-label {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 20px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px dashed rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: all 0.3s;
-        font-size: 0.9rem;
-      }
-      .file-upload-label:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: var(--primary);
-        color: #fff;
-      }
-      .upload-icon { font-size: 1.2rem; }
-      
-      @media (max-width: 768px) {
-        .report-bug-trigger { margin: 20px 0; width: 100%; justify-content: center; padding: 12px; }
-      }
+    .cookie-prefs-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 20000;
+      padding: 20px;
+    }
 
-      /* --- Estilos Cookies Avanzados --- */
-      .cookie-banner-wrapper { 
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); 
-        z-index: 10000; width: calc(100% - 40px); max-width: 500px; 
-        background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 15px 20px; 
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); 
-        opacity: 0; visibility: hidden; 
-      }
-      .cookie-banner-wrapper.is-active { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
-      
-      .cookie-prefs-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
-        display: none; justify-content: center; align-items: center;
-        z-index: 20000; padding: 20px;
-      }
-      .cookie-prefs-overlay.is-active { display: flex; }
-      .cookie-prefs-content {
-        background: #161b22; border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 24px; max-width: 450px; width: 100%;
-        padding: 30px; box-shadow: 0 40px 80px rgba(0,0,0,0.6);
-      }
-      .pref-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-      .pref-info strong { display: block; color: #fff; font-size: 0.95rem; }
-      .pref-info span { color: rgba(255,255,255,0.4); font-size: 0.75rem; }
-      
-      .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-      .switch input { opacity: 0; width: 0; height: 0; }
-      .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 22px; }
-      .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-      input:checked + .slider { background-color: var(--primary); }
-      input:checked + .slider:before { transform: translateX(18px); }
+    .cookie-prefs-overlay.is-active {
+      display: flex;
+    }
 
-      .cookie-actions { display: flex; gap: 10px; }
-      .cookie-btn-primary { background: var(--primary); color: #000; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 800; font-size: 0.8rem; cursor: pointer; }
-      .cookie-btn-secondary { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 9px 17px; border-radius: 12px; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
-    </style>
+    .cookie-prefs-content {
+      background: #161b22;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      max-width: 450px;
+      width: 100%;
+      padding: 30px;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+    }
 
-    <!-- Cookie Consent Banner -->
-    <div id="cookie-banner" class="cookie-banner-wrapper">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center;">
-        <div style="display: flex; align-items: center; gap: 10px; color: #fff; font-size: 0.9rem; font-weight: 500;">
-          <span style="font-size: 1.2rem;">🍪</span>
-          <p>¿Aceptas las cookies para una experiencia premium en WALO?</p>
+    .pref-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .pref-info strong {
+      display: block;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .pref-info span {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.75rem;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .4s;
+      border-radius: 22px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: var(--primary);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(18px);
+    }
+
+    .cookie-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .cookie-btn-primary {
+      background: var(--primary);
+      color: #000;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .cookie-btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 9px 17px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body class="{% block body_class %}page-home{% endblock %}">
+  <nav class="cmp-navbar">
+    <div class="walo-container cmp-navbar-inner">
+      <a href="/" class="logo">WALO <span style="font-size: 0.7em; opacity: 0.5; margin: 0 5px;">·</span> <span
+          style="font-size: 0.6em; font-weight: 400; opacity: 0.7; letter-spacing: 2px;">NICARAGUA</span> <span
+          class="logo-spark">✦</span></a>
+
+      <div class="cmp-navbar-menu" id="navbar-menu">
+        <a href="{% url 'home' %}"><i data-lucide="home" class="nav-icon"></i> Inicio</a>
+        <a href="{% url 'explore' %}"><i data-lucide="search" class="nav-icon"></i> Explorar</a>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'inbox' %}"><i data-lucide="mail" class="nav-icon"></i> Mensajes</a>
+        <a href="{% url 'favorites' %}"><i data-lucide="heart" class="nav-icon"></i> Favoritos</a>
+        <a href="/publicar/"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
+
+        <div class="cmp-navbar-dropdown" id="config-dropdown">
+          <button class="dropdown-trigger" onclick="toggleConfigSubmenu(event)">
+            <i data-lucide="settings" class="nav-icon"></i> Configuraciones <span class="arrow">▾</span>
+          </button>
+          <div class="dropdown-menu" id="config-submenu">
+            <a href="{% url 'user_profile' user.username %}"><i data-lucide="user" class="sub-icon"></i> Mi Perfil</a>
+            <a href="{% url 'edit_profile' %}"><i data-lucide="edit-3" class="sub-icon"></i> Editar mi perfil</a>
+            <a href="{% url 'account_change_password' %}"><i data-lucide="key" class="sub-icon"></i> Cambiar
+              contraseña</a>
+            <form action="{% url 'account_logout' %}" method="post">
+              {% csrf_token %}
+              <button type="submit"><i data-lucide="log-out" class="sub-icon"></i> Cerrar sesión</button>
+            </form>
+          </div>
         </div>
-        <div class="cookie-actions" style="width: 100%; justify-content: center;">
-          <button class="cookie-btn-secondary" style="flex: 1;" onclick="openCookiePreferences()">CONFIGURAR</button>
-          <button class="cookie-btn-primary" style="flex: 1;" onclick="acceptAllCookies()">ACEPTAR TODAS</button>
+        {% else %}
+        <a href="{% url 'account_login' %}"><i data-lucide="log-in" class="nav-icon"></i> Entrar</a>
+        <a href="{% url 'account_signup' %}" class="cmp-btn cmp-btn-primary nav-cta-mobile"><i data-lucide="rocket"
+            class="nav-icon"></i> Registrarse</a>
+        <a href="{% url 'account_login' %}"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
+        {% endif %}
+
+        {% if user.is_authenticated %}
+        <button class="report-bug-trigger" onclick="openBugModal()">⚠️ Reportar</button>
+        {% endif %}
+      </div>
+
+      <!-- Botón Hamburguesa a la Derecha -->
+      <button class="cmp-navbar-toggle" id="navbar-toggle" aria-label="Abrir menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Bug Report Modal -->
+  <div id="bug-modal" class="bug-modal-overlay">
+    <div class="bug-modal-content">
+      <button class="close-bug-modal" onclick="closeBugModal()">&times;</button>
+      <h3>¡Ayúdanos a mejorar! 🛠️</h3>
+      <p>¿Algo no funciona como debería? Explícanos qué está pasando y lo revisaremos cuanto antes.</p>
+      <form action="{% url 'report_bug' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="bug-form-group">
+          <label>Describe el fallo:</label>
+          <textarea name="description" placeholder="Ej: No puedo subir fotos en el formulario de publicación..."
+            required></textarea>
+        </div>
+        <div class="bug-form-group">
+          <label>Captura de pantalla (opcional):</label>
+          <div class="custom-file-upload">
+            <input type="file" name="screenshot" id="bug-screenshot" accept="image/*" onchange="updateFileName(this)">
+            <label for="bug-screenshot" class="file-upload-label">
+              <span class="upload-icon">📸</span>
+              <span id="bug-file-label">Seleccionar imagen...</span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="cmp-btn cmp-btn-primary" style="width: 100%; margin-top: 15px;">ENVIAR
+          REPORTE</button>
+      </form>
+    </div>
+  </div>
+
+  <main>
+    {% block flash_messages %}
+    {% if messages %}
+    <div class="walo-container" style="margin-top: 20px;">
+      {% for message in messages %}
+      <div
+        style="padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; background: {% if message.tags == 'error' %}#ef4444{% else %}#161b22{% endif %}; color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+        {{ message }}
+        <button onclick="this.parentElement.remove()"
+          style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem;">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endblock %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="walo-container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="logo">WALO <span class="logo-spark">✦</span></a>
+          <p style="margin-top: 15px; color: var(--text-muted); line-height: 1.6; font-size: 0.95rem;">
+            El marketplace de confianza en Nicaragua. Compra, vende y conecta con tu comunidad local de forma segura y
+            rápida.
+          </p>
+        </div>
+
+        <div class="footer-column">
+          <h4 style="color: #fff; margin-bottom: 20px; font-size: 1.1rem;">Plataforma</h4>
+          <div class="footer-links" style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{% url 'home' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Inicio</a>
+            <a href="{% url 'explore' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Explorar</a>
+            <a href="{% url 'inbox' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Mensajes</a>
+            <a href="{% url 'favorites' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Mis Favoritos</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4 style="color: #fff; margin-bottom: 20px; font-size: 1.1rem;">Soporte</h4>
+          <div class="footer-links" style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Centro de Ayuda</a>
+            <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Reglas de
+              Seguridad</a>
+            <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Consejos para
+              Vender</a>
+            <button onclick="openBugModal()"
+              style="background: none; border: none; color: var(--text-muted); cursor: pointer; text-align: left; padding: 0; font-family: inherit; transition: 0.3s;">Reportar
+              un Fallo</button>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4 style="color: #fff; margin-bottom: 20px; font-size: 1.1rem;">Legal</h4>
+          <div class="footer-links" style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{% url 'terms' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Términos de Servicio</a>
+            <a href="{% url 'privacy' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Privacidad</a>
+            <a href="{% url 'cookies' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Política de Cookies</a>
+            <a href="{% url 'legal_notice' %}"
+              style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Aviso Legal</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom"
+        style="margin-top: 60px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <p style="color: var(--text-muted); font-size: 0.85rem;">&copy; 2026 Walo. Hecho con ❤️ en Nicaragua para vos.
+        </p>
+        <div class="footer-socials" style="display: flex; gap: 20px;">
+          <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="facebook"
+              style="width: 20px;"></i></a>
+          <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="instagram"
+              style="width: 20px;"></i></a>
+          <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="twitter"
+              style="width: 20px;"></i></a>
         </div>
       </div>
     </div>
+  </footer>
 
-    <!-- Cookie Preferences Modal -->
-    <div id="cookie-prefs-modal" class="cookie-prefs-overlay">
-      <div class="cookie-prefs-content">
-        <h3 style="color:#fff; margin-bottom: 5px;">Privacidad</h3>
-        <p style="color:rgba(255,255,255,0.5); font-size:0.85rem; margin-bottom: 25px;">Gestiona tus preferencias de datos.</p>
-        
-        <div class="pref-item">
-          <div class="pref-info"><strong>Necesarias</strong><span>Esenciales para el sitio.</span></div>
-          <span style="opacity:0.3">🔒</span>
-        </div>
+  <!-- Lucide Icons Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
 
-        <div class="pref-item">
-          <div class="pref-info"><strong>Analíticas</strong><span>Para mejorar Walo.</span></div>
-          <label class="switch"><input type="checkbox" id="pref-analytics" checked><span class="slider"></span></label>
-        </div>
+    const toggle = document.getElementById('navbar-toggle');
+    const menu = document.getElementById('navbar-menu');
 
-        <div class="pref-item">
-          <div class="pref-info"><strong>Publicidad y Avisos</strong><span>Recibe ofertas y noticias.</span></div>
-          <label class="switch"><input type="checkbox" id="pref-marketing" checked><span class="slider"></span></label>
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 30px;">
-          <button class="cookie-btn-secondary" style="flex:1" onclick="closeCookiePreferences()">CANCELAR</button>
-          <button class="cookie-btn-primary" style="flex:1" onclick="saveCookiePreferences()">GUARDAR</button>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      function openCookiePreferences() { document.getElementById('cookie-prefs-modal').classList.add('is-active'); document.getElementById('cookie-banner').classList.remove('is-active'); }
-      function closeCookiePreferences() { document.getElementById('cookie-prefs-modal').classList.remove('is-active'); }
-
-      function acceptAllCookies() {
-        localStorage.setItem('walo_cookies_accepted', 'all');
-        localStorage.setItem('walo_marketing_consent', 'true'); // Guardamos para el futuro
-        syncConsentWithBackend(true, true);
-        document.getElementById('cookie-banner').classList.remove('is-active');
-      }
-
-      function saveCookiePreferences() {
-        const mark = document.getElementById('pref-marketing').checked;
-        localStorage.setItem('walo_cookies_accepted', 'custom');
-        localStorage.setItem('walo_marketing_consent', mark ? 'true' : 'false');
-        syncConsentWithBackend(mark, mark);
-        closeCookiePreferences();
-        document.getElementById('cookie-banner').classList.remove('is-active');
-      }
-
-      function syncConsentWithBackend(notif, mark) {
-        // Solo enviamos si el usuario está autenticado
-        {% if user.is_authenticated %}
-        fetch('/save-preferences/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ allows_notifications: notif, allows_marketing: mark })
-        }).then(() => {
-            localStorage.setItem('walo_consent_synced', 'true');
-        });
-        {% endif %}
-      }
-
-      document.addEventListener('DOMContentLoaded', function() {
-        // 1. Mostrar banner si no hay respuesta
-        if (!localStorage.getItem('walo_cookies_accepted')) {
-          setTimeout(() => { document.getElementById('cookie-banner').classList.add('is-active'); }, 2000);
-        }
-
-        // 2. SCRIPT DETECTIVE: Si el usuario acaba de entrar logueado y aceptó marketing antes... ¡ZAS!
-        {% if user.is_authenticated %}
-        const hasConsent = localStorage.getItem('walo_marketing_consent') === 'true';
-        const alreadySynced = localStorage.getItem('walo_consent_synced') === 'true';
-        
-        if (hasConsent && !alreadySynced) {
-            syncConsentWithBackend(true, true);
-        }
-        {% endif %}
+    if (toggle && menu) {
+      toggle.addEventListener('click', () => {
+        toggle.classList.toggle('is-active');
+        menu.classList.toggle('is-active');
+        document.body.style.overflow = menu.classList.contains('is-active') ? 'hidden' : 'auto';
       });
-    </script>
+    }
 
-    <script>
-      function updateFileName(input) {
-        const label = document.getElementById('bug-file-label');
-        if (input.files.length > 0) {
-          label.textContent = input.files[0].name;
-          label.style.color = 'var(--primary)';
-        } else {
-          label.textContent = 'Seleccionar imagen...';
-          label.style.color = 'var(--text-muted)';
-        }
+    function toggleConfigSubmenu(e) {
+      e.stopPropagation();
+      const submenu = document.getElementById('config-submenu');
+      const arrow = document.querySelector('.dropdown-trigger .arrow');
+      submenu.classList.toggle('is-active');
+      arrow.style.transform = submenu.classList.contains('is-active') ? 'rotate(180deg)' : 'rotate(0)';
+    }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', () => {
+      const submenu = document.getElementById('config-submenu');
+      const arrow = document.querySelector('.dropdown-trigger .arrow');
+      if (submenu && submenu.classList.contains('is-active')) {
+        submenu.classList.remove('is-active');
+        if (arrow) arrow.style.transform = 'rotate(0)';
       }
-      function openBugModal() {
-        document.getElementById('bug-modal').classList.add('is-active');
-        document.body.style.overflow = 'hidden';
+    });
+  </script>
+
+
+  <!-- Cookie Consent Banner -->
+  <div id="cookie-banner" class="cookie-banner-wrapper">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center;">
+      <div style="display: flex; align-items: center; gap: 10px; color: #fff; font-size: 0.9rem; font-weight: 500;">
+        <span style="font-size: 1.2rem;">🍪</span>
+        <p>¿Aceptas las cookies para una experiencia premium en WALO?</p>
+      </div>
+      <div class="cookie-actions" style="width: 100%; justify-content: center;">
+        <button class="cookie-btn-secondary" style="flex: 1;" onclick="openCookiePreferences()">CONFIGURAR</button>
+        <button class="cookie-btn-primary" style="flex: 1;" onclick="acceptAllCookies()">ACEPTAR TODAS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cookie Preferences Modal -->
+  <div id="cookie-prefs-modal" class="cookie-prefs-overlay">
+    <div class="cookie-prefs-content">
+      <h3 style="color:#fff; margin-bottom: 5px;">Privacidad</h3>
+      <p style="color:rgba(255,255,255,0.5); font-size:0.85rem; margin-bottom: 25px;">Gestiona tus preferencias de
+        datos.</p>
+
+      <div class="pref-item">
+        <div class="pref-info"><strong>Necesarias</strong><span>Esenciales para el sitio.</span></div>
+        <span style="opacity:0.3">🔒</span>
+      </div>
+
+      <div class="pref-item">
+        <div class="pref-info"><strong>Analíticas</strong><span>Para mejorar Walo.</span></div>
+        <label class="switch"><input type="checkbox" id="pref-analytics" checked><span class="slider"></span></label>
+      </div>
+
+      <div class="pref-item">
+        <div class="pref-info"><strong>Publicidad y Avisos</strong><span>Recibe ofertas y noticias.</span></div>
+        <label class="switch"><input type="checkbox" id="pref-marketing" checked><span class="slider"></span></label>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 30px;">
+        <button class="cookie-btn-secondary" style="flex:1" onclick="closeCookiePreferences()">CANCELAR</button>
+        <button class="cookie-btn-primary" style="flex:1" onclick="saveCookiePreferences()">GUARDAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openCookiePreferences() { document.getElementById('cookie-prefs-modal').classList.add('is-active'); document.getElementById('cookie-banner').classList.remove('is-active'); }
+    function closeCookiePreferences() { document.getElementById('cookie-prefs-modal').classList.remove('is-active'); }
+
+    function acceptAllCookies() {
+      localStorage.setItem('walo_cookies_accepted', 'all');
+      localStorage.setItem('walo_marketing_consent', 'true'); // Guardamos para el futuro
+      syncConsentWithBackend(true, true);
+      document.getElementById('cookie-banner').classList.remove('is-active');
+    }
+
+    function saveCookiePreferences() {
+      const mark = document.getElementById('pref-marketing').checked;
+      localStorage.setItem('walo_cookies_accepted', 'custom');
+      localStorage.setItem('walo_marketing_consent', mark ? 'true' : 'false');
+      syncConsentWithBackend(mark, mark);
+      closeCookiePreferences();
+      document.getElementById('cookie-banner').classList.remove('is-active');
+    }
+
+    function syncConsentWithBackend(notif, mark) {
+      // Solo enviamos si el usuario está autenticado
+      {% if user.is_authenticated %}
+      fetch('/save-preferences/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allows_notifications: notif, allows_marketing: mark })
+      }).then(() => {
+        localStorage.setItem('walo_consent_synced', 'true');
+      });
+      {% endif %}
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // 1. Mostrar banner si no hay respuesta
+      if (!localStorage.getItem('walo_cookies_accepted')) {
+        setTimeout(() => { document.getElementById('cookie-banner').classList.add('is-active'); }, 2000);
       }
-      function closeBugModal() {
-        document.getElementById('bug-modal').classList.remove('is-active');
-        document.body.style.overflow = 'auto';
+
+      // 2. SCRIPT DETECTIVE: Si el usuario acaba de entrar logueado y aceptó marketing antes... ¡ZAS!
+      {% if user.is_authenticated %}
+      const hasConsent = localStorage.getItem('walo_marketing_consent') === 'true';
+      const alreadySynced = localStorage.getItem('walo_consent_synced') === 'true';
+
+      if (hasConsent && !alreadySynced) {
+        syncConsentWithBackend(true, true);
       }
-      window.onclick = function(event) {
-        let modal = document.getElementById('bug-modal');
-        if (event.target == modal) {
-          closeBugModal();
-        }
+      {% endif %}
+    });
+  </script>
+
+  <script>
+    function updateFileName(input) {
+      const label = document.getElementById('bug-file-label');
+      if (input.files.length > 0) {
+        label.textContent = input.files[0].name;
+        label.style.color = 'var(--primary)';
+      } else {
+        label.textContent = 'Seleccionar imagen...';
+        label.style.color = 'var(--text-muted)';
       }
-    </script>
-  </body>
+    }
+    function openBugModal() {
+      document.getElementById('bug-modal').classList.add('is-active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeBugModal() {
+      document.getElementById('bug-modal').classList.remove('is-active');
+      document.body.style.overflow = 'auto';
+    }
+    window.onclick = function (event) {
+      let modal = document.getElementById('bug-modal');
+      if (event.target == modal) {
+        closeBugModal();
+      }
+    }
+  </script>
+</body>
+
 </html>

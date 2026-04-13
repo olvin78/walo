@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+  {% if category %}{{ category.name }} en {{ city_name }} | Walo Nicaragua{% else %}Anuncios en {{ city_name }} | Walo Nicaragua{% endif %}
+{% endblock %}
+{% block meta_description %}
+  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }}. Compra y vende en Walo con personas cerca de ti.{% else %}Explora anuncios en {{ city_name }}. Compra y vende en Walo con personas cerca de ti.{% endif %}
+{% endblock %}
+{% block og_title %}
+  {% if category %}{{ category.name }} en {{ city_name }} | Walo Nicaragua{% else %}Anuncios en {{ city_name }} | Walo Nicaragua{% endif %}
+{% endblock %}
+{% block og_description %}
+  {% if category %}Compra y vende {{ category.name|lower }} en {{ city_name }} con Walo.{% else %}Compra y vende en {{ city_name }} con Walo.{% endif %}
+{% endblock %}
+{% block twitter_title %}
+  {% if category %}{{ category.name }} en {{ city_name }} | Walo Nicaragua{% else %}Anuncios en {{ city_name }} | Walo Nicaragua{% endif %}
+{% endblock %}
+{% block twitter_description %}
+  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }} con Walo.{% else %}Encuentra ofertas en {{ city_name }} con Walo.{% endif %}
+{% endblock %}
+{% block canonical %}
+  {% if category %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_landing' city_slug %}{% endif %}
+{% endblock %}
+{% block og_url %}
+  {% if category %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_landing' city_slug %}{% endif %}
+{% endblock %}
+{% block robots %}{% if has_results %}index, follow{% else %}noindex, follow{% endif %}{% endblock %}
+
+{% block content %}
+<div class="walo-container">
+  <section class="section-header" style="margin-bottom: 30px;">
+    <h1>
+      {% if category %}{{ category.name }} en {{ city_name }}{% else %}Anuncios en {{ city_name }}{% endif %}
+    </h1>
+    <p style="color: var(--text-muted);">
+      {% if category %}
+        Descubre {{ category.name|lower }} disponibles en {{ city_name }}.
+      {% else %}
+        Explora anuncios recientes en {{ city_name }}.
+      {% endif %}
+    </p>
+  </section>
+
+  <section class="section-products">
+    <div class="products-grid">
+      {% for listing in listings %}
+      <a href="{{ listing.get_absolute_url }}" class="product-card">
+        {% if listing.image %}
+        <img src="{{ listing.image.url }}" alt="{{ listing.title }} en {{ listing.location }}" class="product-img" loading="lazy">
+        {% else %}
+        <img src="{% static 'img/hero_bg.png' %}" alt="Anuncio sin imagen" class="product-img" loading="lazy">
+        {% endif %}
+        <div class="product-info">
+          <div class="product-price">C$ {{ listing.price }}</div>
+          <div class="product-title">{{ listing.title }}</div>
+          <div class="product-location">📍 {{ listing.location }}</div>
+        </div>
+      </a>
+      {% empty %}
+      <div style="grid-column: 1/-1; text-align: center; padding: 60px;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">📦</div>
+        <h3>Sin anuncios por ahora</h3>
+        <p style="color: var(--text-muted);">
+          {% if category %}
+            Aun no hay {{ category.name|lower }} en {{ city_name }}.
+          {% else %}
+            Aun no hay anuncios en {{ city_name }}.
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

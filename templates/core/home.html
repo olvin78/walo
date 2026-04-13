@@ -396,7 +396,43 @@
             </div>
         </div>
 
-    <!-- 7. CONFIANZA & CERCANÍA (HUMAN-FIRST) -->
+    <!-- 7. CIUDADES DESTACADAS (SEO LOCAL) -->
+    <section class="section-cities" style="padding: 60px 0; border-top: 1px solid rgba(255,255,255,0.08);">
+        <div class="walo-container">
+            <div style="display: flex; flex-direction: column; gap: 20px; text-align: center;">
+                <h2 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Ciudades destacadas</h2>
+                <p style="color: var(--text-muted);">Explora anuncios locales en las principales ciudades de Nicaragua.</p>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;">
+                    <a href="{% url 'city_landing' 'managua' %}" class="story-btn" style="text-decoration: none;">
+                        <div class="story-circle-pro">📍</div>
+                        <p>Managua</p>
+                    </a>
+                    <a href="{% url 'city_landing' 'leon' %}" class="story-btn" style="text-decoration: none;">
+                        <div class="story-circle-pro">📍</div>
+                        <p>León</p>
+                    </a>
+                    <a href="{% url 'city_landing' 'granada' %}" class="story-btn" style="text-decoration: none;">
+                        <div class="story-circle-pro">📍</div>
+                        <p>Granada</p>
+                    </a>
+                    <a href="{% url 'city_landing' 'masaya' %}" class="story-btn" style="text-decoration: none;">
+                        <div class="story-circle-pro">📍</div>
+                        <p>Masaya</p>
+                    </a>
+                    <a href="{% url 'city_landing' 'esteli' %}" class="story-btn" style="text-decoration: none;">
+                        <div class="story-circle-pro">📍</div>
+                        <p>Estelí</p>
+                    </a>
+                    <a href="{% url 'city_landing' 'matagalpa' %}" class="story-btn" style="text-decoration: none;">
+                        <div class="story-circle-pro">📍</div>
+                        <p>Matagalpa</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. CONFIANZA & CERCANÍA (HUMAN-FIRST) -->
     <section class="section-trust-human">
         <div class="walo-container">
             <div class="trust-human-flex">

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils.text import slugify
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -43,6 +44,7 @@ class Listing(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='listings')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='listings')
+    slug = models.SlugField(blank=True)
     location = models.CharField(max_length=100, default='Nicaragua')
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -54,7 +56,13 @@ class Listing(models.Model):
     favorites = models.ManyToManyField(User, related_name='favorite_listings', blank=True)
 
     def get_absolute_url(self):
-        return reverse('listing_detail', kwargs={'listing_id': self.pk})
+        return reverse('listing_detail', kwargs={'listing_id': self.pk, 'slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title or "anuncio")
+            self.slug = base or "anuncio"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

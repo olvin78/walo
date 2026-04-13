@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+Disallow: /accounts/
+Disallow: /mensajes/
+Disallow: /favoritos/
+Disallow: /configuracion/
+
 Sitemap: {{ request.scheme }}://{{ request.get_host }}/sitemap.xml
