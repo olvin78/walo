@@ -66,3 +66,12 @@ class ProfileAdmin(admin.ModelAdmin):
 class ProfileReviewAdmin(admin.ModelAdmin):
     list_display = ("profile_user", "reviewer", "rating", "created_at")
     list_filter = ("rating", "created_at")
+
+from .models import MarketingConsent
+
+@admin.register(MarketingConsent)
+class MarketingConsentAdmin(admin.ModelAdmin):
+    list_display = ("email", "user", "allows_notifications", "allows_marketing", "created_at")
+    list_filter = ("allows_notifications", "allows_marketing", "created_at")
+    search_fields = ("email", "user__username", "user__email")
+    readonly_fields = ("created_at",)

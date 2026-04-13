@@ -5,7 +5,8 @@ from django.urls import reverse
 class Category(models.Model):
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50, help_text="Emoji o clase de icono")
-    description = models.TextField(blank=True, help_text="Palabras clave para el buscador (ej: celular, movil, cable)")
+    description = models.TextField(blank=True, help_text="Descripción de la categoría")
+    keywords = models.TextField(blank=True, help_text="Palabras clave para el buscador (ej: celular, movil, cable)")
     image = models.ImageField(upload_to='categories/', null=True, blank=True)
     slug = models.SlugField(unique=True)
 
@@ -22,7 +23,8 @@ class Subcategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50, help_text="Emoji o clase de icono")
-    description = models.TextField(blank=True, help_text="Palabras clave para el buscador")
+    description = models.TextField(blank=True, help_text="Descripción de la subcategoría")
+    keywords = models.TextField(blank=True, help_text="Palabras clave para el buscador")
     slug = models.SlugField(unique=True)
 
     class Meta:
@@ -38,8 +40,8 @@ class Listing(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='listings')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='listings')
     location = models.CharField(max_length=100, default='Nicaragua')
-    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='listings/', null=True, blank=True)
     payment_methods = models.CharField(max_length=200, default='Efectivo')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -158,3 +160,21 @@ class BugReport(models.Model):
 
     def __str__(self):
         return f"Fallo reportado el {self.created_at.strftime('%d/%m/%Y')}"
+class MarketingConsent(models.Model):
+    CONSENT_TYPES = [
+        ('notifications', 'Notificaciones'),
+        ('marketing', 'Publicidad y Ofertas'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+    allows_notifications = models.BooleanField(default=False)
+    allows_marketing = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Consentimiento de Marketing"
+        verbose_name_plural = "Consentimientos de Marketing"
+
+    def __str__(self):
+        return f"{self.email or 'Usuario ' + str(self.user.id)} - {self.created_at.strftime('%d/%m/%Y')}"

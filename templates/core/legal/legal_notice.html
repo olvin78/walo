@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Aviso Legal | WALO · NICARAGUA{% endblock %}
+
+{% block content %}
+<div class="legal-fluid-wrapper">
+    <div class="legal-container">
+        <header class="legal-header">
+            <h1 class="legal-title">Aviso Legal</h1>
+            <p class="legal-meta">Identificación de la plataforma</p>
+        </header>
+
+        <article class="legal-content">
+            <section class="legal-section">
+                <h2>1. Identidad de WALO</h2>
+                <p>En cumplimiento de las normativas de comercio electrónico, informamos que WALO NICARAGUA es una marca operada para facilitar el comercio local. Nuestra misión es potenciar la economía digital en Nicaragua conectando personas de forma segura.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>2. Propiedad Intelectual</h2>
+                <p>Todos los elementos visuales, logotipos, códigos de programación y diseños presentes en esta web son propiedad exclusiva de WALO o sus licenciantes. Queda prohibida la reproducción total o parcial sin autorización expresa.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>3. Contacto Oficial</h2>
+                <p>Para cualquier duda legal, reclamación o consulta técnica, puedes contactarnos a través de:</p>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 10px;">📩 <strong>Email:</strong> [correo@ejemplo.com]</li>
+                    <li style="margin-bottom: 10px;">📍 <strong>Dirección:</strong> [Ciudad, Nicaragua]</li>
+                    <li>📱 <strong>WhatsApp:</strong> [Número de contacto]</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>4. Exención de Responsabilidad</h2>
+                <p>WALO se exime de cualquier responsabilidad derivada de la información publicada por terceros en la plataforma. Actuamos únicamente como intermediarios tecnológicos.</p>
+            </section>
+        </article>
+
+        <footer class="legal-footer">
+            <p>Gracias por ser parte del marketplace más innovador de Nicaragua. <a href="{% url 'home' %}">Ir al inicio</a></p>
+        </footer>
+    </div>
+</div>
+
+<style>
+    /* Estilos base consistentes */
+    .legal-fluid-wrapper { background: #0a0b10; min-height: 100vh; padding: 100px 20px; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+    .legal-container { max-width: 800px; margin: 0 auto; }
+    .legal-header { text-align: center; margin-bottom: 80px; }
+    .legal-title { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; background: linear-gradient(to right, #fff, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .legal-meta { color: rgba(255,255,255,0.4); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; }
+    .legal-content { line-height: 1.8; font-size: 1.1rem; color: rgba(255,255,255,0.8); }
+    .legal-section { margin-bottom: 50px; }
+    .legal-section h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 20px; font-weight: 700; }
+    .legal-footer { margin-top: 100px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; color: rgba(255,255,255,0.4); font-size: 0.95rem; }
+    .legal-footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    @media (max-width: 768px) { .legal-title { font-size: 2.5rem; } .legal-fluid-wrapper { padding: 60px 20px; } }
+</style>
+{% endblock %}

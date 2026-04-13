@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account %}
+
+{% block title %}{% trans "Email Addresses" %} | WALO · NICARAGUA{% endblock %}
+
+{% block content %}
+<div class="auth-page-wrapper">
+    <div class="auth-card glass-morphism" style="max-width: 600px;">
+        <div class="auth-header text-center">
+            <h1 class="auth-title">Tus correos</h1>
+            <p class="auth-subtitle">Gestiona las direcciones vinculadas a tu cuenta de Walo.</p>
+        </div>
+
+        {% if user.emailaddress_set.all %}
+        <p class="auth-subtitle" style="margin-bottom: 20px; font-weight: 600; color: #fff;">Direcciones registradas:</p>
+        <form action="{% url 'account_email' %}" class="email_list" method="post">
+            {% csrf_token %}
+            <div class="email-items-container">
+                {% for emailaddress in user.emailaddress_set.all %}
+                <label class="email-item-card {% if emailaddress.primary %}primary-email{% endif %}">
+                    <div style="display: flex; align-items: center; gap: 15px; width: 100%;">
+                        <input type="radio" name="email" {% if emailaddress.primary or user.emailaddress_set.count == 1 %}checked="checked"{% endif %} value="{{emailaddress.email}}"/>
+                        <div class="email-info">
+                            <span class="email-text">{{ emailaddress.email }}</span>
+                            <div class="email-status-badges">
+                                {% if emailaddress.verified %}
+                                <span class="badge verified">Verificado</span>
+                                {% else %}
+                                <span class="badge unverified">Pendiente</span>
+                                {% endif %}
+                                {% if emailaddress.primary %}
+                                <span class="badge primary">Principal</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="email-actions-grid">
+                <button class="cmp-btn secondary-btn" type="submit" name="action_primary">Hacer principal</button>
+                <button class="cmp-btn secondary-btn" type="submit" name="action_send">Reenviar verificación</button>
+                <button class="cmp-btn danger-btn" type="submit" name="action_remove" onclick="return confirmDeletePrimary(event)">Eliminar</button>
+            </div>
+        </form>
+        {% endif %}
+
+        <script>
+            function confirmDeletePrimary(event) {
+                const selectedRadio = document.querySelector('input[name="email"]:checked');
+                if (!selectedRadio) return true;
+                
+                const card = selectedRadio.closest('.email-item-card');
+                if (card && card.classList.contains('primary-email')) {
+                    alert("⚠️ No puedes eliminar tu correo principal. Por seguridad, primero debes marcar otra dirección como principal.");
+                    event.preventDefault();
+                    return false;
+                }
+                return confirm("¿Estás seguro de que quieres eliminar este correo?");
+            }
+        </script>
+
+        <div class="auth-separator" style="margin: 40px 0;">
+            <span>Añadir nueva dirección</span>
+        </div>
+
+        <form method="post" action="{% url 'account_email' %}" class="add_email">
+            {% csrf_token %}
+            <div class="auth-form-group">
+                <div class="auth-input-container">
+                    {{ form.email }}
+                </div>
+                {% if form.email.errors %}
+                <span class="field-error">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+            <button class="cmp-btn cmp-btn-primary w-full btn-auth-submit" name="action_add" type="submit">
+                AÑADIR CORREO
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Estilos base reutilizados */
+    .auth-page-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 80px);
+        padding: 40px 20px;
+    }
+
+    .auth-card {
+        width: 100%;
+        background: rgba(22, 27, 34, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 32px;
+        padding: 48px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .auth-title { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .auth-subtitle { color: rgba(255,255,255,0.5); font-size: 0.95rem; }
+
+    .email-items-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+    .email-item-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        padding: 16px 20px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+        display: block;
+    }
+    .email-item-card:hover { background: rgba(255,255,255,0.06); }
+    .primary-email { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.03); }
+
+    .email-text { font-weight: 600; color: #fff; display: block; margin-bottom: 5px; }
+    .email-status-badges { display: flex; gap: 8px; }
+    .badge { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; }
+    .badge.verified { background: rgba(34, 197, 94, 0.1); color: var(--primary); }
+    .badge.unverified { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .badge.primary { background: var(--primary); color: #000; }
+
+    .email-actions-grid { display: grid; grid-template-columns: 1fr 1fr 0.6fr; gap: 10px; margin-top: 20px; }
+    .secondary-btn { background: rgba(255,255,255,0.05); color: #fff; font-size: 0.8rem; border-radius: 12px; padding: 10px; font-weight: 600; }
+    .secondary-btn:hover { background: rgba(255,255,255,0.1); }
+    .danger-btn { background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.8rem; border-radius: 12px; padding: 10px; font-weight: 600; }
+    .danger-btn:hover { background: rgba(239, 68, 68, 0.2); }
+
+    .auth-input-container input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        padding: 16px 20px;
+        color: #fff;
+        font-size: 1rem;
+        outline: none;
+        transition: 0.3s;
+    }
+    .auth-input-container input:focus { border-color: var(--primary); background: rgba(255,255,255,0.06); }
+
+    .btn-auth-submit { padding: 16px !important; font-weight: 700 !important; border-radius: 16px !important; margin-top: 15px; }
+
+    .auth-separator { display: flex; align-items: center; text-align: center; }
+    .auth-separator::before, .auth-separator::after { content: ''; flex: 1; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .auth-separator span { padding: 0 15px; font-size: 0.8rem; text-transform: uppercase; color: rgba(255, 255, 255, 0.3); }
+
+    @media (max-width: 500px) { .email-actions-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

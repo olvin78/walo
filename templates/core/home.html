@@ -53,13 +53,14 @@
                 <p>Miles de productos verificados. Sin trampas, sin comisiones.</p>
                 
                 <div class="search-box-impact">
-                    <form action="{% url 'explore' %}" method="GET" class="search-form-pro">
+                    <form action="/" method="GET" class="search-form-pro">
                         <div class="input-group-pro">
                             <span class="search-icon">🔍</span>
-                            <input type="text" name="q" placeholder="¿Qué buscas? (Ej: iPhone, Vehículos, Hogar...)" required>
+                            <input type="text" name="q" value="{{ query|default:'' }}" placeholder="¿Qué buscas? (Ej: iPhone, Vehículos, Hogar...)" required>
                             <button type="submit" class="btn-search-impact">BUSCAR AHORA</button>
                         </div>
                     </form>
+
                     <div class="search-suggestions">
                         Populares: 
                         <a href="{% url 'explore' %}?q=Celulares">Celulares</a>
@@ -122,13 +123,55 @@
     }
     .hero-content { width: 100%; max-width: 900px; }
 
+    /* Mejora de margen para categorías en móvil similar a explore */
+    @media (max-width: 768px) {
+        .cmp-navbar-inner {
+            padding: 26px 0;
+        }
+        .section-hero {
+            padding: 160px 0 60px 0 !important;
+            align-items: flex-start !important;
+            min-height: auto !important;
+        }
+        .section-stories-discovery {
+            padding: 40px 0 20px !important;
+            margin-top: 10px;
+        }
+        .stories-scroll {
+            gap: 20px !important;
+        }
+    }
+
+    .btn-view-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 14px 28px;
+        border-radius: 100px;
+        color: #fff;
+        font-weight: 700;
+        text-decoration: none;
+        transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-view-all:hover {
+        background: var(--primary);
+        color: #000;
+        border-color: var(--primary);
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2);
+    }
+    .btn-view-all i { width: 18px; height: 18px; transition: 0.3s; }
+    .btn-view-all:hover i { transform: translateX(5px); }
+
     </style>
 
     <!-- 2. HISTORIAS / CATEGORÍAS (APP-FIRST FEEL) -->
     <section class="section-stories-discovery">
         <div class="walo-container">
             <div class="stories-scroll" id="storiesScroll">
-                <a href="{% url 'signup' %}" class="story-btn yours">
+                <a href="{% if user.is_authenticated %}/publicar/{% else %}{% url 'account_signup' %}{% endif %}" class="story-btn yours">
                     <div class="story-circle-pro"><span>+</span></div>
                     <p>Vender</p>
                 </a>
@@ -141,6 +184,64 @@
             </div>
         </div>
     </section>
+
+    {% if search_results is not None %}
+    <section id="results" class="section-search-results" style="padding: 40px 0; background: #0b0f1a; border-bottom: 1px solid var(--glass-border);">
+        <div class="walo-container" style="animation: slideUp 0.6s ease-out;">
+            <h3 style="color: var(--primary); margin-bottom: 30px; font-weight: 800; font-size: 1.8rem;">🔍 {{ search_results|length }} resultados para "{{ query }}"</h3>
+            <div class="feed-grid-pro">
+                {% for list in search_results %}
+                <div class="item-card-pro">
+                    <a href="{{ list.get_absolute_url }}" class="card-link">
+                        <div class="card-img-wrapper">
+                            <img src="{% if list.image %}{{ list.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ list.title }}" loading="lazy">
+                            <div class="card-badge-loc">{{ list.location }}</div>
+                        </div>
+                        <div class="card-body-pro">
+                            <div class="card-price">C$ {{ list.price }}</div>
+                            <h3 class="card-title-pro" style="color: #fff; text-align: left;">{{ list.title }}</h3>
+                        </div>
+                    </a>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 60px 20px; background: var(--glass-bg); border-radius: 24px; border: 1px solid var(--glass-border);">
+                    <p style="color: rgba(255,255,255,0.5); font-size: 1.1rem;">No encontramos coincidencias exactas para tu búsqueda.</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if search_results %}
+                {% if user.is_authenticated %}
+                <!-- Botón "Ver más" solo para usuarios registrados -->
+                <div class="results-footer" style="text-align: center; margin-top: 20px; padding-bottom: 40px;">
+                    <a href="{% url 'explore' %}?q={{ query }}" class="btn-view-all">
+                        <span>Ver más resultados para "{{ query }}"</span>
+                        <i data-lucide="arrow-right"></i>
+                    </a>
+                </div>
+                {% else %}
+                <!-- Bloque de Login para usuarios no registrados -->
+                <div class="registration-cta" style="margin-top: 30px; padding: 30px; border: 1px dashed var(--primary); border-radius: 20px; text-align: center;">
+                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9); font-weight: 500;">¿Buscas algo más específico? Únete a la comunidad.</p>
+                    <a href="{% url 'account_login' %}" class="btn-primary-glow" style="padding: 15px 40px;">INICIA SESIÓN PARA VER TODOS LOS RESULTADOS</a>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const resultsSection = document.getElementById('results');
+                if (resultsSection) {
+                    // Esperamos un momento a que el navegador se asiente
+                    setTimeout(() => {
+                        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            });
+        </script>
+    </section>
+    {% endif %}
 
     <script>
         function scrollStories(direction) {
@@ -661,16 +762,4 @@
     }
 </style>
 
-{% if not user.is_authenticated %}
-<script>
-  (function () {
-    const loginUrl = "{% url 'account_login' %}";
-    document.querySelectorAll('a').forEach((link) => {
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-      link.setAttribute('href', loginUrl);
-    });
-  })();
-</script>
-{% endif %}
 {% endblock %}

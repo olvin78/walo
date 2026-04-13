@@ -141,11 +141,27 @@
         font-size: 1.5rem;
         cursor: pointer;
     }
+    .location-link-pro:hover {
+        background: rgba(255,255,255,0.2) !important;
+        border-color: var(--primary) !important;
+        transform: translateY(-2px);
+    }
 
     @media (max-width: 992px) {
         .product-main-row { grid-template-columns: 1fr; gap: 40px; }
         .product-visuals img { height: 450px; }
         .editorial-title { font-size: 2.5rem; }
+        .price-location-container { 
+            flex-direction: column; 
+            align-items: flex-start !important; 
+            gap: 12px !important; 
+        }
+        .location-link-pro { 
+            width: fit-content; 
+            max-width: 100%; 
+            font-size: 0.85rem !important; 
+            padding: 10px 16px !important;
+        }
     }
 </style>
 
@@ -208,11 +224,14 @@
 
                 <h1 class="editorial-title">{{ listing.title }}</h1>
                 
-                <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 25px;">
+                <div class="price-location-container" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 25px;">
                     <div class="editorial-price" style="margin-bottom: 0;"><span>C$</span>{{ listing.price }}</div>
-                    <div style="background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 10px; color: #fff; font-size: 0.9rem; font-weight: 600;">
-                        📍 {{ listing.location }}
-                    </div>
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ listing.location|urlencode }}+Nicaragua" 
+                       target="_blank" 
+                       class="location-link-pro"
+                       style="background: rgba(255,255,255,0.08); padding: 8px 16px; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap;">
+                        📍 {{ listing.location }} · <span style="opacity: 0.6; font-size: 0.8rem; font-weight: 500;">Ver en el mapa</span>
+                    </a>
                 </div>
 
                 <div style="display: flex; gap: 15px; margin-bottom: 40px; align-items: center; flex-wrap: wrap;">

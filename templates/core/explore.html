@@ -14,21 +14,25 @@
         <div class="input-focus-group">
           <input type="text" name="q" placeholder="Buscar iPhone, Vehículos, Hogar..." value="{{ query|default:'' }}" aria-label="Buscar productos">
           
+          <!-- Botón Cerca de Mí -->
+          <button type="button" class="btn-near-me" onclick="useMyLocation()" title="Buscar cosas cerca de mí">
+            <span class="loc-icon">📍</span>
+            <span class="loc-text">Cerca de mí</span>
+          </button>
+
           <!-- Botón de Abrir Filtros -->
           <button type="button" class="btn-toggle-filters" onclick="toggleFilters()">
-            <span>FILTROS</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9v6l4 2v-8l8-9z"></path></svg>
+            <span>FILTROS</span>
           </button>
 
           <button type="submit" class="btn-search-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>BUSCAR</span>
           </button>
         </div>
 
         <!-- Panel de Filtros Reconstruido -->
         <div class="filter-panel-v4" id="filterPanel">
-          <!-- FILA 1: Controles Principales -->
           <div class="filter-top-grid">
             <div class="filter-group-v4">
               <label>Rango de Precio (C$)</label>
@@ -39,7 +43,7 @@
             </div>
 
             <div class="filter-group-v4">
-              <label>Ubicación</label>
+              <label>Ubicación General</label>
               <select name="location" class="filter-input-pro">
                 <option value="">Todo Nicaragua</option>
                 <option value="Managua" {% if loc == 'Managua' %}selected{% endif %}>Managua</option>
@@ -61,24 +65,30 @@
             </div>
           </div>
 
-          <!-- FILA 2: Slider de Distancia (Full Width) -->
+          <!-- Rango de Distancia -->
           <div class="filter-distance-row">
             <div class="distance-header">
-                <label>Cercanía Máxima: <span id="radiusVal" style="color:var(--primary); font-weight: 900;">{{ radius|default:'500' }}</span> km</label>
-                <span class="range-hint">0 - 500 km</span>
+                <label>Radio de búsqueda: <span id="radiusVal" style="color:var(--primary); font-weight: 900;">{{ radius|default:'20' }}</span> km</label>
+                <span class="range-hint">Ajusta para ver cosas más cerca</span>
             </div>
-            <input type="range" name="radius" min="0" max="500" step="10" class="distance-slider" value="{{ radius|default:'0' }}" 
+            <input type="range" name="radius" min="0" max="100" step="5" class="distance-slider" value="{{ radius|default:'0' }}" 
                    oninput="document.getElementById('radiusVal').innerText = this.value">
             <input type="hidden" name="user_lat" id="userLat" value="{{ request.GET.user_lat }}">
             <input type="hidden" name="user_lng" id="userLng" value="{{ request.GET.user_lng }}">
           </div>
 
-          <!-- FILA 3: Acciones -->
           <div class="filter-actions-v4">
-            <a href="{% url 'explore' %}" class="btn-reset-v4">Restablecer filtros</a>
+            <a href="{% url 'explore' %}" class="btn-reset-v4">Restablecer</a>
             <button type="submit" class="btn-apply-v4">APLICAR FILTROS</button>
           </div>
         </div>
+
+        {% if radius and radius != '0' %}
+        <div class="active-distance-tag">
+          📍 Buscando en un radio de {{ radius }} km a la redonda
+          <a href="{% url 'explore' %}?q={{ query|default:'' }}" title="Quitar filtro de distancia">✕</a>
+        </div>
+        {% endif %}
 
         <!-- Preservar categoría actual al filtrar -->
         {% if current_category %}
@@ -229,6 +239,24 @@
     }
     .btn-toggle-filters:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
 
+    .btn-near-me {
+      background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0 20px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 10px;
+      font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.3s; height: 52px;
+      margin-left: 10px; white-space: nowrap;
+    }
+    .btn-near-me:hover { background: rgba(34, 197, 94, 0.1); border-color: var(--primary); color: var(--primary); }
+    .btn-near-me.loading { opacity: 0.5; cursor: wait; }
+
+    .active-distance-tag {
+      display: inline-flex; align-items: center; gap: 12px; background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.2); color: var(--primary); padding: 8px 20px;
+      border-radius: 100px; font-size: 0.8rem; font-weight: 800; margin-top: 25px;
+      animation: slideUp 0.4s ease;
+    }
+    .active-distance-tag a { color: #fff; text-decoration: none; margin-left: 5px; opacity: 0.5; transition: 0.2s; }
+    .active-distance-tag a:hover { opacity: 1; color: #ff4444; }
+
     /* FILTER PANEL V4 - LUXURY TECH RECONSTRUCTED */
     .filter-panel-v4 { 
       overflow: hidden; max-height: 0; opacity: 0;
@@ -306,7 +334,7 @@
         margin-bottom: 5px;
         text-align: center;
       }
-      .btn-toggle-filters, .btn-search-icon { 
+      .btn-toggle-filters, .btn-search-icon, .btn-near-me { 
         width: 100% !important; 
         margin-left: 0 !important; 
         height: 54px; 
@@ -401,34 +429,62 @@
 </div>
 
 <script>
+function useMyLocation() {
+    const btn = document.querySelector('.btn-near-me');
+    const locIcon = btn.querySelector('.loc-icon');
+    const locText = btn.querySelector('.loc-text');
+
+    if (!navigator.geolocation) {
+        alert("Tu navegador no soporta geolocalización.");
+        return;
+    }
+
+    btn.classList.add('loading');
+    locIcon.textContent = '⏳';
+    locText.textContent = 'Localizando...';
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            document.getElementById('userLat').value = pos.coords.latitude;
+            document.getElementById('userLng').value = pos.coords.longitude;
+            const radiusInput = document.querySelector('input[name="radius"]');
+            if (!radiusInput.value || radiusInput.value === '0') { radiusInput.value = 20; }
+            document.getElementById('exploreForm').submit();
+        },
+        (err) => {
+            btn.classList.remove('loading');
+            locIcon.textContent = '📍';
+            locText.textContent = 'Cerca de mí';
+            
+            let msg = "No pudimos obtener tu ubicación.";
+            if (err.code === 1) {
+                msg = "Permiso denegado. Por favor, haz clic en el candado 🔒 de la barra de direcciones y permite la 'Ubicación' para WALO.";
+            } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                msg = "La geolocalización requiere una conexión segura (HTTPS). Por ahora, usa el filtro de Ciudad.";
+            }
+            alert(msg);
+        },
+        { timeout: 10000 }
+    );
+}
+
 function toggleFilters() {
     const panel = document.getElementById('filterPanel');
     panel.classList.toggle('is-active');
-    
-    // Al abrir filtros, pedimos permiso de ubicación si no lo tenemos
-    if (panel.classList.contains('is-active') && !document.getElementById('userLat').value) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                document.getElementById('userLat').value = pos.coords.latitude;
-                document.getElementById('userLng').value = pos.coords.longitude;
-            });
-        }
-    }
 }
 
 function toggleFav(btn, id) {
     fetch(`/favoritos/toggle/${id}/`)
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            if (data.is_favorite) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if (data.is_favorite) btn.classList.add('active');
+            else btn.classList.remove('active');
         })
-        .catch(err => {
-            window.location.href = "/admin/login/"; 
-        });
+        .catch(() => { window.location.href = "{% url 'account_login' %}"; });
 }
 </script>
+    <!-- La geolocalización ahora solo se activa si el usuario pulsa el botón manualmente -->
+    <script>
+      console.log("Modo de búsqueda: Global (Nicaragua completa)");
+    </script>
 {% endblock %}

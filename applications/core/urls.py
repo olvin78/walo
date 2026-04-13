@@ -1,10 +1,12 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 
 from .views import (add_review, category_detail, chat_view, create_listing,
                     delete_conversation, delete_story, edit_profile, explore,
                     favorites_view, home, inbox_view, listing_detail,
                     make_offer, signup, start_conversation, toggle_favorite,
-                    toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug)
+                    toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug,
+                    terms_view, privacy_view, cookies_view, legal_notice_view, save_marketing_consent)
 
 urlpatterns = [
     path("", home, name="home"),
@@ -25,6 +27,11 @@ urlpatterns = [
     path("perfil/<str:username>/", user_profile, name="user_profile"),
     path("perfil/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
     path("configuracion/", edit_profile, name="edit_profile"),
+    path('terminos/', terms_view, name='terms'),
+    path('privacidad/', privacy_view, name='privacy'),
+    path('cookies/', cookies_view, name='cookies'),
+    path('aviso-legal/', legal_notice_view, name='legal_notice'),
+    path('save-preferences/', save_marketing_consent, name='save_preferences'),
     path("configuracion/verificar/", verify_profile, name="verify_profile"),
     path("perfil/<str:username>/calificar/", rate_profile, name="rate_profile"),
     path("historias/subir/", upload_story, name="upload_story"),

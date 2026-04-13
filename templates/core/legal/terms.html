@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Términos y Condiciones | WALO · NICARAGUA{% endblock %}
+
+{% block content %}
+<div class="legal-fluid-wrapper">
+    <div class="legal-container">
+        <header class="legal-header">
+            <h1 class="legal-title">Términos y Condiciones</h1>
+            <p class="legal-meta">Última actualización: 13 de Abril, 2026</p>
+        </header>
+
+        <article class="legal-content">
+            <section class="legal-section">
+                <h2>1. Aceptación del Servicio</h2>
+                <p>Al acceder o utilizar la plataforma WALO (en adelante, "la Plataforma"), usted acepta cumplir y estar sujeto a estos Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, no podrá utilizar nuestros servicios.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>2. Naturaleza de WALO</h2>
+                <p>WALO es una plataforma de anuncios clasificados que facilita la conexión entre compradores y vendedores en Nicaragua. WALO no es dueño, no posee, ni vende los artículos listados en la plataforma. Las transacciones se realizan directamente entre los usuarios.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>3. Responsabilidad del Usuario</h2>
+                <p>Usted es el único responsable de la veracidad de la información publicada en sus anuncios. Queda prohibida la publicación de artículos ilegales, peligrosos o que infrinjan los derechos de propiedad intelectual de terceros según las leyes de la República de Nicaragua.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>4. Seguridad y Verificación</h2>
+                <p>Aunque WALO ofrece herramientas de verificación (biometría), los usuarios deben actuar con precaución. Recomendamos siempre realizar transacciones en lugares públicos y seguros.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>5. Limitación de Responsabilidad</h2>
+                <p>WALO no se hace responsable de estafas, artículos defectuosos o cualquier inconveniente surgido de las negociaciones entre usuarios. Sin embargo, colaboraremos con las autoridades competentes en caso de denuncias formales.</p>
+            </section>
+        </article>
+
+        <footer class="legal-footer">
+            <p>¿Tienes dudas sobre estos términos? <a href="mailto:soporte@tuweb.ni">Contacta con nuestro equipo legal</a></p>
+        </footer>
+    </div>
+</div>
+
+<style>
+    .legal-fluid-wrapper {
+        background: #0a0b10;
+        min-height: 100vh;
+        padding: 100px 20px;
+        color: #fff;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .legal-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .legal-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .legal-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -2px;
+        margin-bottom: 20px;
+        background: linear-gradient(to right, #fff, #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .legal-meta {
+        color: rgba(255,255,255,0.4);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .legal-content {
+        line-height: 1.8;
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .legal-section {
+        margin-bottom: 50px;
+    }
+
+    .legal-section h2 {
+        color: var(--primary);
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+
+    .legal-section p {
+        margin-bottom: 20px;
+    }
+
+    .legal-footer {
+        margin-top: 100px;
+        padding-top: 40px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        text-align: center;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.95rem;
+    }
+
+    .legal-footer a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .legal-title { font-size: 2.5rem; }
+        .legal-fluid-wrapper { padding: 60px 20px; }
+    }
+</style>
+{% endblock %}

@@ -15,22 +15,39 @@ from django.conf import settings
 from django.utils import timezone
 import datetime
 from django.db import models
-from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport
+from django.views.decorators.csrf import csrf_exempt
+from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent
 
 def home(request):
     """
-    Página de inicio (Landing Page) con secciones informativas y CTA.
-    No incluye el catálogo de productos completo pero sí un adelanto.
+    Página de inicio (Landing Page) con secciones informativas, CTA y búsqueda integrada.
     """
+    from django.db.models import Q
+    query = request.GET.get('q', '')
+    search_results = None
+    
+    if query:
+        search_results = Listing.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) | 
+            Q(category__name__icontains=query) |
+            Q(category__keywords__icontains=query) |
+            Q(subcategory__name__icontains=query) |
+            Q(subcategory__keywords__icontains=query) |
+            Q(location__icontains=query)
+        ).order_by('-created_at')[:4]
+
     categories = Category.objects.all()[:6]
     latest_listings = Listing.objects.all().order_by('-created_at')[:4]
+    
     context = {
         'categories': categories,
         'latest_listings': latest_listings,
+        'search_results': search_results,
+        'query': query,
     }
     return render(request, "core/home.html", context)
 
-@login_required
 def explore(request):
     """
     Página de Exploración (Marketplace) con el buscador, categorías y todos los productos.
@@ -143,8 +160,10 @@ def explore(request):
                 Q(title__icontains=token)
                 | Q(description__icontains=token)
                 | Q(category__name__icontains=token)
+                | Q(category__keywords__icontains=token)
                 | Q(subcategory__name__icontains=token)
                 | Q(subcategory__description__icontains=token)
+                | Q(subcategory__keywords__icontains=token)
                 | Q(location__icontains=token)
             )
 
@@ -222,6 +241,10 @@ def explore(request):
     # Obtener categorías principales (para el carrusel de arriba)
     all_categories = Category.objects.annotate(num_listings=Count('listings')).order_by('-num_listings')
     
+    # Límite de cortesía para invitados (4 resultados)
+    if not request.user.is_authenticated:
+        listings = listings[:4]
+
     # Manejo de favoritos del usuario
     user_favorites = []
     if request.user.is_authenticated:
@@ -633,3 +656,47 @@ def report_bug(request):
             return redirect(request.META.get('HTTP_REFERER', 'home'))
             
     return redirect('home')
+
+def terms_view(request):
+    return render(request, 'core/legal/terms.html')
+
+def privacy_view(request):
+    return render(request, 'core/legal/privacy.html')
+
+def cookies_view(request):
+    return render(request, 'core/legal/cookies.html')
+
+def legal_notice_view(request):
+    return render(request, 'core/legal/legal_notice.html')
+
+@csrf_exempt
+def save_marketing_consent(request):
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        
+        email = data.get('email')
+        allows_notifications = data.get('allows_notifications', False)
+        allows_marketing = data.get('allows_marketing', False)
+        
+        # Si el usuario está logueado, priorizamos su cuenta
+        if request.user.is_authenticated:
+            MarketingConsent.objects.update_or_create(
+                user=request.user,
+                defaults={
+                    'email': request.user.email,
+                    'allows_notifications': allows_notifications,
+                    'allows_marketing': allows_marketing
+                }
+            )
+        elif email:
+            MarketingConsent.objects.update_or_create(
+                email=email,
+                defaults={
+                    'allows_notifications': allows_notifications,
+                    'allows_marketing': allows_marketing
+                }
+            )
+            
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)

@@ -115,10 +115,10 @@
                             </div>
 
                             <div class="studio-input-block">
-                                <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Subcategoría</label>
-                                <select name="subcategory" id="form-subcategory"
+                                <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; display: block;">Subcategoría específica</label>
+                                <select name="subcategory" id="form-subcategory" required
                                         style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.1rem; font-weight: 800; color: #fff; padding: 10px 0; outline: none; transition: 0.3s; cursor: pointer; appearance: none;">
-                                    <option value="">Selecciona una categoría primero</option>
+                                    <option value="" disabled selected>Selecciona una categoría primero</option>
                                     {% for sub in subcategories %}
                                         <option value="{{ sub.id }}" data-category="{{ sub.category_id }}">{{ sub.icon }} {{ sub.name }}</option>
                                     {% endfor %}
@@ -227,37 +227,46 @@ function updateStudioPreview() {
     updatePublishScore();
 }
 
+let originalSubcategories = null;
+
 function filterSubcategories() {
-    const catValue = document.getElementById('form-category').value;
+    const catSelect = document.getElementById('form-category');
     const subSelect = document.getElementById('form-subcategory');
-    if (!subSelect) {
-        return;
+    if (!catSelect || !subSelect) return;
+
+    // Guardar las opciones originales la primera vez
+    if (!originalSubcategories) {
+        originalSubcategories = Array.from(subSelect.options).slice(1);
     }
 
-    const options = Array.from(subSelect.options);
-    let hasVisible = false;
-
-    options.forEach((opt, index) => {
-        if (index === 0) {
-            return;
-        }
-        const match = opt.dataset.category === catValue;
-        opt.hidden = !match;
-        opt.disabled = !match;
-        if (match) {
-            hasVisible = true;
-        }
-    });
+    const catValue = catSelect.value;
+    
+    // Limpiar subcategorías actuales (manteniendo la primera opción)
+    const firstOption = subSelect.options[0];
+    subSelect.innerHTML = '';
+    subSelect.appendChild(firstOption);
 
     if (!catValue) {
-        subSelect.options[0].text = "Selecciona una categoría primero";
-        subSelect.value = "";
+        firstOption.textContent = "Selecciona una categoría primero";
+        subSelect.disabled = true;
+        subSelect.style.opacity = "0.5";
         return;
     }
 
-    subSelect.options[0].text = hasVisible ? "Selecciona una subcategoría (opcional)" : "Sin subcategorías";
-    if (subSelect.value && subSelect.selectedOptions[0].hidden) {
-        subSelect.value = "";
+    const filtered = originalSubcategories.filter(opt => opt.dataset.category === catValue);
+    
+    if (filtered.length > 0) {
+        subSelect.disabled = false;
+        subSelect.style.opacity = "1";
+        firstOption.textContent = "Selecciona una subcategoría (obligatorio)";
+        filtered.forEach(opt => {
+            const newOpt = opt.cloneNode(true);
+            subSelect.appendChild(newOpt);
+        });
+    } else {
+        firstOption.textContent = "Sin subcategorías específicas";
+        subSelect.disabled = true;
+        subSelect.style.opacity = "0.5";
     }
 }
 
@@ -295,6 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     .studio-publish-btn:active { transform: scale(0.95) !important; filter: brightness(0.8); }
 
+    /* Corrección de visibilidad para selectores en modo oscuro */
+    select option {
+        background-color: #111 !important;
+        color: #fff !important;
+        padding: 10px;
+    }
+    
     .payment-option { cursor: pointer; }
     .payment-option input { display: none; }
     .payment-card { 

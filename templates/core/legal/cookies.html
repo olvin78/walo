@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Política de Cookies | WALO · NICARAGUA{% endblock %}
+
+{% block content %}
+<div class="legal-fluid-wrapper">
+    <div class="legal-container">
+        <header class="legal-header">
+            <h1 class="legal-title">Cookies</h1>
+            <p class="legal-meta">Nuestra tecnología de navegación</p>
+        </header>
+
+        <article class="legal-content">
+            <section class="legal-section">
+                <h2>¿Qué son las cookies?</h2>
+                <p>Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo al visitar WALO. Nos ayudan a mejorar tu experiencia y a que la web funcione correctamente.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>Cookies Esenciales</h2>
+                <p>Son necesarias para que puedas iniciar sesión, subir fotos y enviar mensajes de oferta. Sin estas cookies, WALO no podría prestar sus servicios básicos.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>Cookies de Preferencias</h2>
+                <p>Permiten que la web recuerde elecciones que has hecho (como tu ciudad preferida o tus categorías favoritas) para que no tengas que configurarlas cada vez que entras.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>¿Cómo desactivarlas?</h2>
+                <p>Puedes desactivar las cookies en la configuración de tu navegador (Chrome, Safari, Firefox), pero ten en cuenta que WALO podría no funcionar correctamente si lo haces.</p>
+            </section>
+        </article>
+
+        <footer class="legal-footer">
+            <p>Hecho con transparencia para Nicaragua. <a href="{% url 'terms' %}">Leer términos</a></p>
+        </footer>
+    </div>
+</div>
+
+<style>
+    /* Estilos base consistentes */
+    .legal-fluid-wrapper { background: #0a0b10; min-height: 100vh; padding: 100px 20px; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+    .legal-container { max-width: 800px; margin: 0 auto; }
+    .legal-header { text-align: center; margin-bottom: 80px; }
+    .legal-title { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; background: linear-gradient(to right, #fff, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .legal-meta { color: rgba(255,255,255,0.4); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; }
+    .legal-content { line-height: 1.8; font-size: 1.1rem; color: rgba(255,255,255,0.8); }
+    .legal-section { margin-bottom: 50px; }
+    .legal-section h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 20px; font-weight: 700; }
+    .legal-footer { margin-top: 100px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; color: rgba(255,255,255,0.4); font-size: 0.95rem; }
+    .legal-footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    @media (max-width: 768px) { .legal-title { font-size: 2.5rem; } .legal-fluid-wrapper { padding: 60px 20px; } }
+</style>
+{% endblock %}

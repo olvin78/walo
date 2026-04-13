@@ -94,18 +94,29 @@
                     </section>
                 </div>
 
-                <!-- TAB: SECURITY (Placeholder) -->
+                <!-- TAB: SECURITY (ACTUALIZED) -->
                 <div id="tab-security" class="tab-content">
                     <section class="settings-section">
-                        <h2 class="section-h">Cambiar Contraseña</h2>
-                        <div class="fluid-input-group">
-                            <label>Contraseña Actual</label>
-                            <input type="password" placeholder="••••••••">
+                        <h2 class="section-h">Seguridad de la Cuenta</h2>
+                        
+                        <!-- Card: Password Change -->
+                        <div class="security-action-card" style="background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                            <div class="action-info">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Cambiar contraseña</h3>
+                                <p style="margin: 5px 0 0; font-size: 0.85rem; color: rgba(255,255,255,0.4);">Actualiza tu clave para mantener tu cuenta protegida.</p>
+                            </div>
+                            <a href="{% url 'account_change_password' %}" class="f-btn outline" style="text-decoration: none; display: inline-block; white-space: nowrap;">Configurar</a>
                         </div>
-                        <div class="fluid-input-group">
-                            <label>Nueva Contraseña</label>
-                            <input type="password" placeholder="Mínimo 8 caracteres">
+
+                        <!-- Card: Email Management -->
+                        <div class="security-action-card" style="background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                            <div class="action-info">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: #fff;">Cambiar correo</h3>
+                                <p style="margin: 5px 0 0; font-size: 0.85rem; color: rgba(255,255,255,0.4);">Actual: <b>{{ user.email }}</b></p>
+                            </div>
+                            <a href="{% url 'account_email' %}" class="f-btn outline" style="text-decoration: none; display: inline-block; white-space: nowrap;">Gestionar</a>
                         </div>
+
                     </section>
                 </div>
 
