@@ -7,11 +7,13 @@ class Category(models.Model):
     icon = models.CharField(max_length=50, help_text="Emoji o clase de icono")
     description = models.TextField(blank=True, help_text="Descripción de la categoría")
     keywords = models.TextField(blank=True, help_text="Palabras clave para el buscador (ej: celular, movil, cable)")
+    order = models.PositiveIntegerField(default=100, help_text="Orden de visualización (menor número primero)")
     image = models.ImageField(upload_to='categories/', null=True, blank=True)
     slug = models.SlugField(unique=True)
 
     class Meta:
         verbose_name_plural = "Categories"
+        ordering = ['order', 'name']
 
     def __str__(self):
         return self.name
@@ -25,10 +27,12 @@ class Subcategory(models.Model):
     icon = models.CharField(max_length=50, help_text="Emoji o clase de icono")
     description = models.TextField(blank=True, help_text="Descripción de la subcategoría")
     keywords = models.TextField(blank=True, help_text="Palabras clave para el buscador")
+    order = models.PositiveIntegerField(default=100, help_text="Orden de visualización")
     slug = models.SlugField(unique=True)
 
     class Meta:
         verbose_name_plural = "Subcategories"
+        ordering = ['order', 'name']
 
     def __str__(self):
         return f"{self.category.name} - {self.name}"
@@ -44,6 +48,7 @@ class Listing(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='listings/', null=True, blank=True)
     payment_methods = models.CharField(max_length=200, default='Efectivo')
+    is_active = models.BooleanField(default=True, help_text="¿Está el anuncio visible al público?")
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     favorites = models.ManyToManyField(User, related_name='favorite_listings', blank=True)

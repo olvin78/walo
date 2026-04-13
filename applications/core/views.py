@@ -35,10 +35,10 @@ def home(request):
             Q(subcategory__name__icontains=query) |
             Q(subcategory__keywords__icontains=query) |
             Q(location__icontains=query)
-        ).order_by('-created_at')[:4]
+        ).filter(is_active=True).order_by('-created_at')[:4]
 
     categories = Category.objects.all()[:6]
-    latest_listings = Listing.objects.all().order_by('-created_at')[:4]
+    latest_listings = Listing.objects.filter(is_active=True).order_by('-created_at')[:4]
     
     context = {
         'categories': categories,
@@ -66,7 +66,7 @@ def explore(request):
     user_lng = request.GET.get('user_lng')
     radius = request.GET.get('radius') # en KM
 
-    listings = Listing.objects.all()
+    listings = Listing.objects.filter(is_active=True)
 
     if query:
         synonyms = {
@@ -238,8 +238,8 @@ def explore(request):
     else:
         listings = listings.order_by('-created_at')
 
-    # Obtener categorías principales (para el carrusel de arriba)
-    all_categories = Category.objects.annotate(num_listings=Count('listings')).order_by('-num_listings')
+    # Obtener categorías principales respetando el orden manual definido en el admin
+    all_categories = Category.objects.annotate(num_listings=Count('listings')).order_by('order', '-num_listings')
     
     # Límite de cortesía para invitados (4 resultados)
     if not request.user.is_authenticated:
@@ -318,13 +318,13 @@ def create_listing(request):
 @login_required
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
-    listings = category.listings.all().order_by("-created_at")
+    listings = category.listings.filter(is_active=True).order_by("-created_at")
     context = {"category": category, "listings": listings}
     return render(request, "core/category_detail.html", context)
 
 @login_required
 def listing_detail(request, listing_id):
-    listing = get_object_or_404(Listing, id=listing_id)
+    listing = get_object_or_404(Listing, id=listing_id, is_active=True)
     is_favorite = False
     if request.user.is_authenticated:
         is_favorite = listing.favorites.filter(id=request.user.id).exists()
@@ -340,7 +340,7 @@ def listing_detail(request, listing_id):
 
 @login_required
 def favorites_view(request):
-    listings = request.user.favorite_listings.all().order_by('-created_at')
+    listings = request.user.favorite_listings.filter(is_active=True).order_by('-created_at')
     return render(request, "core/favorites.html", {'listings': listings})
 
 @login_required
@@ -481,7 +481,7 @@ def delete_conversation(request, conversation_id):
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     Profile.objects.get_or_create(user=profile_user)
-    listings = Listing.objects.filter(user=profile_user).order_by('-created_at')
+    listings = Listing.objects.filter(user=profile_user, is_active=True).order_by('-created_at')
     
     # Rating stats
     reviews = ProfileReview.objects.filter(profile_user=profile_user)

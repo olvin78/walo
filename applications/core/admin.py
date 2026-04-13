@@ -20,14 +20,16 @@ class BugReportAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug")
+    list_display = ("id", "name", "order", "slug")
+    list_editable = ("order",)
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(Subcategory)
 class SubcategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "slug")
+    list_display = ("id", "name", "category", "order", "slug")
+    list_editable = ("order",)
     list_filter = ("category",)
     search_fields = ("name", "slug", "category__name")
     prepopulated_fields = {"slug": ("name",)}
@@ -35,8 +37,9 @@ class SubcategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ("title", "price", "category", "subcategory", "location", "user", "created_at")
-    list_filter = ("category", "subcategory", "location", "created_at")
+    list_display = ("id", "title", "price", "category", "subcategory", "is_active", "location", "user", "created_at")
+    list_editable = ("is_active",)
+    list_filter = ("is_active", "category", "subcategory", "location", "created_at")
     search_fields = ("title", "description", "location")
     autocomplete_fields = ("category", "subcategory", "user")
     date_hierarchy = "created_at"
