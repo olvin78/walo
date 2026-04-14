@@ -67,6 +67,14 @@ class Listing(models.Model):
     def __str__(self):
         return self.title
 
+class ListingImage(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='listings/extra/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Imagen de {self.listing.title}"
+
 class Conversation(models.Model):
     participants = models.ManyToManyField(User, related_name='conversations')
     listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, related_name='conversations')
@@ -79,8 +87,13 @@ class Conversation(models.Model):
 class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages_sent')
-    text = models.TextField()
+    text = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='chat_images/', null=True, blank=True)
+    audio = models.FileField(upload_to='chat_audio/', null=True, blank=True)
     is_read = models.BooleanField(default=False)
+    is_view_once = models.BooleanField(default=False)
+    viewed_by_sender = models.BooleanField(default=False)
+    viewed_by_receiver = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

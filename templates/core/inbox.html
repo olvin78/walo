@@ -30,10 +30,18 @@
              data-stories-id="{{ item.script_id }}"
              style="cursor: pointer; text-align: center; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
           
-          <div class="story-ring {% if item.user == request.user %}story-ring-user{% else %}story-ring-active{% endif %}">
+          <div class="story-ring {% if item.user == request.user %}story-ring-user{% else %}story-ring-active{% endif %}" style="position: relative;">
             <div class="story-avatar-inner">
-              <img src="{{ item.avatar }}" alt="{{ item.user.username }}">
+              {% if item.avatar %}
+                <img src="{{ item.avatar }}" alt="{{ item.user.username }}">
+              {% else %}
+                <div class="story-avatar-initial" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #222; color: #fff; font-weight: 800; font-size: 1.5rem; border-radius: 50%;">
+                  {{ item.user.username|slice:":1"|upper }}
+                </div>
+              {% endif %}
             </div>
+            <!-- Bolita de activo estilo Instagram -->
+            <div class="status-dot"></div>
           </div>
           
           <p style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin: 0;">{% if item.user == request.user %}Mi historia{% else %}{{ item.user.username }}{% endif %}</p>
@@ -242,10 +250,12 @@
     .story-viewer.active { display: flex; animation: storyReveal 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
     
     .story-viewer-content { width: min(450px, 100%); height: min(800px, 100vh); position: relative; display: flex; flex-direction: column; overflow: hidden; background: #000; border-radius: 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.6); border: none; }
-    .story-viewer-header { position: absolute; top: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); z-index: 10; }
-    .story-progress-bar { width: 100%; height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-bottom: 15px; overflow: hidden; }
-    .story-progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.1s linear; }
+    .story-viewer-header { position: absolute; top: 0; left: 0; right: 0; padding: 15px 15px 25px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); z-index: 10; }
     
+    .story-progress-container { width: 100%; display: flex; gap: 4px; margin-bottom: 12px; padding: 0 5px; }
+    .story-prog-segment { flex: 1; height: 2px; background: rgba(255,255,255,0.25); border-radius: 2px; overflow: hidden; }
+    .story-prog-fill { height: 100%; background: #fff; width: 0%; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
     .story-user-info { display: flex; align-items: center; gap: 12px; color: #fff; font-weight: 700; font-size: 0.95rem; }
     .story-user-info img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--primary); }
     
@@ -510,6 +520,19 @@
       opacity: 0.4;
     }
     
+    .status-dot {
+      position: absolute;
+      bottom: 12px;
+      right: 0px;
+      width: 14px;
+      height: 14px;
+      background: #22c55e;
+      border: 2px solid #000;
+      border-radius: 50%;
+      z-index: 5;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+    }
+    
     .story-avatar-inner {
       width: 68px;
       height: 68px;
@@ -521,16 +544,10 @@
       justify-content: center;
     }
     
-    .story-avatar-inner img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .story-item:hover .story-ring {
-      transform: scale(1.08);
-    }
+    .story-user-info img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+    .story-user-initial-mini { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--primary); background: #222; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; }
+    
+    .story-body { flex: 1; display: flex; align-items: center; justify-content: center; background: #050505; cursor: pointer; }
 
     .text-overlay {
       position: fixed;
@@ -1110,12 +1127,13 @@
            ontouchmove="handleTouchMove(event)"
            ontouchend="handleTouchEnd(event)"
            style="display: flex; align-items: center; gap: 20px; padding: 20px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; transition: transform 0.3s ease; text-decoration: none; position: relative; z-index: 2;">
-          <div class="conv-img" style="width: 60px; height: 60px; border-radius: 12px; overflow: hidden; background: var(--bg-main);">
+          <div class="conv-img" style="width: 60px; height: 60px; border-radius: 12px; overflow: hidden; background: var(--bg-main); position: relative;">
             {% if conversation.listing.image %}
               <img src="{{ conversation.listing.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
             {% else %}
               <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📦</div>
             {% endif %}
+            <div class="status-dot" style="width: 12px; height: 12px; border-width: 2px; bottom: 4px; right: 4px;"></div>
           </div>
           <div class="conv-info" style="flex: 1;">
             <h3 style="margin-bottom: 4px; color: var(--text-main);">
@@ -1151,27 +1169,34 @@
   <div id="storyViewer" class="story-viewer">
     <div class="story-viewer-content">
       <div class="story-viewer-header">
-        <div class="story-progress-bar"><div id="storyProgress" class="story-progress-fill"></div></div>
-        <div style="display: flex; align-items: center; width: 100%;">
-          <a id="storyProfileLink" href="" class="story-user-info" style="text-decoration: none;">
-            <img id="storyViewerAvatar" src="" alt=""><span id="storyViewerName"></span>
-          </a>
-          <div style="margin-left: auto; display: flex; align-items: center; gap: 15px; position: relative;">
-            <button id="btnTogglePause" class="btn-story-control" onclick="togglePause()"><span id="pauseIcon"></span></button>
-            <button id="btnStoryMute" class="btn-story-control" onclick="toggleStoryAudio()" title="Activar/Desactivar sonido">
-              <span id="muteIcon">🔊</span>
-            </button>
-            <button id="btnStoryMenu" class="btn-story-control" onclick="toggleStoryMenu(event)" aria-label="Opciones">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <circle cx="12" cy="5" r="2"></circle>
-                <circle cx="12" cy="12" r="2"></circle>
-                <circle cx="12" cy="19" r="2"></circle>
-              </svg>
-            </button>
-            <button class="btn-close-story" onclick="closeStory()">&times;</button>
-            <div id="storyMenu" class="story-menu" style="display: none;">
-              <button id="deleteStoryBtn" type="button" onclick="deleteCurrentStory()">Eliminar historia</button>
+        <div id="storyProgressContainer" class="story-progress-container"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <a href="#" id="storyProfileLink" class="story-user-info" style="text-decoration: none;">
+            <div id="viewerAvatarContainer" style="position: relative;">
+              <img id="storyViewerAvatar" src="" alt="" style="display: none;">
+              <div id="storyViewerInitial" class="story-user-initial-mini" style="display: none;"></div>
+              <div class="status-dot" style="width: 10px; height: 10px; border-width: 1.5px; bottom: 0; right: -2px;"></div>
             </div>
+            <span id="storyViewerName"></span>
+          </a>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="pauseIcon" class="btn-story-control" onclick="togglePause()">
+              <svg width="20" height="20" fill="currentColor"><path d="M7 5v14l12-7z"></path></svg>
+            </button>
+            <button class="btn-story-control" onclick="toggleStoryAudio()">
+              <span id="muteIcon" style="font-size: 1.2rem;">🔊</span>
+            </button>
+            <div class="story-menu-wrapper" style="position: relative;">
+              <button id="btnStoryMenu" class="btn-story-control" onclick="toggleStoryMenu(event)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+              </button>
+              <div id="storyMenu" class="custom-context-menu" style="right: 0; left: auto; top: 100%;">
+                <div class="context-menu-item delete" id="deleteStoryBtn" onclick="deleteCurrentStory()">
+                  <span>Eliminar Historia</span>
+                </div>
+              </div>
+            </div>
+            <button class="btn-close-story" onclick="closeStory()">&times;</button>
           </div>
         </div>
       </div>
@@ -1276,8 +1301,20 @@ function renderStory() {
     if (!currentStory) return;
     currentStoryId = currentStory.id;
     const activeEl = currentStoryElement;
-    avatar.src = activeEl ? activeEl.getAttribute('data-avatar') : '';
-    name.innerText = activeEl ? activeEl.getAttribute('data-user') : '';
+    const avatarUrl = activeEl ? activeEl.getAttribute('data-avatar') : '';
+    const userName = activeEl ? activeEl.getAttribute('data-user') : '';
+    
+    if (avatarUrl && avatarUrl !== 'None' && avatarUrl !== '') {
+        avatar.src = avatarUrl;
+        avatar.style.display = 'block';
+        document.getElementById('storyViewerInitial').style.display = 'none';
+    } else {
+        avatar.style.display = 'none';
+        const initialEl = document.getElementById('storyViewerInitial');
+        initialEl.innerText = (userName === 'Mi historia') ? '{{ request.user.username|slice:":1"|upper }}' : userName.charAt(0).toUpperCase();
+        initialEl.style.display = 'flex';
+    }
+    name.innerText = userName;
     storyImg.src = currentStory.img;
     profileLink.href = currentStory.profile_url;
 
@@ -1360,9 +1397,18 @@ function renderStory() {
     viewer.classList.add('active');
     document.body.style.overflow = 'hidden';
 
+    // RENDER SEGMENTED PROGRESS BARS (IG STYLE)
+    const progContainer = document.getElementById('storyProgressContainer');
+    progContainer.innerHTML = '';
+    for(let i=0; i<stories.length; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'story-prog-segment';
+        seg.innerHTML = `<div class="story-prog-fill" style="width: ${i < currentStoryIndex ? '100%' : '0%'}"></div>`;
+        progContainer.appendChild(seg);
+    }
+
     cancelAnimationFrame(progressTimer);
     startTime = null; pausedAt = 0; isPaused = false;
-    progress.style.width = '0%';
     
     function animateProgress(timestamp) {
         if (isPaused) { progressTimer = requestAnimationFrame(animateProgress); return; }
@@ -1370,7 +1416,12 @@ function renderStory() {
         if (pausedAt > 0) { startTime = timestamp - pausedAt; pausedAt = 0; }
         const elapsed = timestamp - startTime;
         const val = Math.min((elapsed / duration) * 100, 100);
-        progress.style.width = val + '%';
+        
+        const fills = progContainer.querySelectorAll('.story-prog-fill');
+        if(fills[currentStoryIndex]) {
+            fills[currentStoryIndex].style.width = val + '%';
+        }
+
         if (elapsed < duration) {
             progressTimer = requestAnimationFrame(animateProgress);
         } else {
@@ -1388,8 +1439,11 @@ function renderStory() {
 function pauseStory() {
     isPaused = true;
     updatePauseUI();
-    const p = document.getElementById('storyProgress');
-    pausedAt = (parseFloat(p.style.width) / 100) * duration;
+    const progContainer = document.getElementById('storyProgressContainer');
+    const fills = progContainer.querySelectorAll('.story-prog-fill');
+    if(fills[currentStoryIndex]) {
+        pausedAt = (parseFloat(fills[currentStoryIndex].style.width) / 100) * duration;
+    }
 }
 
 function resumeStory() {
@@ -1442,15 +1496,76 @@ function toggleStoryAudio() {
     }
 }
 
-document.getElementById('storyViewer').addEventListener('click', function(e) {
-    if (Date.now() < suppressStoryClickUntil) return;
+// -- GESTOS Y NAVEGACIÓN PRO (ESTILO INSTAGRAM) --
+let storyPressStartTime = 0;
+let storyPressTimer = null;
+let isPressingStory = false;
+
+const viewer = document.getElementById('storyViewer');
+
+function handleStoryPressStart(e) {
     if (e.target.closest('.btn-close-story') || e.target.closest('.btn-story-control') || e.target.closest('#storyMenu')) return;
-    if (stories.length <= 1) return;
-    if (e.clientX > window.innerWidth / 2) nextStory();
-    else prevStory();
+    
+    storyPressStartTime = Date.now();
+    isPressingStory = true;
+    
+    // Pausa visual y técnica inmediata
+    storyPressTimer = setTimeout(() => {
+        if (isPressingStory) {
+            pauseStory();
+            document.querySelector('.story-viewer-header').style.opacity = '0';
+            document.querySelector('.story-viewer-header').style.pointerEvents = 'none';
+        }
+    }, 150); // Pequeño margen para no pausar en toques ultra rápidos
+}
+
+function handleStoryPressEnd(e) {
+    if (!isPressingStory) return;
+    const duration = Date.now() - storyPressStartTime;
+    isPressingStory = false;
+    clearTimeout(storyPressTimer);
+
+    // Restaurar interfaz
+    document.querySelector('.story-viewer-header').style.opacity = '1';
+    document.querySelector('.story-viewer-header').style.pointerEvents = 'all';
+
+    if (duration < 250) {
+        // FUE UN TOQUE RÁPIDO -> NAVEGAR
+        if (e.clientX > window.innerWidth / 2) {
+            nextStory();
+        } else {
+            prevStory();
+        }
+    } else {
+        // FUE UNA PULSACIÓN LARGA -> REANUDAR
+        resumeStory();
+    }
+}
+
+// Eventos para Ratón
+viewer.addEventListener('mousedown', handleStoryPressStart);
+document.addEventListener('mouseup', handleStoryPressEnd);
+
+// Eventos para Táctil (Móvil)
+viewer.addEventListener('touchstart', (e) => {
+    // Para táctil necesitamos el clientX del primer toque
+    const touch = e.touches[0];
+    e.clientX = touch.clientX; 
+    handleStoryPressStart(e);
+}, {passive: false});
+
+viewer.addEventListener('touchend', (e) => {
+    // No usamos e.clientX aquí, usamos el guardado en el start si fuera necesario, 
+    // pero para simplicidad el touchend solo valida el tiempo.
+    // Instagram usa la posición del touchstart para decidir lado.
+    handleStoryPressEnd({ clientX: storyPressStartTimeX });
 });
 
-document.addEventListener('click', function(e) {
+// Guardamos la X del inicio táctil
+let storyPressStartTimeX = 0;
+viewer.addEventListener('touchstart', (e) => { storyPressStartTimeX = e.touches[0].clientX; });
+
+document.addEventListener('click', (e) => {
     const menu = document.getElementById('storyMenu');
     if (menu && !e.target.closest('#btnStoryMenu') && !e.target.closest('#storyMenu')) {
         menu.style.display = 'none';

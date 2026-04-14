@@ -3,30 +3,12 @@
 
 {% block title %}{{ listing.title }} | Walo Nicaragua{% endblock %}
 {% block meta_description %}{{ listing.title }} en {{ listing.location }}. {{ listing.description|striptags|truncatechars:150 }}{% endblock %}
-{% block og_title %}{{ listing.title }} | Walo Nicaragua{% endblock %}
-{% block og_description %}{{ listing.description|striptags|truncatechars:160 }}{% endblock %}
-{% block twitter_title %}{{ listing.title }} | Walo Nicaragua{% endblock %}
-{% block twitter_description %}{{ listing.description|striptags|truncatechars:160 }}{% endblock %}
-{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}
-{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
-{% block og_image %}{% if listing.image %}{{ request.scheme }}://{{ request.get_host }}{{ listing.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endif %}{% endblock %}
-{% block og_type %}product{% endblock %}
 
 {% block extra_head %}
 <style>
-    .pro-detail-page {
-        background: #0b0f1a;
-        color: #fff;
-        padding: 60px 0;
-    }
+    .pro-detail-page { background: #0b0f1a; color: #fff; padding: 60px 0; }
+    .info-container { max-width: 1350px; margin: 0 auto; padding: 0 40px; }
 
-    .info-container {
-        max-width: 1350px;
-        margin: 0 auto;
-        padding: 0 40px;
-    }
-
-    /* FILA 1: Foto e Información side-by-side */
     .product-main-row {
         display: grid;
         grid-template-columns: 1.2fr 0.8fr;
@@ -35,185 +17,109 @@
         align-items: start;
     }
 
-    .product-visuals img {
+    /* CARRUSEL PRO */
+    .product-visuals {
+        position: relative;
         width: 100%;
-        min-height: 500px;
-        max-height: 80vh;
-        object-fit: cover;
         border-radius: 32px;
+        overflow: hidden;
         box-shadow: 0 50px 100px rgba(0,0,0,0.6);
-        transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
-        image-rendering: auto;
+        background: #111;
     }
-
-    .product-visuals:hover img {
-        transform: scale(1.01);
-    }
-
-    .product-info-column {
-        padding-top: 10px;
-    }
-
-    .editorial-category {
-        color: var(--primary);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-size: 0.8rem;
-        margin-bottom: 15px;
-    }
-
-    .editorial-title {
-        font-size: 3.2rem;
-        font-weight: 900;
-        line-height: 1.1;
-        letter-spacing: -2px;
-        margin-bottom: 25px;
-    }
-
-    .editorial-price {
-        font-size: 2.8rem;
-        font-weight: 300;
-        margin-bottom: 40px;
-    }
-
-    .editorial-price span { color: var(--primary); font-weight: 700; font-size: 1.2rem; margin-right: 5px; }
-
-    .editorial-description {
-        font-size: 1.15rem;
-        line-height: 1.8;
-        color: rgba(255,255,255,0.95);
-        margin-bottom: 50px;
-        font-weight: 300;
-    }
-
-    /* Seller Minimal */
-    .seller-box-simple {
+    
+    .carousel-track {
         display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 20px;
-        background: rgba(255,255,255,0.02);
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.05);
-        margin-bottom: 40px;
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        height: 100%;
+        will-change: transform;
     }
 
-    /* Action Buttons */
-    .action-grid-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr 60px;
-        gap: 15px;
-        margin-bottom: 20px;
+    .carousel-slide {
+        min-width: 100%;
+        height: 600px;
+        flex-shrink: 0;
     }
 
-    .btn-contact-pro {
-        background: var(--primary);
-        color: #000;
-        padding: 20px;
-        border-radius: 20px;
-        text-align: center;
-        text-decoration: none;
-        font-weight: 800;
-        font-size: 1.1rem;
+    .carousel-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .carousel-dots {
+        position: absolute;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        cursor: pointer;
         transition: 0.3s;
     }
 
-    .btn-whatsapp-pro {
-        background: #25D366;
-        color: #fff;
-        padding: 18px;
-        border-radius: 20px;
-        text-align: center;
-        text-decoration: none;
-        font-weight: 800;
-        display: block;
-        margin-bottom: 30px;
+    .dot.active {
+        background: var(--primary);
+        transform: scale(1.3);
+        box-shadow: 0 0 15px var(--primary);
     }
 
-    .btn-fav-circle {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        cursor: pointer;
+    .editorial-category { color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; margin-bottom: 15px; }
+    .editorial-title { font-size: 3.2rem; font-weight: 900; line-height: 1.1; letter-spacing: -2px; margin-bottom: 25px; }
+    .editorial-price { font-size: 2.8rem; font-weight: 300; margin-bottom: 40px; }
+    .editorial-price span { color: var(--primary); font-weight: 700; font-size: 1.2rem; margin-right: 5px; }
+    .editorial-description { font-size: 1.15rem; line-height: 1.8; color: rgba(255,255,255,0.95); margin-bottom: 50px; font-weight: 300; }
+
+    .seller-box-simple {
+        display: flex; align-items: center; gap: 15px; padding: 20px;
+        background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px;
     }
-    .location-link-pro:hover {
-        background: rgba(255,255,255,0.2) !important;
-        border-color: var(--primary) !important;
-        transform: translateY(-2px);
-    }
+
+    .action-grid-buttons { display: grid; grid-template-columns: 1fr 1fr 60px; gap: 15px; margin-bottom: 20px; }
+    .btn-contact-pro { background: var(--primary); color: #000; padding: 20px; border-radius: 20px; text-align: center; text-decoration: none; font-weight: 800; font-size: 1.1rem; transition: 0.3s; }
+    .btn-fav-circle { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; }
 
     @media (max-width: 992px) {
         .product-main-row { grid-template-columns: 1fr; gap: 40px; }
-        .product-visuals img { height: 450px; }
+        .carousel-slide { height: 450px; }
         .editorial-title { font-size: 2.5rem; }
-        .price-location-container { 
-            flex-direction: column; 
-            align-items: flex-start !important; 
-            gap: 12px !important; 
-        }
-        .location-link-pro { 
-            width: fit-content; 
-            max-width: 100%; 
-            font-size: 0.85rem !important; 
-            padding: 10px 16px !important;
-        }
     }
 </style>
-
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Inicio",
-        "item": "{{ request.scheme }}://{{ request.get_host }}/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "{{ listing.category.name }}",
-        "item": "{{ request.scheme }}://{{ request.get_host }}{{ listing.category.get_absolute_url }}"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": "{{ listing.title }}",
-        "item": "{{ request.build_absolute_uri }}"
-      }
-    ]
-  }
-</script>
-<script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": "{{ listing.title }}",
-    "description": "{{ listing.description|striptags }}",
-    "image": "{% if listing.image %}{{ request.scheme }}://{{ request.get_host }}{{ listing.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endif %}",
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "NIO",
-      "price": "{{ listing.price }}",
-      "availability": "https://schema.org/InStock"
-    }
-  }
-</script>
 {% endblock %}
 
 {% block content %}
 <div class="pro-detail-page">
     <div class="info-container">
         <div class="product-main-row">
-            <div class="product-visuals">
-                <img src="{% if listing.image %}{{ listing.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ listing.title }} en {{ listing.location }}" fetchpriority="high">
+            
+            <!-- SECCIÓN VISUAL CON CARRUSEL -->
+            <div class="product-visuals" id="product-carousel-main">
+                <div class="carousel-track" id="main-track">
+                    <!-- Portada Principal -->
+                    <div class="carousel-slide">
+                        <img src="{% if listing.image %}{{ listing.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ listing.title }}">
+                    </div>
+                    <!-- Fotos Extra -->
+                    {% for extra_img in listing.images.all %}
+                        {% if extra_img.image.url != listing.image.url %}
+                        <div class="carousel-slide">
+                            <img src="{{ extra_img.image.url }}" alt="{{ listing.title }} - Foto {{ forloop.counter }}">
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="carousel-dots" id="main-dots">
+                    <!-- Dots generados por JS -->
+                </div>
             </div>
 
             <div class="product-info-column">
@@ -226,29 +132,11 @@
                 
                 <div class="price-location-container" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 25px;">
                     <div class="editorial-price" style="margin-bottom: 0;"><span>C$</span>{{ listing.price }}</div>
-                    <a href="https://www.google.com/maps/search/?api=1&query={{ listing.location|urlencode }}+Nicaragua" 
-                       target="_blank" 
-                       class="location-link-pro"
-                       style="background: rgba(255,255,255,0.08); padding: 8px 16px; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap;">
-                        📍 {{ listing.location }} · <span style="opacity: 0.6; font-size: 0.8rem; font-weight: 500;">Ver en el mapa</span>
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ listing.location|urlencode }}+Nicaragua" target="_blank" class="location-link-pro" style="background: rgba(255,255,255,0.08); padding: 8px 16px; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap;">
+                        📍 {{ listing.location }}
                     </a>
                 </div>
 
-                <div style="display: flex; gap: 15px; margin-bottom: 40px; align-items: center; flex-wrap: wrap;">
-                    <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4); text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Acepta:</span>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        {% if "Efectivo" in listing.payment_methods %}
-                            <span style="background: rgba(34, 197, 94, 0.08); padding: 5px 14px; border-radius: 10px; font-size: 0.85rem; color: var(--primary); border: 1px solid rgba(34, 197, 94, 0.2); font-weight: 700;">💵 Efectivo</span>
-                        {% endif %}
-                        {% if "Transferencia" in listing.payment_methods %}
-                            <span style="background: rgba(59, 130, 246, 0.08); padding: 5px 14px; border-radius: 10px; font-size: 0.85rem; color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">🏦 Transferencia</span>
-                        {% endif %}
-                        {% if "Apps de Pago" in listing.payment_methods %}
-                            <span style="background: rgba(168, 85, 247, 0.08); padding: 5px 14px; border-radius: 10px; font-size: 0.85rem; color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.2); font-weight: 700;">📱 Apps Pago</span>
-                        {% endif %}
-                    </div>
-                </div>
-                
                 <div class="editorial-description">{{ listing.description }}</div>
 
                 <div class="seller-box-simple">
@@ -257,103 +145,59 @@
                     </div>
                     <div style="flex: 1;">
                         <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">{{ listing.user.username }}</div>
-                        <div style="color: #fbbf24; font-size: 0.75rem;">★ ★ ★ ★ ★ <span style="color: rgba(255,255,255,0.5); margin-left:10px;">{{ listing.user.profile.reviews_count }} reseñas</span></div>
+                        <div style="color: #fbbf24; font-size: 0.75rem;">★ ★ ★ ★ ★</div>
                     </div>
                     <a href="{% url 'user_profile' listing.user.username %}" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 700;">Perfil →</a>
                 </div>
 
                 <div class="action-grid-buttons">
                     <a href="{% url 'start_chat' listing.id %}" class="btn-contact-pro">MENSAJE</a>
-                    <a href="javascript:void(0)" onclick="openOfferModal()" style="border: 2px solid var(--primary); color: var(--primary); text-decoration: none; display: flex; align-items: center; justify-content: center; border-radius: 20px; font-weight: 800; font-size: 0.9rem; transition: 0.3s; background: rgba(34, 197, 94, 0.05);" onmouseover="this.style.background='var(--primary)'; this.style.color='#000'" onmouseout="this.style.background='rgba(34, 197, 94, 0.05)'; this.style.color='var(--primary)'">
-                        🏷️ HACER OFERTA
-                    </a>
-                    <button class="btn-fav-circle" onclick="toggleFav(this, {{ listing.id }})">
-                        <span id="favIcon">{% if is_favorite %}❤️{% else %}🤍{% endif %}</span>
-                    </button>
-                </div>
-
-
-                <div style="margin-top: 10px; padding: 15px; background: rgba(235, 153, 27, 0.05); border: 1px dashed rgba(235, 153, 27, 0.4); border-radius: 15px; margin-bottom: 30px;">
-                    <p style="margin: 0; font-size: 0.8rem; color: #fbbf24; font-weight: 800;">⚠️ RECOMENDACIÓN DE SEGURIDAD</p>
-                    <p style="margin: 5px 0 0; font-size: 0.85rem; color: #fff; line-height: 1.4;">Queda siempre en lugares públicos y revisa el producto antes de realizar cualquier pago.</p>
-                </div>
-
-                <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.75rem;">Publicado hace {{ listing.created_at|timesince }}</p>
-            </div>
-        </div>
-
-        <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 60px;">
-            <div style="max-width: 800px;">
-                <h3 style="font-size: 2rem; font-weight: 900; margin-bottom: 40px; letter-spacing: -1px;">Opiniones del artículo</h3>
-                
-                {% if request.user.is_authenticated %}
-                <form action="{% url 'add_review' listing.id %}" method="POST" style="margin-bottom: 60px;">
-                    {% csrf_token %}
-                    <div style="background: rgba(255,255,255,0.02); padding: 30px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05);">
-                        <textarea name="text" placeholder="¿Qué te parece este artículo?..." required style="background: transparent; border: none; color: #fff; width: 100%; min-height: 80px; font-size: 1.1rem; outline: none; resize: none;"></textarea>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-                            <select name="rating" style="background: #161b22; color: #fbbf24; border: 1px solid rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 12px;">
-                                <option value="5">★★★★★</option>
-                                <option value="4">★★★★☆</option>
-                                <option value="3">★★★☆☆</option>
-                                <option value="2">★★☆☆☆</option>
-                                <option value="1">★☆☆☆☆</option>
-                            </select>
-                            <button type="submit" style="background: var(--primary); color: #000; border: none; padding: 12px 30px; border-radius: 15px; font-weight: 900; cursor: pointer;">Publicar</button>
-                        </div>
-                    </div>
-                </form>
-                {% endif %}
-
-                <div style="display: flex; flex-direction: column; gap: 40px;">
-                    {% for review in reviews %}
-                    <div style="display: flex; gap: 20px;">
-                        <div style="width: 45px; height: 45px; border-radius: 50%; background: #3d4a5d; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; flex-shrink: 0;">{{ review.user.username|slice:":1"|upper }}</div>
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-weight: 800; font-size: 1.1rem; color: #fff;">@{{ review.user.username }}</span>
-                                <span style="color: #fbbf24;">{% if review.rating == 5 %}★★★★★{% elif review.rating == 4 %}★★★★☆{% elif review.rating == 3 %}★★★☆☆{% elif review.rating == 2 %}★★☆☆☆{% else %}★☆☆☆☆{% endif %}</span>
-                            </div>
-                            <p style="color: rgba(255,255,255,0.9); line-height: 1.6; margin: 0; font-size: 1.1rem; font-weight: 300;">{{ review.text }}</p>
-                            <div style="margin-top: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.4);">{{ review.created_at|date:"d M, Y" }}</div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p style="color: rgba(255,255,255,0.4); text-align: center; padding: 60px 0;">No hay valoraciones todavía.</p>
-                    {% endfor %}
+                    <a href="javascript:void(0)" onclick="openOfferModal()" style="border: 2px solid var(--primary); color: var(--primary); text-decoration: none; display: flex; align-items: center; justify-content: center; border-radius: 20px; font-weight: 800; font-size: 0.9rem; background: rgba(34, 197, 94, 0.05);">🏷️ OFERTA</a>
+                    <button class="btn-fav-circle" onclick="toggleFav(this, {{ listing.id }})">❤️</button>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Modal de Oferta -->
-<div id="offerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 2000; align-items: center; justify-content: center;">
-    <div style="background: #161b22; width: 90%; max-width: 450px; padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); position: relative;">
-        <button onclick="closeOfferModal()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
-        <h2 style="margin-top: 0; font-size: 1.8rem; font-weight: 900; margin-bottom: 30px;">Enviar Oferta</h2>
-        <form action="{% url 'make_offer' listing.id %}" method="POST">
-            {% csrf_token %}
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-size: 0.75rem; color: var(--primary); font-weight: 800; margin-bottom: 10px;">Tu Oferta (C$)</label>
-                <input type="number" name="amount" placeholder="0.00" required step="0.01" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; color: #fff; font-size: 1.5rem; font-weight: 900;">
-            </div>
-            <div style="margin-bottom: 30px;">
-                <label style="display: block; font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 800; margin-bottom: 10px;">Mensaje</label>
-                <textarea name="message" placeholder="¿Quieres decir algo más?" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; color: #fff; min-height: 80px; resize: none;"></textarea>
-            </div>
-            <button type="submit" style="width: 100%; background: var(--primary); color: #000; border: none; padding: 18px; border-radius: 15px; font-weight: 900; cursor: pointer;">ENVIAR PROPUESTA</button>
-        </form>
     </div>
 </div>
 
 <script>
-    function openOfferModal() { document.getElementById('offerModal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
-    function closeOfferModal() { document.getElementById('offerModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    // Lógica del Carrusel
+    let currentIdx = 0;
+    const track = document.getElementById('main-track');
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dotsContainer = document.getElementById('main-dots');
+
+    if (slides.length > 1) {
+        slides.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = `dot ${i === 0 ? 'active' : ''}`;
+            dot.onclick = () => goToSlide(i);
+            dotsContainer.appendChild(dot);
+        });
+
+        // Swipe
+        let startX = 0;
+        const visuals = document.getElementById('product-carousel-main');
+        visuals.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+        visuals.addEventListener('touchend', e => {
+            const endX = e.changedTouches[0].clientX;
+            if (startX - endX > 50) nextSlide();
+            if (endX - startX > 50) prevSlide();
+        });
+    }
+
+    function goToSlide(i) {
+        currentIdx = i;
+        track.style.transform = `translateX(-${i * 100}%)`;
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach((d, idx) => d.classList.toggle('active', idx === i));
+    }
+
+    function nextSlide() { if (currentIdx < slides.length - 1) goToSlide(currentIdx + 1); }
+    function prevSlide() { if (currentIdx > 0) goToSlide(currentIdx - 1); }
+
     function toggleFav(btn, id) {
-        fetch(`/favoritos/toggle/${id}/`)
-            .then(response => response.json())
-            .then(data => { btn.querySelector('#favIcon').innerText = data.is_favorite ? '❤️' : '🤍'; });
+        fetch(`/favoritos/toggle/${id}/`).then(r => r.json()).then(d => { btn.innerText = d.is_favorite ? '❤️' : '🤍'; });
     }
 </script>
 {% endblock %}

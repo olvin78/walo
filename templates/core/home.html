@@ -34,6 +34,82 @@
     "url": "{{ request.scheme }}://{{ request.get_host }}/"
   }
 </script>
+<style>
+  .city-grid-pro {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    margin-top: 40px;
+  }
+  .city-card-pro {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 30px 20px;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+  .city-card-pro::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: var(--primary);
+    opacity: 0;
+    transition: 0.3s;
+  }
+  .city-card-pro:hover {
+    transform: translateY(-12px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(34, 197, 94, 0.4);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+  .city-card-pro:hover::before { opacity: 1; }
+  
+  .city-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    transition: all 0.4s;
+  }
+  .city-card-pro:hover .city-icon-wrapper {
+    background: var(--primary);
+    color: #000;
+    transform: rotate(12deg) scale(1.1);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+  }
+  .city-info-pro h3 {
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+  .city-explore-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    transition: 0.3s;
+  }
+  .city-card-pro:hover .city-explore-label {
+    opacity: 1;
+    color: var(--primary);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -402,30 +478,65 @@
             <div style="display: flex; flex-direction: column; gap: 20px; text-align: center;">
                 <h2 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Ciudades destacadas</h2>
                 <p style="color: var(--text-muted);">Explora anuncios locales en las principales ciudades de Nicaragua.</p>
-                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;">
-                    <a href="{% url 'city_landing' 'managua' %}" class="story-btn" style="text-decoration: none;">
-                        <div class="story-circle-pro">📍</div>
-                        <p>Managua</p>
+                <div class="city-grid-pro">
+                    <a href="{% url 'city_landing' 'managua' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Managua</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
                     </a>
-                    <a href="{% url 'city_landing' 'leon' %}" class="story-btn" style="text-decoration: none;">
-                        <div class="story-circle-pro">📍</div>
-                        <p>León</p>
+                    
+                    <a href="{% url 'city_landing' 'leon' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>León</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
                     </a>
-                    <a href="{% url 'city_landing' 'granada' %}" class="story-btn" style="text-decoration: none;">
-                        <div class="story-circle-pro">📍</div>
-                        <p>Granada</p>
+
+                    <a href="{% url 'city_landing' 'granada' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Granada</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
                     </a>
-                    <a href="{% url 'city_landing' 'masaya' %}" class="story-btn" style="text-decoration: none;">
-                        <div class="story-circle-pro">📍</div>
-                        <p>Masaya</p>
+
+                    <a href="{% url 'city_landing' 'masaya' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Masaya</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
                     </a>
-                    <a href="{% url 'city_landing' 'esteli' %}" class="story-btn" style="text-decoration: none;">
-                        <div class="story-circle-pro">📍</div>
-                        <p>Estelí</p>
+
+                    <a href="{% url 'city_landing' 'esteli' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Estelí</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
                     </a>
-                    <a href="{% url 'city_landing' 'matagalpa' %}" class="story-btn" style="text-decoration: none;">
-                        <div class="story-circle-pro">📍</div>
-                        <p>Matagalpa</p>
+
+                    <a href="{% url 'city_landing' 'matagalpa' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Matagalpa</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
                     </a>
                 </div>
             </div>

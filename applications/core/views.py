@@ -9,6 +9,7 @@ from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, Http404
+from django.urls import reverse
 from django.db.models import Q
 from django.contrib import messages
 from django.conf import settings
@@ -16,7 +17,7 @@ from django.utils import timezone
 import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
-from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent
+from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage
 
 CITY_LANDINGS = {
     "managua": "Managua",
@@ -341,6 +342,10 @@ def create_listing(request):
             subcategory = get_object_or_404(Subcategory, id=subcategory_id, category=category)
         
         try:
+            # Capturar múltiples imágenes
+            images = request.FILES.getlist('images')
+            main_image = images[0] if images else None
+
             listing = Listing.objects.create(
                 user=request.user,
                 title=title,
@@ -349,9 +354,14 @@ def create_listing(request):
                 category=category,
                 subcategory=subcategory,
                 location=location,
-                image=image,
+                image=main_image,
                 payment_methods=payment_methods
             )
+            
+            # Guardar resto de imágenes en el modelo relacionado
+            for img in images:
+                ListingImage.objects.create(listing=listing, image=img)
+
             messages.success(request, "¡Tu anuncio ha sido publicado con éxito!")
             return redirect(listing.get_absolute_url())
         except Exception as e:
@@ -427,7 +437,8 @@ def inbox_view(request):
     stories_payload = []
     for item in stories_by_user:
         user = item['user']
-        avatar = user.profile.avatar.url if hasattr(user, 'profile') and user.profile.avatar else f"https://i.pravatar.cc/150?u={user.id}"
+        profile = getattr(user, 'profile', None)
+        avatar = profile.avatar.url if profile and profile.avatar else None
         stories_payload.append({
             'user': user,
             'avatar': avatar,
@@ -490,9 +501,21 @@ def chat_view(request, conversation_id):
     
     if request.method == 'POST':
         text = request.POST.get('text')
-        if text:
-            Message.objects.create(conversation=conversation, sender=request.user, text=text)
+        image = request.FILES.get('image')
+        audio = request.FILES.get('audio')
+        is_view_once = request.POST.get('is_view_once') == 'true'
+
+        if text or image or audio:
+            Message.objects.create(
+                conversation=conversation, 
+                sender=request.user, 
+                text=text,
+                image=image,
+                audio=audio,
+                is_view_once=is_view_once
+            )
             conversation.save() # Actualiza updated_at
+            return redirect(reverse('chat_detail', args=[conversation_id]))
     
     messages = conversation.messages.all()
     other_user = conversation.participants.exclude(id=request.user.id).first()
@@ -501,6 +524,35 @@ def chat_view(request, conversation_id):
         'messages': messages,
         'other_user': other_user
     })
+
+@csrf_exempt
+@login_required
+def mark_image_viewed(request, message_id):
+    """
+    Marca un mensaje de 'ver una sola vez' como ya visto por el usuario actual.
+    """
+    message = get_object_or_404(Message, id=message_id, is_view_once=True)
+    
+    # Comparar IDs para evitar errores de objeto
+    if request.user.id == message.sender_id:
+        message.viewed_by_sender = True
+    else:
+        message.viewed_by_receiver = True
+        
+    message.save()
+
+    # Autodestrucción total si ambos lo han visto
+    if message.viewed_by_sender and message.viewed_by_receiver:
+        # Borrado físico de archivos del disco
+        if message.image:
+            message.image.delete(save=False)
+        if message.audio:
+            message.audio.delete(save=False)
+            
+        message.delete()
+        return JsonResponse({"status": "deleted"})
+        
+    return JsonResponse({"status": "success", "viewed_by_sender": message.viewed_by_sender, "viewed_by_receiver": message.viewed_by_receiver})
 
 @login_required
 def start_conversation(request, listing_id):

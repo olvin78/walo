@@ -3,48 +3,297 @@
 
 {% block title %}Chat con {{ other_user.username }} | Walo{% endblock %}
 
-{% block flash_messages %}{% endblock %}
+{% block body_class %}page-chat-pro{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* RESET & LAYOUT */
+    .page-chat-pro footer.cmp-footer, 
+    .page-chat-pro .cookie-banner { display: none !important; }
+    
+    .chat-pro-wrapper {
+        position: fixed;
+        inset: 0;
+        top: 70px;
+        display: flex;
+        flex-direction: column;
+        background: #080a0f;
+        z-index: 100;
+        height: calc(100dvh - 70px);
+    }
+
+    @media (max-width: 768px) {
+        .chat-pro-wrapper { top: 60px; height: calc(100dvh - 60px); }
+        .bubble { max-width: 85%; }
+        .chat-pro-input-bar { padding: 10px 15px 20px; }
+        .msg-img { max-width: 120px; border-radius: 8px; }
+    }
+
+    /* HEADER PRO */
+    .chat-pro-header {
+        background: rgba(15, 22, 36, 0.8);
+        backdrop-filter: blur(20px);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        z-index: 10;
+    }
+    
+    .btn-back-chat {
+        color: #fff; background: rgba(255,255,255,0.05);
+        width: 36px; height: 36px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none;
+    }
+
+    .header-user-info { flex: 1; display: flex; flex-direction: column; }
+    .header-user-info b { color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
+    .status-online { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; display: inline-block; }
+
+    .header-listing-thumb { width: 35px; height: 35px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+    .header-listing-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* MESSAGES AREA */
+    .chat-pro-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    /* BUBBLES */
+    .bubble {
+        max-width: 75%;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        position: relative;
+    }
+    
+    .bubble.me { align-self: flex-end; background: var(--primary); color: #000; font-weight: 500; border-radius: 18px 18px 4px 18px; }
+    .bubble.other { align-self: flex-start; background: #242f41; color: #fff; border-radius: 18px 18px 18px 4px; }
+    
+    .bubble-img-container {
+        margin: -4px -8px 4px -8px;
+        overflow: hidden;
+        border-radius: 14px;
+        display: flex;
+        justify-content: center;
+        position: relative;
+    }
+
+    /* MODO UNA VEZ - ESTILOS */
+    .view-once-cover {
+        width: 120px;
+        height: 120px;
+        background: #1a2230;
+        border: 2px dashed rgba(255,255,255,0.15);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .bubble.me .view-once-cover { background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.2); }
+    .view-once-cover:hover { border-color: var(--primary); background: #242f41; }
+    .view-once-cover svg { color: var(--primary); }
+    .bubble.me .view-once-cover svg { color: #000; }
+    .view-once-text { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--primary); }
+    .bubble.me .view-once-text { color: #000; }
+
+    /* AUDIO */
+    .msg-audio-player { display: flex; align-items: center; gap: 10px; min-width: 200px; padding: 5px 0; }
+    .audio-btn { background: none; border: none; color: inherit; cursor: pointer; padding: 0; display: flex; align-items: center; }
+    .audio-progress { flex: 1; height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; position: relative; }
+    .audio-progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: currentColor; border-radius: 2px; width: 0%; }
+    .msg-time { font-size: 0.65rem; margin-top: 4px; opacity: 0.6; text-align: right; }
+
+    /* INPUT & PREVIEW */
+    .chat-pro-input-bar { padding: 10px 15px 30px; background: rgba(15, 22, 36, 0.98); border-top: 1px solid rgba(255,255,255,0.05); }
+    .input-container-pro { background: #161b22; border-radius: 25px; padding: 5px 5px 5px 15px; display: flex; align-items: center; gap: 8px; }
+    .input-container-pro input { flex: 1; background: none; border: none; color: #fff; outline: none; font-size: 0.9rem; }
+    
+    .action-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; border-radius: 50%; }
+    .btn-send-pro { width: 38px; height: 38px; background: var(--primary); color: #000; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    #image-preview-container {
+        display: none; padding: 15px; background: #0f1624; border-top: 1px solid rgba(255,255,255,0.1);
+        position: relative; align-items: center; gap: 20px;
+    }
+    #image-preview-container img { height: 90px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.05); }
+    
+    .btn-view-once-toggle {
+        width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1);
+        display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
+        transition: 0.3s; font-weight: 900; font-size: 1.2rem;
+    }
+    .btn-view-once-toggle.active { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+
+    .btn-remove-preview { position: absolute; top: 5px; left: 95px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-weight: 800; font-size: 14px; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="walo-container" style="padding: 40px 0; max-width: 800px;">
-  <!-- Cabecera del Chat -->
-  <div class="chat-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;">
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <a href="{% url 'inbox' %}" style="text-decoration: none; font-size: 1.2rem;">⬅️</a>
-      <div>
-        <h2 style="font-size: 1.2rem;">Chat con {{ other_user.username }}</h2>
-        <p style="font-size: 0.9rem; color: var(--text-muted);">Sobre: {{ conversation.listing.title }}</p>
-      </div>
+<div class="chat-pro-wrapper">
+    <header class="chat-pro-header">
+        <a href="{% url 'inbox' %}" class="btn-back-chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
+        <div class="header-user-info"><b>{{ other_user.username }} <span class="status-online"></span></b><span>{{ conversation.listing.title }}</span></div>
+        <a href="{{ conversation.listing.get_absolute_url }}" class="header-listing-thumb">{% if conversation.listing.image %}<img src="{{ conversation.listing.image.url }}" alt="P">{% else %}<div style="background: #111; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">📦</div>{% endif %}</a>
+    </header>
+
+    <div id="chat-messages" class="chat-pro-messages">
+        {% for message in messages %}
+            {% if message.is_view_once %}
+                {# Lógica de ocultación TOTAL con IFs anidados (más seguro) #}
+                {% if message.sender_id == request.user.pk %}
+                    {% if not message.viewed_by_sender %}
+                        <div class="msg-group" id="msg-{{ message.id }}" style="display: flex; flex-direction: column;">
+                            <div class="bubble me">
+                                <div class="bubble-img-container">
+                                    <div class="view-once-cover" onclick="openViewOnce('{{ message.image.url }}', {{ message.id }})">
+                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><text x="9.5" y="16" fill="currentColor" style="font-size: 12px; font-weight: 900; stroke: none;">1</text></svg>
+                                        <span class="view-once-text">Tu Foto (1)</span>
+                                    </div>
+                                </div>
+                                <div class="msg-time">{{ message.created_at|date:"H:i" }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% if not message.viewed_by_receiver %}
+                        <div class="msg-group" id="msg-{{ message.id }}" style="display: flex; flex-direction: column;">
+                            <div class="bubble other">
+                                <div class="bubble-img-container">
+                                    <div class="view-once-cover" onclick="openViewOnce('{{ message.image.url }}', {{ message.id }})">
+                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><text x="9.5" y="16" fill="currentColor" style="font-size: 12px; font-weight: 900; stroke: none;">1</text></svg>
+                                        <span class="view-once-text">Ver Foto</span>
+                                    </div>
+                                </div>
+                                <div class="msg-time">{{ message.created_at|date:"H:i" }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <div class="msg-group" id="msg-{{ message.id }}" style="display: flex; flex-direction: column;">
+                    <div class="bubble {% if message.sender_id == request.user.pk %}me{% else %}other{% endif %}">
+                        {% if message.image %}<div class="bubble-img-container"><img src="{{ message.image.url }}" class="msg-img" onclick="window.open(this.src)" style="max-width: 120px; border-radius: 12px;"></div>{% endif %}
+                        {% if message.audio %}
+                            <div class="msg-audio-player">
+                                <button class="audio-btn" onclick="toggleAudio('audio-{{ message.id }}', this)"><svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg><svg class="pause-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
+                                <div class="audio-progress"><div id="progress-audio-{{ message.id }}" class="audio-progress-fill"></div></div>
+                                <audio id="audio-{{ message.id }}" src="{{ message.audio.url }}" ontimeupdate="updateAudioProgress('audio-{{ message.id }}')" onended="resetAudioPlayer('audio-{{ message.id }}', this.parentElement.querySelector('.audio-btn'))"></audio>
+                            </div>
+                        {% endif %}
+                        {% if message.text %}<div class="msg-text">{{ message.text }}</div>{% endif %}
+                        <div class="msg-time">{{ message.created_at|date:"H:i" }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
     </div>
-    {% if conversation.listing.image %}
-      <img src="{{ conversation.listing.image.url }}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
-    {% endif %}
-  </div>
 
-  <!-- Ventana de Mensajes -->
-  <div id="chat-window" style="height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px; background: var(--bg-secondary); border-radius: 20px; border: 1px solid var(--border);">
-    {% for message in messages %}
-      <div class="message {% if message.sender == request.user %}me{% else %}other{% endif %}" 
-           style="max-width: 75%; padding: 12px 18px; border-radius: 20px; {% if message.sender == request.user %}align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px;{% else %}align-self: flex-start; background: #fff; color: #000; border-bottom-left-radius: 4px;{% endif %}">
-        {{ message.text }}
-        <div style="font-size: 0.7rem; margin-top: 4px; opacity: 0.8;">{{ message.created_at|date:"H:i" }}</div>
-      </div>
-    {% empty %}
-      <div style="text-align: center; padding: 40px; color: var(--text-muted);">Inicia la conversación preguntando algo sobre el producto.</div>
-    {% endfor %}
-  </div>
+    <!-- PREVIEW IMAGE -->
+    <div id="image-preview-container">
+        <div style="position: relative;"><img id="img-preview" src=""><button class="btn-remove-preview" onclick="clearImage()">×</button></div>
+        <div style="flex: 1;"><div id="btn-view-once" class="btn-view-once-toggle" onclick="toggleViewOnce()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><text x="9.5" y="15.8" fill="currentColor" style="font-size: 11px; font-weight: 900; stroke: none;">1</text></svg></div><p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 5px; font-weight: 700;">UNA VEZ</p></div>
+    </div>
 
-  <!-- Formulario de Envío -->
-  <form method="POST" style="margin-top: 20px; display: flex; gap: 10px;">
-    {% csrf_token %}
-    <input type="text" name="text" placeholder="Escribe un mensaje..." required 
-           style="flex: 1; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border); background: #fff; outline: none;">
-    <button type="submit" class="cmp-btn cmp-btn-primary" style="padding: 10px 25px;">Enviar</button>
-  </form>
+    <footer class="chat-pro-input-bar">
+        <form id="chat-form" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="is_view_once" id="is_view_once_val" value="false">
+            <div class="input-container-pro">
+                <label for="img-input" class="action-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></label>
+                <input type="file" id="img-input" name="image" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                <div id="rec-btn" class="action-btn" onclick="toggleRecording()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></div>
+                <input type="text" id="chat-input" name="text" placeholder="Escribe un mensaje..." autocomplete="off">
+                <input type="file" id="audio-blob-input" name="audio" style="display: none;">
+                <button type="submit" class="btn-send-pro"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+            </div>
+        </form>
+    </footer>
 </div>
 
 <script>
-  const chatWindow = document.getElementById('chat-window');
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    let viewOnceActive = false;
+    function toggleViewOnce() {
+        viewOnceActive = !viewOnceActive;
+        const btn = document.getElementById('btn-view-once');
+        document.getElementById('is_view_once_val').value = viewOnceActive ? "true" : "false";
+        btn.classList.toggle('active', viewOnceActive);
+    }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('img-preview').src = e.target.result;
+                document.getElementById('image-preview-container').style.display = 'flex';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    function clearImage() {
+        document.getElementById('img-input').value = '';
+        document.getElementById('image-preview-container').style.display = 'none';
+        viewOnceActive = false;
+        document.getElementById('btn-view-once').classList.remove('active');
+        document.getElementById('is_view_once_val').value = "false";
+    }
+
+    function openViewOnce(url, msgId) {
+        window.open(url, '_blank');
+        fetch(`/mensajes/visto/${msgId}/`).then(res => {
+            if (res.ok) {
+                // ELIMINACIÓN VISUAL INSTANTÁNEA
+                const bubble = document.getElementById(`msg-${msgId}`);
+                if (bubble) bubble.style.display = 'none';
+            }
+        });
+    }
+
+    // AUDIO & RECORDING
+    function toggleAudio(id, btn) {
+        const audio = document.getElementById(id);
+        const playIcon = btn.querySelector('.play-icon'), pauseIcon = btn.querySelector('.pause-icon');
+        if (audio.paused) { audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
+        else { audio.pause(); playIcon.style.display = 'block'; pauseIcon.style.display = 'none'; }
+    }
+    function updateAudioProgress(id) { document.getElementById('progress-' + id).style.width = (document.getElementById(id).currentTime / document.getElementById(id).duration) * 100 + '%'; }
+    function resetAudioPlayer(id, btn) { btn.querySelector('.play-icon').style.display = 'block'; btn.querySelector('.pause-icon').style.display = 'none'; document.getElementById('progress-' + id).style.width = '0%'; }
+
+    let mediaRecorder, audioChunks = [], isRecording = false;
+    async function toggleRecording() {
+        if (!isRecording) {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const file = new File([new Blob(audioChunks, { type: 'audio/webm' })], "voice.webm", { type: 'audio/webm' });
+                const dt = new DataTransfer(); dt.items.add(file);
+                document.getElementById('audio-blob-input').files = dt.files;
+                document.getElementById('chat-input').value = "Nota de voz lista 🎙️";
+                document.getElementById('chat-input').readOnly = true;
+            };
+            audioChunks = []; mediaRecorder.start();
+            document.getElementById('rec-btn').classList.add('active-rec');
+            isRecording = true;
+        } else {
+            mediaRecorder.stop(); document.getElementById('rec-btn').classList.remove('active-rec');
+            isRecording = false;
+        }
+    }
 </script>
 {% endblock %}
