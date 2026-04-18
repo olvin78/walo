@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Crear Anuncio Pro | Walo{% endblock %}
+{% block title %}{% if is_edit %}Editar Publicación{% else %}Crear Anuncio Pro{% endif %} | Walo{% endblock %}
 
 {% block content %}
 <div class="publish-studio" style="min-height: 100vh; background: #000; color: #fff; padding: 40px 0; font-family: 'Space Grotesk', sans-serif;">
@@ -11,7 +11,7 @@
         <div class="studio-header" style="margin-bottom: 30px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px;">
             <div class="header-left">
                 <span class="studio-badge" style="background: var(--primary); color: #000; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.65rem; text-transform: uppercase; margin-bottom: 10px; display: inline-block;">Walo Studio</span>
-                <h1 id="studio-main-title" style="font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; margin: 0; line-height: 1;">Nueva <span style="color: var(--primary);">Oferta</span></h1>
+                <h1 id="studio-main-title" style="font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; margin: 0; line-height: 1;">{% if is_edit %}Editar <span style="color: var(--primary);">Publicación</span>{% else %}Nueva <span style="color: var(--primary);">Oferta</span>{% endif %}</h1>
             </div>
             <div class="header-right" style="text-align: right;">
                 <p style="color: var(--text-muted); margin: 0; font-weight: 500;">Estado</p>
@@ -32,17 +32,17 @@
                     <div class="preview-card-wrapper" style="display: flex; justify-content: center;">
                         <div class="listing-preview-card" id="main-preview-card" style="width: 100%; max-width: 380px; aspect-ratio: 3/4; background: #111; border-radius: 25px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 30px 60px rgba(0,0,0,0.5); transition: 0.4s ease;">
                             <div id="preview-carousel" style="display: flex; height: 100%; transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1); will-change: transform;">
-                                <img id="preview-img-placeholder" src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60" style="width: 100%; height: 100%; flex-shrink: 0; object-fit: cover; opacity: 0.6;">
+                                <img id="preview-img-placeholder" src="{% if is_edit and listing.image %}{{ listing.image.url }}{% else %}https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60{% endif %}" style="width: 100%; height: 100%; flex-shrink: 0; object-fit: cover; opacity: 0.6;">
                             </div>
                             <div id="carousel-dots" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5;"></div>
                             <div class="card-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; pointer-events: none;">
                                 <div class="card-badge" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 4px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: 700;">
-                                    <span id="preview-category">Categoría</span>
+                                    <span id="preview-category">{% if is_edit %}{{ listing.category.name }}{% else %}Categoría{% endif %}</span>
                                 </div>
-                                <h2 id="preview-title" style="font-size: 1.6rem; margin-bottom: 5px; font-weight: 900; line-height: 1.1;">Título del Anuncio</h2>
+                                <h2 id="preview-title" style="font-size: 1.6rem; margin-bottom: 5px; font-weight: 900; line-height: 1.1;">{% if is_edit %}{{ listing.title }}{% else %}Título del Anuncio{% endif %}</h2>
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <div class="price-tag" style="font-size: 1.3rem; font-weight: 900; color: var(--primary);">C$ <span id="preview-price">0.00</span></div>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted);">📍 <span id="preview-location">Ubicación</span></div>
+                                    <div class="price-tag" style="font-size: 1.3rem; font-weight: 900; color: var(--primary);">C$ <span id="preview-price">{% if is_edit %}{{ listing.price }}{% else %}0.00{% endif %}</span></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">📍 <span id="preview-location">{% if is_edit %}{{ listing.location }}{% else %}Ubicación{% endif %}</span></div>
                                 </div>
                             </div>
                         </div>
@@ -54,12 +54,30 @@
                     <div class="form-section" style="margin-bottom: 40px;">
                         <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; font-weight: 900;">01. Galería Multimedia</h4>
                         <div id="image-management-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                            {% if is_edit %}
+                                {% if listing.image %}
+                                <div class="image-slot existing-slot" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
+                                    <img src="{{ listing.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div onclick="removeExistingImage('main', this)" style="position: absolute; top: 4px; right: 4px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.7rem; cursor: pointer;">×</div>
+                                    <span style="position: absolute; bottom: 4px; left: 4px; background: var(--primary); color: #000; font-size: 0.5rem; font-weight: 900; padding: 2px 5px; border-radius: 4px;">PRINCIPAL</span>
+                                </div>
+                                {% endif %}
+                                {% for extra in listing.images.all %}
+                                    {% if extra.image.url != listing.image.url %}
+                                    <div class="image-slot existing-slot" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
+                                        <img src="{{ extra.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div onclick="removeExistingImage({{ extra.id }}, this)" style="position: absolute; top: 4px; right: 4px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.7rem; cursor: pointer;">×</div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                             <div class="image-slot add-slot" onclick="document.getElementById('image-input').click()" style="aspect-ratio: 1; border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: rgba(255,255,255,0.01);">
                                 <span style="font-size: 1.2rem; margin-bottom: 4px;">➕</span>
                                 <span style="font-size: 0.6rem; font-weight: 700; color: var(--text-muted);">Añadir</span>
                             </div>
                         </div>
                         <input type="file" name="images" id="image-input" accept="image/*" multiple style="display: none;" onchange="handleNewImages(this)">
+                        <input type="hidden" name="deleted_images" id="deleted-images-input" value="">
                     </div>
 
                     <div class="form-section" style="margin-bottom: 40px;">
@@ -67,19 +85,19 @@
                         <div style="display: flex; flex-direction: column; gap: 25px;">
                             <div class="studio-input-block">
                                 <label class="studio-label">Título</label>
-                                <input type="text" name="title" id="form-title" required maxlength="200" placeholder="¿Qué vendes?" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 2rem; font-weight: 900; color: #fff; padding: 10px 0; outline: none;" oninput="updateStudioPreview()">
+                                <input type="text" name="title" id="form-title" required maxlength="200" placeholder="¿Qué vendes?" value="{% if is_edit %}{{ listing.title }}{% endif %}" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 2rem; font-weight: 900; color: #fff; padding: 10px 0; outline: none;" oninput="updateStudioPreview()">
                             </div>
                             <div class="grid-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                                 <div class="studio-input-block">
                                     <label class="studio-label">Precio (C$)</label>
-                                    <input type="number" name="price" id="form-price" required step="0.01" placeholder="0.00" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.6rem; font-weight: 900; color: var(--primary); outline: none;" oninput="updateStudioPreview()">
+                                    <input type="number" name="price" id="form-price" required step="0.01" placeholder="0.00" value="{% if is_edit %}{{ listing.price|stringformat:".2f" }}{% endif %}" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.6rem; font-weight: 900; color: var(--primary); outline: none;" oninput="updateStudioPreview()">
                                 </div>
                                 <div class="studio-input-block">
                                     <label class="studio-label">Clasificación</label>
                                     <select name="category" id="form-category" required onchange="updateStudioPreview()">
                                         <option value="" disabled selected>Elegir...</option>
                                         {% for cat in categories %}
-                                            <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                                            <option value="{{ cat.id }}" {% if is_edit and listing.category_id == cat.id %}selected{% endif %}>{{ cat.icon }} {{ cat.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -95,7 +113,7 @@
                             </div>
                             <div class="studio-input-block">
                                 <label class="studio-label">Ubicación</label>
-                                <input type="text" name="location" id="form-location" value="{{ user.profile.location }}" placeholder="Ciudad/Barrio" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.1rem; font-weight: 700; color: #fff; padding: 8px 0; outline: none;" oninput="updateStudioPreview()">
+                                <input type="text" name="location" id="form-location" value="{% if is_edit %}{{ listing.location }}{% else %}{{ user.profile.location }}{% endif %}" placeholder="Ciudad/Barrio" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.1rem; font-weight: 700; color: #fff; padding: 8px 0; outline: none;" oninput="updateStudioPreview()">
                             </div>
                         </div>
                     </div>
@@ -103,19 +121,37 @@
                     <div class="form-section" style="margin-bottom: 40px;">
                         <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 20px; font-weight: 900;">03. Pagos</h4>
                         <div class="payment-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Efectivo" checked><div class="payment-card"><span>💵</span><p>Cash</p></div></label>
-                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Transferencia"><div class="payment-card"><span>🏦</span><p>Banco</p></div></label>
-                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Apps de Pago"><div class="payment-card"><span>📱</span><p>Apps</p></div></label>
+                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Efectivo" {% if is_edit %}{% if "Efectivo" in listing.payment_methods %}checked{% endif %}{% else %}checked{% endif %}><div class="payment-card"><span>💵</span><p>Cash</p></div></label>
+                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Transferencia" {% if is_edit and "Transferencia" in listing.payment_methods %}checked{% endif %}><div class="payment-card"><span>🏦</span><p>Banco</p></div></label>
+                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Apps de Pago" {% if is_edit and "Apps de Pago" in listing.payment_methods %}checked{% endif %}><div class="payment-card"><span>📱</span><p>Apps</p></div></label>
                         </div>
                     </div>
 
+                    {% if is_edit %}
+                    <div class="form-section" style="margin-bottom: 40px;">
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 20px; font-weight: 900;">04. Disponibilidad</h4>
+                        <div class="availability-toggle" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <p style="font-weight: 700; color: #fff; margin: 0;">Anuncio Activo</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Si lo desactivas, nadie podrá verlo.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="is_active" {% if listing.is_active %}checked{% endif %}>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div style="margin-bottom: 50px;">
-                        <textarea name="description" id="form-description" required rows="4" placeholder="Detalles del producto..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; font-size: 1rem; color: #fff; padding: 20px; outline: none; resize: none;" oninput="updatePublishScore()"></textarea>
+                        <textarea name="description" id="form-description" required rows="4" placeholder="Detalles del producto..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; font-size: 1rem; color: #fff; padding: 20px; outline: none; resize: none;" oninput="updatePublishScore()">{% if is_edit %}{{ listing.description }}{% endif %}</textarea>
                     </div>
 
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
-                        <a href="{% url 'explore' %}" style="color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 0.9rem;">Cancelar</a>
-                        <button type="submit" class="studio-publish-btn" style="background: var(--primary); border: none; padding: 18px 40px; border-radius: 30px; color: #000; font-weight: 900; font-size: 1.1rem; cursor: pointer; flex: 1; max-width: 300px;">Publicar 🚀</button>
+                        <a href="{% if is_edit %}{% url 'my_listings' %}{% else %}{% url 'explore' %}{% endif %}" style="color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 0.9rem;">Cancelar</a>
+                        <button type="submit" class="studio-publish-btn" style="background: var(--primary); border: none; padding: 18px 40px; border-radius: 30px; color: #000; font-weight: 900; font-size: 1.1rem; cursor: pointer; flex: 1; max-width: 300px;">
+                            {% if is_edit %}Guardar Cambios ✨{% else %}Publicar 🚀{% endif %}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -125,8 +161,19 @@
 
 <script>
 let selectedFiles = [];
+let deletedImageIds = [];
 let currentSlide = 0;
 let originalSubcategories = null;
+let preselectedSubcategory = "{% if is_edit and listing.subcategory %}{{ listing.subcategory.id }}{% endif %}";
+
+function removeExistingImage(id, btn) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
+        const slot = btn.parentElement;
+        slot.style.display = 'none';
+        deletedImageIds.push(id);
+        document.getElementById('deleted-images-input').value = deletedImageIds.join(',');
+    }
+}
 
 function handleNewImages(input) {
     if (input.files) {
@@ -221,7 +268,6 @@ previewCard.addEventListener('touchend', e => {
     if (touchendX > touchstartX + 50) goToSlide(currentSlide - 1);
 }, {passive: true});
 
-function updateStudioPreview() {
 // --- FILTRO DE SUBCATEGORÍAS ---
 let MASTER_SUB_OPTIONS = [];
 
@@ -268,6 +314,10 @@ function filterSubcategories() {
             const opt = document.createElement('option');
             opt.value = data.value;
             opt.textContent = data.text;
+            if (preselectedSubcategory && data.value == preselectedSubcategory) {
+                opt.selected = true;
+                defaultOpt.selected = false;
+            }
             subSelect.appendChild(opt);
         });
         subSelect.disabled = false;
@@ -337,6 +387,37 @@ select#form-subcategory {
     -webkit-appearance: none;
 }
 select option { background-color: #111 !important; color: #fff !important; }
+
+
+/* Estilos para el Switch de Disponibilidad */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255,255,255,0.1);
+  transition: .4s;
+  border-radius: 24px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider { background-color: var(--primary); }
+input:checked + .slider:before { transform: translateX(26px); }
 
 @media (max-width: 900px) {
     .publish-studio { padding: 20px 0; }

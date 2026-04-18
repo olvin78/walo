@@ -204,3 +204,20 @@ class MarketingConsent(models.Model):
 
     def __str__(self):
         return f"{self.email or 'Usuario ' + str(self.user.id)} - {self.created_at.strftime('%d/%m/%Y')}"
+
+class SearchHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_history')
+    query = models.CharField(max_length=255)
+    normalized_query = models.CharField(max_length=255, db_index=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    results_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Historial de Búsqueda"
+        verbose_name_plural = "Historiales de Búsqueda"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.query}"

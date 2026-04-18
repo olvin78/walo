@@ -35,25 +35,26 @@
   <style>
     /* Bug Report Styles */
     .report-bug-trigger {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      padding: 6px 12px;
-      border-radius: 8px;
+      background: rgba(251, 191, 36, 0.1);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      padding: 8px 16px;
+      border-radius: 12px;
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: 0.3s;
+      transition: all 0.3s;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       margin-left: 15px;
       font-family: inherit;
     }
 
     .report-bug-trigger:hover {
-      background: rgba(239, 68, 68, 0.2);
+      background: rgba(251, 191, 36, 0.2);
       transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.1);
     }
 
     .bug-modal-overlay {
@@ -548,9 +549,7 @@
 <body class="{% block body_class %}page-home{% endblock %}">
   <nav class="cmp-navbar">
     <div class="walo-container cmp-navbar-inner">
-      <a href="/" class="logo">WALO <span style="font-size: 0.7em; opacity: 0.5; margin: 0 5px;">·</span> <span
-          style="font-size: 0.6em; font-weight: 400; opacity: 0.7; letter-spacing: 2px;">NICARAGUA</span> <span
-          class="logo-spark">✦</span></a>
+      <a href="/" class="logo">WALO <span class="logo-spark">✦</span></a>
 
       <div class="cmp-navbar-menu" id="navbar-menu">
         <a href="{% url 'home' %}"><i data-lucide="home" class="nav-icon"></i> Inicio</a>
@@ -567,6 +566,7 @@
           </button>
           <div class="dropdown-menu" id="config-submenu">
             <a href="{% url 'user_profile' user.username %}"><i data-lucide="user" class="sub-icon"></i> Mi Perfil</a>
+            <a href="{% url 'my_listings' %}"><i data-lucide="package" class="sub-icon"></i> Mis publicaciones</a>
             <a href="{% url 'edit_profile' %}"><i data-lucide="edit-3" class="sub-icon"></i> Editar mi perfil</a>
             <a href="{% url 'account_change_password' %}"><i data-lucide="key" class="sub-icon"></i> Cambiar
               contraseña</a>
@@ -584,7 +584,7 @@
         {% endif %}
 
         {% if user.is_authenticated %}
-        <button class="report-bug-trigger" onclick="openBugModal()">⚠️ Reportar</button>
+        <button class="report-bug-trigger" onclick="openBugModal()">💡 Sugerencias</button>
         {% endif %}
       </div>
 
@@ -606,8 +606,8 @@
       <form action="{% url 'report_bug' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="bug-form-group">
-          <label>Describe el fallo:</label>
-          <textarea name="description" placeholder="Ej: No puedo subir fotos en el formulario de publicación..."
+          <label>¿Cómo podemos ayudar?</label>
+          <textarea name="description" placeholder="Explícanos tu sugerencia o el problema que encontraste..."
             required></textarea>
         </div>
         <div class="bug-form-group">
@@ -621,7 +621,7 @@
           </div>
         </div>
         <button type="submit" class="cmp-btn cmp-btn-primary" style="width: 100%; margin-top: 15px;">ENVIAR
-          REPORTE</button>
+          COMENTARIO</button>
       </form>
     </div>
   </div>
@@ -677,9 +677,6 @@
               Seguridad</a>
             <a href="#" style="color: var(--text-muted); text-decoration: none; transition: 0.3s;">Consejos para
               Vender</a>
-            <button onclick="openBugModal()"
-              style="background: none; border: none; color: var(--text-muted); cursor: pointer; text-align: left; padding: 0; font-family: inherit; transition: 0.3s;">Reportar
-              un Fallo</button>
           </div>
         </div>
 

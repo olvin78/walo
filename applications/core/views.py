@@ -17,7 +17,7 @@ from django.utils import timezone
 import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
-from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage
+from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory
 
 CITY_LANDINGS = {
     "managua": "Managua",
@@ -263,23 +263,172 @@ def explore(request):
     if request.user.is_authenticated:
         user_favorites = request.user.favorite_listings.values_list('id', flat=True)
 
+    has_results = listings.exists()
+    recommended_listings = None
+    suggested_categories = []
+
+    if not has_results:
+        # Lógica de recomendaciones
+        recommended_listings = get_search_recommendations(query, current_category, request.user)
+        # Sugerir categorías que tienen productos y no son la actual
+        suggested_categories = Category.objects.annotate(num_listings=Count('listings')).filter(num_listings__gt=0).exclude(id=current_category.id if current_category else None).order_by('?')[:6]
+
+    # Guardar en el historial
+    if query:
+        save_search_query(request.user, query, category=current_category, results_count=listings.count())
+
+    # Recomendaciones personalizadas (Para la sección lateral o si no hay resultados)
+    personalized_recommendations = get_personalized_recommendations(request.user, limit=8)
+
     context = {
         'listings': listings,
+        'has_results': has_results,
+        'recommended_listings': recommended_listings,
+        'personalized_recommendations': personalized_recommendations,
+        'suggested_categories': suggested_categories,
         'all_categories': all_categories,
         'subcategories': subcategories,
         'parent_category': parent_category,
-        'current_subcategory': current_subcategory,
-        'hide_subcategories': hide_subcategories,
-        'query': query,
         'current_category': current_category,
+        'current_subcategory': current_subcategory,
+        'query': query,
         'min_price': min_price,
         'max_price': max_price,
         'loc': location_filter,
         'sort': sort,
         'radius': radius,
-        'user_favorites': user_favorites,
+        'user_favorites': user_favorites
     }
     return render(request, 'core/explore.html', context)
+
+def normalize_query(query):
+    if not query:
+        return ""
+    # Convertir a minúsculas y quitar espacios extra
+    query = query.lower().strip()
+    # Quitar tildes
+    query = "".join(
+        c for c in unicodedata.normalize('NFD', query)
+        if unicodedata.category(c) != 'Mn'
+    )
+    # Limitar longitud
+    return query[:100]
+
+
+def save_search_query(user, query, category=None, results_count=0):
+    if not user.is_authenticated or not query.strip():
+        return
+        
+    normalized = normalize_query(query)
+    if not normalized:
+        return
+
+    # Evitar duplicados recientes (ej: 10 min)
+    time_threshold = timezone.now() - datetime.timedelta(minutes=10)
+    recent_search = SearchHistory.objects.filter(
+        user=user, 
+        normalized_query=normalized,
+        updated_at__gte=time_threshold
+    ).first()
+    
+    if recent_search:
+        recent_search.results_count = results_count
+        if category:
+            recent_search.category = category
+        recent_search.save()
+    else:
+        SearchHistory.objects.create(
+            user=user,
+            query=query[:255],
+            normalized_query=normalized,
+            category=category,
+            results_count=results_count
+        )
+
+
+def get_personalized_recommendations(user, limit=8):
+    if not user.is_authenticated:
+        return Listing.objects.filter(is_active=True).order_by('-created_at')[:limit]
+        
+    # 1. Ver qué categorías busca más
+    top_categories = SearchHistory.objects.filter(user=user, category__isnull=False).values('category').annotate(count=models.Count('id')).order_by('-count')[:2]
+    category_ids = [item['category'] for item in top_categories]
+    
+    # 2. Ver términos recientes (más allá de categorías)
+    recent_searches = SearchHistory.objects.filter(user=user).order_by('-updated_at')[:5]
+    queries = [s.normalized_query for s in recent_searches if len(s.normalized_query) > 2]
+    
+    recommendations = Listing.objects.filter(is_active=True).exclude(user=user)
+    
+    queries_q = Q()
+    for q in queries:
+        queries_q |= Q(title__icontains=q) | Q(description__icontains=q)
+    
+    # Prioridad: Categorías o Términos
+    personalized = recommendations.filter(
+        Q(category_id__in=category_ids) | queries_q
+    ).distinct().order_by('-created_at')[:limit]
+    
+    # Fallback si no hay suficientes
+    if personalized.count() < limit:
+        existing_ids = personalized.values_list('id', flat=True)
+        extras = Listing.objects.filter(is_active=True).exclude(user=user).exclude(id__in=existing_ids).order_by('-created_at')[:limit - personalized.count()]
+        return list(personalized) + list(extras)
+        
+    return personalized
+
+
+def get_search_recommendations(query, current_category=None, user=None):
+    """
+    Función helper para obtener recomendaciones cuando la búsqueda falla.
+    """
+    recommended = Listing.objects.filter(is_active=True)
+    
+    # Mapeo de palabras clave comunes
+    mappings = {
+        'comida': 'otros', 'alimento': 'otros', 'fruta': 'otros', 'manzana': 'otros', 'comidas': 'otros',
+        'coche': 'vehiculos', 'carro': 'v-car', 'moto': 'vehiculos', 'truck': 'vehiculos', 'camioneta': 'v-car',
+        'celular': 'celulares', 'telefono': 'celulares', 'iphone': 'celulares', 'movil': 'celulares', 'teléfono': 'celulares', 'móvil': 'celulares',
+        'ropa': 'm-moda', 'camisa': 'ropa', 'pantalon': 'ropa', 'zapato': 'ropa', 'vestido': 'ropa', 'moda': 'moda',
+        'tablet': 'tecnologia', 'pc': 'tecnologia', 'computadora': 'tecnologia', 'laptop': 'tecnologia', 'tech': 'tecnologia',
+        'juego': 'videojuegos', 'consola': 'videojuegos', 'ps5': 'videojuegos', 'nintendo': 'videojuegos', 'xbox': 'videojuegos', 'gamer': 'videojuegos',
+        'casa': 'inmuebles', 'apartamento': 'inmuebles', 'alquiler': 'inmuebles', 'terreno': 'inmuebles', 'oficina': 'inmuebles',
+        'pelota': 'deportes', 'balon': 'deportes', 'gym': 'deportes', 'deporte': 'deportes', 'futbol': 'deportes',
+        'mueble': 'hogar', 'decoracion': 'hogar', 'sofa': 'hogar', 'cama': 'hogar',
+    }
+    
+    query_str = query.lower() if query else ""
+    tokens = query_str.split()
+    matched_cat_slugs = []
+    for token in tokens:
+        if token in mappings:
+            matched_cat_slugs.append(mappings[token])
+            
+    # Caso 1: Por categoría mapeada (búsqueda actual)
+    if matched_cat_slugs:
+        cat_results = recommended.filter(category__slug__in=matched_cat_slugs).order_by('-created_at')[:8]
+        if cat_results.exists():
+            return cat_results
+
+    # Caso 2: Por coincidencia parcial sencilla (búsqueda actual)
+    if query_str:
+        search_q = Q()
+        for token in tokens:
+            if len(token) > 2:
+                search_q |= Q(title__icontains=token) | Q(category__name__icontains=token)
+        
+        sim_results = recommended.filter(search_q).order_by('-created_at')[:8]
+        if sim_results.exists():
+            return sim_results
+
+    # Caso 3: Recomendaciones personalizadas basadas en HISTORIAL
+    if user and user.is_authenticated:
+        perso = get_personalized_recommendations(user, limit=8)
+        if perso:
+            return perso
+
+    # Caso 4: Fallback a productos recientes (nada relacionado encontrado)
+    return recommended.order_by('-created_at')[:8]
 
 
 def city_landing(request, city_slug):
@@ -379,7 +528,12 @@ def category_detail(request, slug):
     return render(request, "core/category_detail.html", context)
 
 def listing_detail_slug(request, listing_id, slug):
-    listing = get_object_or_404(Listing, id=listing_id, is_active=True)
+    listing = get_object_or_404(Listing, id=listing_id)
+    
+    # Si el anuncio no está activo, solo el dueño puede verlo
+    if not listing.is_active and listing.user != request.user:
+        raise Http404("No se encontró el anuncio o no está disponible actualmente.")
+
     if slug != listing.slug:
         return redirect(listing.get_absolute_url(), permanent=True)
 
@@ -398,7 +552,11 @@ def listing_detail_slug(request, listing_id, slug):
 
 
 def listing_detail(request, listing_id):
-    listing = get_object_or_404(Listing, id=listing_id, is_active=True)
+    listing = get_object_or_404(Listing, id=listing_id)
+    
+    if not listing.is_active and listing.user != request.user:
+        raise Http404("No se encontró el anuncio o no está disponible actualmente.")
+
     return redirect(listing.get_absolute_url(), permanent=True)
 
 @login_required
@@ -805,3 +963,90 @@ def save_marketing_consent(request):
             
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
+
+@login_required
+def my_listings(request):
+    """
+    Vista para que el usuario gestione sus propias publicaciones.
+    """
+    listings = Listing.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, "core/my_listings.html", {'listings': listings})
+
+@login_required
+def edit_listing(request, listing_id):
+    """
+    Vista para editar un anuncio existente. Reutiliza la lógica de creación.
+    """
+    listing = get_object_or_404(Listing, id=listing_id, user=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        price = request.POST.get('price')
+        category_id = request.POST.get('category')
+        subcategory_id = request.POST.get('subcategory')
+        location = request.POST.get('location', 'Nicaragua')
+        is_active = request.POST.get('is_active') == 'on'
+        payment_methods_list = request.POST.getlist('payment_methods')
+        payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
+        
+        if not all([title, price, category_id]):
+            messages.error(request, "Por favor completa todos los campos obligatorios.")
+            return redirect('edit_listing', listing_id=listing.id)
+
+        category = get_object_or_404(Category, id=category_id)
+        subcategory = None
+        if subcategory_id:
+            subcategory = Subcategory.objects.filter(id=subcategory_id, category=category).first()
+        
+        try:
+            listing.title = title
+            listing.description = description
+            listing.price = price
+            listing.category = category
+            listing.subcategory = subcategory
+            listing.location = location
+            listing.is_active = is_active
+            listing.payment_methods = payment_methods
+            
+            # Gestionar eliminación de imágenes existentes
+            deleted_images = request.POST.get('deleted_images', '')
+            if deleted_images:
+                ids_to_delete = [id_str for id_str in deleted_images.split(',') if id_str]
+                if 'main' in ids_to_delete:
+                    listing.image = None
+                
+                other_ids = [int(i) for i in ids_to_delete if i.isdigit()]
+                ListingImage.objects.filter(id__in=other_ids, listing=listing).delete()
+
+            # Gestionar nuevas imágenes si se suben
+            new_images = request.FILES.getlist('images')
+            if new_images:
+                # Si no hay imagen principal o se borró, la primera nueva es la principal
+                if not listing.image:
+                    listing.image = new_images[0]
+                
+                for img in new_images:
+                    ListingImage.objects.create(listing=listing, image=img)
+            
+            # Fallback: Si se borró la principal y no hay nuevas, intentar promover una secundaria
+            if not listing.image:
+                first_secondary = listing.images.first()
+                if first_secondary:
+                    listing.image = first_secondary.image
+            
+            listing.save()
+            messages.success(request, "¡Tu anuncio ha sido actualizado correctamente!")
+            return redirect('my_listings')
+        except Exception as e:
+            messages.error(request, f"Hubo un error al actualizar: {str(e)}")
+            return redirect('edit_listing', listing_id=listing.id)
+            
+    categories = Category.objects.all()
+    subcategories = Subcategory.objects.select_related('category').all()
+    return render(request, 'core/create_listing.html', {
+        'categories': categories, 
+        'subcategories': subcategories,
+        'listing': listing,
+        'is_edit': True
+    })

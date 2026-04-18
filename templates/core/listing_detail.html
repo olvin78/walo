@@ -10,58 +10,68 @@
 {% endblock %}
 
 {% block content %}
-<main class="pro-detail-page pt-4 pt-lg-5">
+<main class="pro-detail-page pt-5">
     <div class="walo-main-container">
         
-        <!-- GALERÍA MINIMALISTA -->
-        <section class="walo-media-card" id="media-root">
-            <div class="walo-media-carousel" id="main-track">
-                <div class="gallery-slide">
-                    <img src="{% if listing.image %}{{ listing.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ listing.title }}">
-                </div>
-                {% for extra_img in listing.images.all %}
-                    {% if listing.image and extra_img.image.url != listing.image.url %}
-                    <div class="gallery-slide">
-                        <img src="{{ extra_img.image.url }}" alt="{{ listing.title }} - Foto {{ forloop.counter }}">
+        <div class="detail-split-layout">
+            <!-- COLUMNA IZQUIERDA: GALERÍA -->
+            <div class="detail-left-col">
+                <section class="walo-media-card" id="media-root">
+                    <div class="walo-media-carousel" id="main-track">
+                        <div class="gallery-slide">
+                            <img src="{% if listing.image %}{{ listing.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ listing.title }}">
+                        </div>
+                        {% for extra_img in listing.images.all %}
+                            {% if listing.image and extra_img.image.url != listing.image.url %}
+                            <div class="gallery-slide">
+                                <img src="{{ extra_img.image.url }}" alt="{{ listing.title }} - Foto {{ forloop.counter }}">
+                            </div>
+                            {% endif %}
+                        {% endfor %}
                     </div>
+
+                    {% if listing.images.count > 0 %}
+                    <div class="gallery-dots-nav" id="main-dots"></div>
                     {% endif %}
-                {% endfor %}
+                </section>
             </div>
 
-            {% if listing.images.count > 0 %}
-            <div class="gallery-dots-nav" id="main-dots"></div>
-            {% endif %}
-        </section>
+            <!-- COLUMNA DERECHA: INFO Y ACCIONES -->
+            <div class="detail-right-col">
+                <section class="walo-info-section">
+                    <span class="category-label">{{ listing.category.name }}</span>
+                    <h1 class="listing-title-main">{{ listing.title }}</h1>
+                    
+                    <div class="listing-price-main">
+                        <b>C$</b> {{ listing.price|floatformat:2 }}
+                    </div>
+                    
+                    <div class="listing-meta-tags">
+                        {% if listing.is_active %}
+                        <span class="status-badge available">Disponible</span>
+                        {% endif %}
+                        <div class="location-box">
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ listing.location|urlencode }}+Nicaragua" target="_blank">
+                                <i data-lucide="map-pin"></i> {{ listing.location }}
+                            </a>
+                        </div>
+                    </div>
+                </section>
 
-        <!-- INFO SIN CAJAS -->
-        <section class="walo-info-section">
-            <span class="category-label">{{ listing.category.name }}</span>
-            <h1 class="listing-title-main">{{ listing.title }}</h1>
-            <div class="listing-price-main">
-                <b>C$</b> {{ listing.price }}
+                <div class="walo-actions-group">
+                    <a href="{% url 'start_chat' listing.id %}" class="btn-walo-action btn-msg">
+                        ENVIAR MENSAJE
+                    </a>
+                    <a href="javascript:void(0)" onclick="openOfferModal()" class="btn-walo-action btn-of">
+                        HACER OFERTA
+                    </a>
+                </div>
+                <div class="btn-fv-row">
+                    <button class="btn-fv-clean" id="fav-trigger" onclick="toggleFav(this, {{ listing.id }})">
+                        <i data-lucide="heart" style="width: 22px;"></i> AÑADIR A FAVORITOS
+                    </button>
+                </div>
             </div>
-            
-            <div class="listing-meta-tags">
-                <span style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 4px 12px; border-radius: 50px; font-size: 0.65rem; font-weight: 800;">● {{ listing.get_status_display|upper }}</span>
-                <a href="https://www.google.com/maps/search/?api=1&query={{ listing.location|urlencode }}+Nicaragua" target="_blank">
-                    <i data-lucide="map-pin" style="width: 14px;"></i> {{ listing.location }}
-                </a>
-            </div>
-        </section>
-
-        <!-- BOTONES MINIMALISTAS -->
-        <div class="walo-actions-group">
-            <a href="{% url 'start_chat' listing.id %}" class="btn-walo-action btn-msg">
-                ENVIAR MENSAJE
-            </a>
-            <a href="javascript:void(0)" onclick="openOfferModal()" class="btn-walo-action btn-of">
-                HACER OFERTA
-            </a>
-        </div>
-        <div class="btn-fv-row">
-            <button class="btn-fv-clean" id="fav-trigger" onclick="toggleFav(this, {{ listing.id }})">
-                <i data-lucide="heart" style="width: 22px;"></i> AÑADIR A FAVORITOS
-            </button>
         </div>
 
         <!-- VENDEDOR (BLOQUE LIMPIO) -->

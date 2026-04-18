@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport
+from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport, SearchHistory
 from django.utils.safestring import mark_safe
 
 
@@ -78,3 +78,11 @@ class MarketingConsentAdmin(admin.ModelAdmin):
     list_filter = ("allows_notifications", "allows_marketing", "created_at")
     search_fields = ("email", "user__username", "user__email")
     readonly_fields = ("created_at",)
+
+@admin.register(SearchHistory)
+class SearchHistoryAdmin(admin.ModelAdmin):
+    list_display = ('query', 'user', 'category', 'results_count', 'updated_at')
+    list_filter = ('category', 'created_at', 'updated_at')
+    search_fields = ('query', 'normalized_query', 'user__username')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'updated_at'

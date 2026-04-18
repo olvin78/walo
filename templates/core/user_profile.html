@@ -4,7 +4,7 @@
 {% block title %}Perfil de {{ profile_user.username }} | Walo Fluido{% endblock %}
 
 {% block content %}
-<div class="pro-fluid-wrapper">
+<div class="pro-fluid-wrapper" style="padding-bottom: 80px;">
     <!-- Hero Stage (Simple Gradient) -->
     <div class="pro-fluid-hero">
         <div class="pro-fluid-bg"></div>
@@ -174,7 +174,7 @@
 .fluid-section-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 40px; }
 .fluid-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 30px; }
 
-.f-item { text-decoration: none; color: inherit; group: hover; }
+.f-item { text-decoration: none; color: inherit; }
 .f-item-media { position: relative; border-radius: 30px; overflow: hidden; aspect-ratio: 1; margin-bottom: 20px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(255,255,255,0.05); }
 .f-item:hover .f-item-media { transform: scale(1.03); border-color: #22c55e; }
 .f-item-media img { width: 100%; height: 100%; object-fit: cover; }
