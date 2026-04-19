@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 import os
 
@@ -15,10 +16,12 @@ if env_file.exists():
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="https://www.igualo.com")
+GOOGLE_TAG_MANAGER_ID = env("GOOGLE_TAG_MANAGER_ID", default="").strip()
 
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
-    default=["localhost", "127.0.0.1", "igualo.olvinduarte.com"],
+    default=["localhost", "127.0.0.1", "igualo.com", "www.igualo.com"],
 )
 
 CSRF_TRUSTED_ORIGINS = env.list(
@@ -26,9 +29,17 @@ CSRF_TRUSTED_ORIGINS = env.list(
     default=[
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        "https://igualo.olvinduarte.com",
+        "https://igualo.com",
+        "https://www.igualo.com",
     ],
 )
+
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=[PUBLIC_BASE_URL, "http://localhost:3000", "http://127.0.0.1:3000"],
+)
+
+CORS_ALLOW_CREDENTIALS = False
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -39,15 +50,21 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "django.contrib.sitemaps",
+    "corsheaders",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "applications.core",
+    "applications.api",
+    "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -59,8 +76,8 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    MIDDLEWARE.insert(1, "config.middleware.HostRedirectMiddleware")
-    MIDDLEWARE.insert(4, "config.middleware.AllauthDebugMiddleware")
+    MIDDLEWARE.insert(2, "config.middleware.HostRedirectMiddleware")
+    MIDDLEWARE.insert(6, "config.middleware.AllauthDebugMiddleware")
 
 ROOT_URLCONF = "config.urls"
 
@@ -75,6 +92,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.tracking",
             ],
         },
     }
@@ -106,11 +124,33 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ] + (["rest_framework.renderers.BrowsableAPIRenderer"] if DEBUG else []),
+    "DEFAULT_PAGINATION_CLASS": "applications.api.pagination.DefaultPagination",
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 
 LOGIN_URL = "/accounts/login/"
 

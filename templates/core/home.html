@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Igualo | Compra y venta online en Nicaragua{% endblock %}
-{% block meta_description %}Igualo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios gratis, encuentra ofertas locales y conecta con compradores reales.{% endblock %}
-{% block og_title %}Igualo | Compra y venta online en Nicaragua{% endblock %}
-{% block og_description %}Compra y vende en Nicaragua con Igualo. Marketplace local con ofertas reales cerca de ti.{% endblock %}
-{% block twitter_title %}Igualo | Compra y venta online en Nicaragua{% endblock %}
-{% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Publica anuncios y encuentra ofertas.{% endblock %}
-{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{% endblock %}
-{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{% endblock %}
-{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endblock %}
+{% block title %}IGUALO | Marketplace para comprar y vender en Nicaragua{% endblock %}
+{% block meta_description %}Comprá y vendé fácil en Nicaragua con IGUALO. Publicá anuncios gratis de celulares, motos, ropa, tecnología, hogar, servicios y más.{% endblock %}
+{% block og_title %}IGUALO | Marketplace para comprar y vender en Nicaragua{% endblock %}
+{% block og_description %}Comprá y vendé en Nicaragua con IGUALO. Marketplace local con ofertas reales cerca de vos.{% endblock %}
+{% block twitter_title %}IGUALO | Marketplace para comprar y vender en Nicaragua{% endblock %}
+{% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Publicá anuncios y encontrá ofertas.{% endblock %}
+{% block canonical %}https://www.igualo.com/{% endblock %}
+{% block og_url %}https://www.igualo.com/{% endblock %}
+{% block og_image %}https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endblock %}
 {% block body_class %}page-home-pro{% endblock %}
 
 {% block extra_head %}
@@ -17,11 +17,11 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Igualo",
-    "url": "{{ request.scheme }}://{{ request.get_host }}/",
+    "name": "IGUALO",
+    "url": "https://www.igualo.com/",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "{{ request.scheme }}://{{ request.get_host }}/explorar/?q={search_term_string}",
+      "target": "https://www.igualo.com/explorar/?q={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   }
@@ -30,8 +30,9 @@
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Igualo",
-    "url": "{{ request.scheme }}://{{ request.get_host }}/"
+    "name": "IGUALO",
+    "url": "https://www.igualo.com/",
+    "logo": "https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}"
   }
 </script>
 <style>
@@ -124,8 +125,7 @@
         </div>
         <div class="container hero-container">
             <div class="hero-content">
-                <span class="badge-safe">🚀 EL MARKETPLACE MÁS SEGURO DE NICARAGUA</span>
-                <h1>Todo lo que buscas, <br> <span class="text-primary">más cerca que nunca.</span></h1>
+                <h1>El marketplace para comprar y <br> <span class="text-primary">vendé fácil en Nicaragua.</span></h1>
                 <p>Miles de productos verificados. Sin trampas, sin comisiones.</p>
                 
                 <div class="search-box-impact">
@@ -210,11 +210,13 @@
             min-height: auto !important;
         }
         .section-stories-discovery {
-            padding: 40px 0 20px !important;
+            padding: 40px 0 56px !important;
             margin-top: 10px;
+            margin-bottom: 18px;
         }
         .stories-scroll {
             gap: 20px !important;
+            padding-bottom: 18px !important;
         }
     }
 
@@ -270,6 +272,11 @@
                 <div class="item-card-pro">
                     <a href="{{ list.get_absolute_url }}" class="card-link">
                         <div class="product-img-wrapper">
+                            {% if list.is_promoted %}
+                            <div class="featured-badge-pro" title="Anuncio Priorizado">
+                                <span class="star-icon">★</span>
+                            </div>
+                            {% endif %}
                             <img src="{% if list.image %}{{ list.get_thumb }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
                                  alt="{{ list.title }}" 
                                  loading="lazy" 
@@ -394,6 +401,11 @@
                 <div class="item-card-pro">
                     <a href="{{ list.get_absolute_url }}" class="card-link">
                         <div class="product-img-wrapper">
+                            {% if list.is_promoted %}
+                            <div class="featured-badge-pro" title="Anuncio Priorizado">
+                                <span class="star-icon">★</span>
+                            </div>
+                            {% endif %}
                             <img src="{% if list.image %}{{ list.get_thumb }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
                                  alt="{{ list.title }} en {{ list.location }}" 
                                  loading="lazy" 
@@ -414,8 +426,9 @@
         </div>
     </section>
 
+    {% if system_payments_enabled %}
     <!-- 5. GESTIÓN PRO: Herramientas para el usuario -->
-    <section class="section-pro-tools">
+    <section class="section-pro-tools" id="soluciones-pro">
         <div class="igualo-container">
             <div class="tools-grid-pro">
                 <div class="tools-text">
@@ -435,9 +448,10 @@
             </div>
         </div>
     </section>
+    {% endif %}
 
     <!-- 6. PRUEBA SOCIAL: Historias de Éxito -->
-    <section class="section-testimonials">
+    <section class="section-testimonials" style="margin-bottom: 10px !important; padding-bottom: 40px !important;">
         <div class="igualo-container">
             <div class="section-header-centered">
                 <span class="pro-tag">COMUNIDAD</span>
@@ -448,7 +462,7 @@
                 <div class="testimonial-card">
                     <div class="testi-user">
                         <div class="testi-avatar">
-                            <img src="{% static 'img/testi_carlos.png' %}" alt="Carlos en Managua" loading="lazy">
+                            <img src="{% static 'img/testi_carlos.png' %}" alt="Carlos en Managua - IGUALO" loading="lazy" decoding="async">
                         </div>
                         <div class="testi-meta">
                             <strong>@carlos_mga</strong>
@@ -460,7 +474,7 @@
                 <div class="testimonial-card">
                     <div class="testi-user">
                         <div class="testi-avatar">
-                            <img src="{% static 'img/testi_elena.png' %}" alt="Elena en Leon" loading="lazy">
+                            <img src="{% static 'img/testi_elena.png' %}" alt="Elena en León - IGUALO" loading="lazy" decoding="async">
                         </div>
                         <div class="testi-meta">
                             <strong>@elena_leon</strong>
@@ -472,7 +486,7 @@
                 <div class="testimonial-card">
                     <div class="testi-user">
                         <div class="testi-avatar">
-                            <img src="{% static 'img/testi_jorge.png' %}" alt="Jorge en Esteli" loading="lazy">
+                            <img src="{% static 'img/testi_jorge.png' %}" alt="Jorge en Estelí - IGUALO" loading="lazy" decoding="async">
                         </div>
                         <div class="testi-meta">
                             <strong>@jorge_estelí</strong>
@@ -483,9 +497,10 @@
                 </div>
             </div>
         </div>
-
+    </section>
+    
     <!-- 7. CIUDADES DESTACADAS (SEO LOCAL) -->
-    <section class="section-cities" style="padding: 60px 0; border-top: 1px solid rgba(255,255,255,0.08);">
+    <section class="section-cities" style="margin: 0 !important; padding: 40px 0 60px !important; border-top: 1px solid rgba(255,255,255,0.08);">
         <div class="igualo-container">
             <div style="display: flex; flex-direction: column; gap: 20px; text-align: center;">
                 <h2 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Ciudades destacadas</h2>
@@ -689,23 +704,23 @@
     .search-suggestions a:hover { color: var(--primary); }
 
     /* STORIES */
-    .section-stories-discovery { padding: 40px 0; border-bottom: 1px solid var(--glass-border); }
+    .section-stories-discovery { padding: 40px 0 64px; border-bottom: 1px solid var(--glass-border); }
     .stories-scroll {
-        display: flex; gap: 30px; overflow-x: auto; padding: 20px 0; justify-content: center;
+        display: flex; gap: 30px; overflow-x: auto; padding: 20px 0 12px; justify-content: center;
         scrollbar-width: thin; scrollbar-color: var(--primary) transparent;
     }
     @media (max-width: 992px) { .stories-scroll { justify-content: flex-start; padding-left: 20px; } }
     .stories-scroll::-webkit-scrollbar { height: 4px; }
     .stories-scroll::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.3); border-radius: 10px; }
     
-    .story-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; min-width: 80px; }
+    .story-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; min-width: 80px; padding-bottom: 6px; }
     .story-circle-pro {
-        width: 70px; height: 70px; background: var(--glass-bg); border: 2px solid var(--glass-border);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; transition: 0.3s;
+        width: 85px; height: 85px; background: var(--glass-bg); border: 2px solid var(--glass-border);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transition: 0.3s;
     }
     .story-btn:hover .story-circle-pro { transform: scale(1.05); border-color: var(--primary); }
     .story-btn.yours .story-circle-pro { background: var(--primary); color: #000; border: none; font-weight: 900; }
-    .story-btn p { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+    .story-btn p { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.8); }
 
     /* BENTO GRID */
     .section-bento { padding: 80px 0; }
@@ -829,15 +844,30 @@
 
     /* TESTIMONIALS */
     .section-header-centered { text-align: center; margin-bottom: 60px; }
-    .section-header-centered h2 { font-size: 3.5rem; font-weight: 900; }
-    .section-testimonials { padding: 100px 0 150px; background: radial-gradient(circle at bottom, rgba(34,197,94,0.05) 0%, transparent 50%); }
-    .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-    .testimonial-card { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 40px; border-radius: 32px; transition: 0.3s; }
+    .section-header-centered h2 { font-size: 3.5rem; font-weight: 950; letter-spacing: -2px; }
+    .section-testimonials { padding: 40px 0 5px !important; background: radial-gradient(circle at bottom right, rgba(34,197,94,0.08) 0%, transparent 40%); margin-bottom: 0 !important; }
+    .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; }
+    .testimonial-card { 
+        background: rgba(255, 255, 255, 0.03); 
+        border: 1px solid rgba(255, 255, 255, 0.07); 
+        padding: 45px; 
+        border-radius: 40px; 
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        backdrop-filter: blur(12px);
+    }
+    .testimonial-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(34, 197, 94, 0.3);
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+    }
     .testi-user { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
     .testi-avatar { 
-        width: 60px; height: 60px; 
-        background: #222; border-radius: 50%; 
-        overflow: hidden; border: 2px solid var(--primary);
+        width: 80px; height: 80px; 
+        background: #000; border-radius: 24px; 
+        overflow: hidden; 
+        border: 3px solid rgba(34, 197, 94, 0.2);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     }
     .testi-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .testi-meta strong { display: block; font-size: 1rem; }
@@ -935,7 +965,7 @@
 
         /* 2. Stories Smooth */
         .story-btn p { font-size: 0.7rem; opacity: 0.8; }
-        .section-stories-discovery { padding: 30px 0; }
+        .section-stories-discovery { padding: 30px 0 56px; }
 
         /* 3. Bento Pro Mobile - EL ARREGLO */
         .bento-grid-pro { grid-template-columns: 1fr !important; gap: 20px; }

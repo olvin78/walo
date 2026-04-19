@@ -7,7 +7,8 @@ from .views import (add_review, category_detail, chat_view, create_listing,
                     make_offer, signup, start_conversation, toggle_favorite,
                     toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug,
                     terms_view, privacy_view, cookies_view, legal_notice_view, save_marketing_consent,
-                    city_landing, city_category_landing, mark_image_viewed, my_listings, edit_listing)
+                     city_landing, city_category_landing, mark_image_viewed, my_listings, edit_listing,
+                     delete_listing)
 
 urlpatterns = [
     path("", home, name="home"),
@@ -43,4 +44,5 @@ urlpatterns = [
     path("reportar-fallo/", report_bug, name="report_bug"),
     path("mis-anuncios/", my_listings, name="my_listings"),
     path("anuncio/<int:listing_id>/editar/", edit_listing, name="edit_listing"),
+    path("anuncio/<int:listing_id>/eliminar/", delete_listing, name="delete_listing"),
 ]

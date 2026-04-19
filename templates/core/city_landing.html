@@ -2,28 +2,28 @@
 {% load static %}
 
 {% block title %}
-  {% if category %}{{ category.name }} en {{ city_name }} | Igualo Nicaragua{% else %}Anuncios en {{ city_name }} | Igualo Nicaragua{% endif %}
+  {% if category %}{{ category.name }} en {{ city_name }} | IGUALO{% else %}Anuncios en {{ city_name }}, Nicaragua | IGUALO{% endif %}
 {% endblock %}
 {% block meta_description %}
-  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }}. Compra y vende en Igualo con personas cerca de ti.{% else %}Explora anuncios en {{ city_name }}. Compra y vende en Igualo con personas cerca de ti.{% endif %}
+  {% if category %}Encontrá {{ category.name|lower }} en {{ city_name }}. Comprá y vendé en IGUALO con personas cerca de vos.{% else %}Explorá anuncios en {{ city_name }}, Nicaragua. Comprá y vendé en IGUALO con personas de tu comunidad.{% endif %}
 {% endblock %}
 {% block og_title %}
-  {% if category %}{{ category.name }} en {{ city_name }} | Igualo Nicaragua{% else %}Anuncios en {{ city_name }} | Igualo Nicaragua{% endif %}
+  {% if category %}{{ category.name }} en {{ city_name }} | IGUALO{% else %}Anuncios en {{ city_name }}, Nicaragua | IGUALO{% endif %}
 {% endblock %}
 {% block og_description %}
-  {% if category %}Compra y vende {{ category.name|lower }} en {{ city_name }} con Igualo.{% else %}Compra y vende en {{ city_name }} con Igualo.{% endif %}
+  {% if category %}Comprá y vendé {{ category.name|lower }} en {{ city_name }} con IGUALO.{% else %}Comprá y vendé en {{ city_name }} con IGUALO.{% endif %}
 {% endblock %}
 {% block twitter_title %}
-  {% if category %}{{ category.name }} en {{ city_name }} | Igualo Nicaragua{% else %}Anuncios en {{ city_name }} | Igualo Nicaragua{% endif %}
+  {% if category %}{{ category.name }} en {{ city_name }} | IGUALO{% else %}Anuncios en {{ city_name }}, Nicaragua | IGUALO{% endif %}
 {% endblock %}
 {% block twitter_description %}
-  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }} con Igualo.{% else %}Encuentra ofertas en {{ city_name }} con Igualo.{% endif %}
+  {% if category %}Encontrá {{ category.name|lower }} en {{ city_name }} con IGUALO.{% else %}Encontrá ofertas en {{ city_name }} con IGUALO.{% endif %}
 {% endblock %}
 {% block canonical %}
-  {% if category %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_landing' city_slug %}{% endif %}
+  {% if category %}https://www.igualo.com{% url 'city_category_landing' city_slug category.slug %}{% else %}https://www.igualo.com{% url 'city_landing' city_slug %}{% endif %}
 {% endblock %}
 {% block og_url %}
-  {% if category %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_landing' city_slug %}{% endif %}
+  {% if category %}https://www.igualo.com{% url 'city_category_landing' city_slug category.slug %}{% else %}https://www.igualo.com{% url 'city_landing' city_slug %}{% endif %}
 {% endblock %}
 {% block robots %}{% if has_results %}index, follow{% else %}noindex, follow{% endif %}{% endblock %}
 
@@ -46,11 +46,18 @@
     <div class="products-grid">
       {% for listing in listings %}
       <a href="{{ listing.get_absolute_url }}" class="product-card">
-        {% if listing.image %}
-        <img src="{{ listing.image.url }}" alt="{{ listing.title }} en {{ listing.location }}" class="product-img" loading="lazy">
-        {% else %}
-        <img src="{% static 'img/hero_bg.png' %}" alt="Anuncio sin imagen" class="product-img" loading="lazy">
-        {% endif %}
+        <div class="product-img-wrapper">
+          {% if listing.is_promoted %}
+          <div class="featured-badge-pro" title="Anuncio Priorizado">
+              <span class="star-icon">★</span>
+          </div>
+          {% endif %}
+          {% if listing.image %}
+          <img src="{{ listing.get_thumb }}" alt="{{ listing.title }} en {{ listing.location }}" class="product-img" loading="lazy">
+          {% else %}
+          <img src="{% static 'img/hero_bg.png' %}" alt="Anuncio sin imagen" class="product-img" loading="lazy">
+          {% endif %}
+        </div>
         <div class="product-info">
           <div class="product-price">C$ {{ listing.price }}</div>
           <div class="product-title">{{ listing.title }}</div>

@@ -7,7 +7,7 @@ Practical security auditor for a Django SSR marketplace, focused on real-world a
 Prevent unauthorized access, protect user data, harden upload handling, and ensure production settings are safe without introducing heavy tooling or complexity.
 
 ## Project Context
-Walo is a Django SSR marketplace for Nicaragua with public listings, authenticated user actions, and staff/admin workflows. It runs in Docker behind Nginx and uses PostgreSQL.
+IGUALO is a Django SSR marketplace for Nicaragua with public listings, authenticated user actions, and staff/admin workflows. It runs in Docker behind Nginx and uses PostgreSQL.
 
 ## High-Risk Areas To Audit
 - Authentication Flows

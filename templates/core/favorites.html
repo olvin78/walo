@@ -14,6 +14,11 @@
     {% for listing in listings %}
       <a href="{{ listing.get_absolute_url }}" class="product-card">
         <div class="product-img-wrapper">
+          {% if listing.is_promoted %}
+            <div class="featured-badge-pro" title="Anuncio Priorizado">
+              <span class="star-icon">★</span>
+            </div>
+          {% endif %}
           {% if listing.image %}
             <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async">
           {% else %}

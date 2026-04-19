@@ -1,12 +1,44 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ listing.title }} | Igualo Nicaragua{% endblock %}
-{% block meta_description %}{{ listing.title }} en {{ listing.location }}. {{ listing.description|striptags|truncatechars:150 }}{% endblock %}
+{% block title %}{{ listing.title }} en {{ listing.location }}, Nicaragua | IGUALO{% endblock %}
+{% block meta_description %}Comprá {{ listing.title }} en {{ listing.location }} al mejor precio. Anuncio publicado en IGUALO, el marketplace de confianza en Nicaragua.{% endblock %}
+{% block og_title %}{{ listing.title }} en {{ listing.location }} | IGUALO{% endblock %}
+{% block og_description %}Disponible ahora: {{ listing.title }} en {{ listing.location }}. Mirá fotos y contactá al vendedor en IGUALO Nicaragua.{% endblock %}
+{% block canonical %}https://www.igualo.com{{ listing.get_absolute_url }}{% endblock %}
+{% block og_url %}https://www.igualo.com{{ listing.get_absolute_url }}{% endblock %}
+{% block og_image %}{% if listing.image %}https://www.igualo.com{{ listing.image.url }}{% else %}https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endif %}{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/pages/detail.css' %}">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "{{ listing.title|escapejs }}",
+  "image": [
+    {% if listing.image %}"https://www.igualo.com{{ listing.image.url }}"{% else %}"https://www.igualo.com{% static 'img/hero_bg.png' %}"{% endif %}
+    {% for extra in listing.images.all %}
+    ,"https://www.igualo.com{{ extra.image.url }}"
+    {% endfor %}
+  ],
+  "description": "{{ listing.description|striptags|truncatechars:160|escapejs }}",
+  "brand": {
+    "@type": "Brand",
+    "name": "IGUALO"
+  },
+  "offers": {
+    "@type": "Offer",
+    "url": "https://www.igualo.com{{ listing.get_absolute_url }}",
+    "priceCurrency": "NIO",
+    "price": "{{ listing.price }}",
+    "availability": "https://schema.org/InStock",
+    "itemCondition": "https://schema.org/UsedCondition",
+    "priceValidUntil": "2026-12-31"
+  }
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -18,7 +50,12 @@
             <div class="detail-left-col">
                 <section class="igualo-media-card" id="media-root">
                     <div class="igualo-media-carousel" id="main-track">
-                        <div class="gallery-slide">
+                        <div class="gallery-slide" style="position: relative;">
+                            {% if listing.is_promoted %}
+                            <div class="featured-badge-pro" title="Anuncio Priorizado" style="top: 25px; right: 25px;">
+                                <span class="star-icon">★</span>
+                            </div>
+                            {% endif %}
                             <img src="{% if listing.image %}{{ listing.get_large }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
                                  alt="{{ listing.title }}" 
                                  fetchpriority="high"

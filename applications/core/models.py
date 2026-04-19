@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
 from django.urls import reverse
 from django.utils.text import slugify
 
@@ -8,12 +9,13 @@ class Category(models.Model):
     icon = models.CharField(max_length=50, help_text="Emoji o clase de icono")
     description = models.TextField(blank=True, help_text="Descripción de la categoría")
     keywords = models.TextField(blank=True, help_text="Palabras clave para el buscador (ej: celular, movil, cable)")
-    order = models.PositiveIntegerField(default=100, help_text="Orden de visualización (menor número primero)")
+    order = models.PositiveIntegerField(default=100, verbose_name="orden", help_text="Orden de visualización (menor número primero)")
     image = models.ImageField(upload_to='categories/', null=True, blank=True)
     slug = models.SlugField(unique=True)
 
     class Meta:
-        verbose_name_plural = "Categories"
+        verbose_name = "Categoría"
+        verbose_name_plural = "Categorías"
         ordering = ['order', 'name']
 
     def __str__(self):
@@ -62,11 +64,12 @@ class Subcategory(models.Model):
     icon = models.CharField(max_length=50, help_text="Emoji o clase de icono")
     description = models.TextField(blank=True, help_text="Descripción de la subcategoría")
     keywords = models.TextField(blank=True, help_text="Palabras clave para el buscador")
-    order = models.PositiveIntegerField(default=100, help_text="Orden de visualización")
+    order = models.PositiveIntegerField(default=100, verbose_name="orden", help_text="Orden de visualización")
     slug = models.SlugField(unique=True)
 
     class Meta:
-        verbose_name_plural = "Subcategories"
+        verbose_name = "Subcategoría"
+        verbose_name_plural = "Subcategorías"
         ordering = ['order', 'name']
 
     def __str__(self):
@@ -84,10 +87,11 @@ class Listing(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='listings/', null=True, blank=True)
     payment_methods = models.CharField(max_length=200, default='Efectivo')
-    is_active = models.BooleanField(default=True, help_text="¿Está el anuncio visible al público?")
-    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True, verbose_name="activo", help_text="¿Está el anuncio visible al público?")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     favorites = models.ManyToManyField(User, related_name='favorite_listings', blank=True)
+    is_featured_paid = models.BooleanField(default=False, verbose_name="destacado", help_text="¿Anuncio destacado/priorizado?")
 
     def get_absolute_url(self):
         return reverse('listing_detail', kwargs={'listing_id': self.pk, 'slug': self.slug})
@@ -142,6 +146,19 @@ class Listing(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        verbose_name = "Anuncio"
+        verbose_name_plural = "Anuncios"
+
+    @property
+    def is_promoted(self):
+        if not SystemPaymentSetting.get_solo().enabled:
+            return False
+        if self.is_featured_paid:
+            return True
+        profile = getattr(self.user, "profile", None)
+        return bool(profile and profile.is_pro)
+
 class ListingImage(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='listings/extra/')
@@ -188,6 +205,10 @@ class ListingImage(models.Model):
     def __str__(self):
         return f"Imagen de {self.listing.title}"
 
+    class Meta:
+        verbose_name = "Imagen de anuncio"
+        verbose_name_plural = "Imágenes de anuncio"
+
 class Conversation(models.Model):
     participants = models.ManyToManyField(User, related_name='conversations')
     listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, related_name='conversations')
@@ -226,13 +247,26 @@ class Profile(models.Model):
     bio = models.TextField(max_length=500, blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=5.00)
     reviews_count = models.PositiveIntegerField(default=1) # Empezar con 1 para usuarios nuevos premium
+    is_pro = models.BooleanField(default=False, verbose_name="pro", help_text="¿Es usuario Pro?")
     
     # Sistema de Verificación Biométrico
     verification_photo = models.ImageField(upload_to='verification_docs/', blank=True, null=True)
-    is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False, verbose_name="verificado")
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
+
+    class Meta:
+        verbose_name = "Perfil"
+        verbose_name_plural = "Perfiles"
+
+    @property
+    def has_avatar_file(self):
+        return bool(self.avatar and default_storage.exists(self.avatar.name))
+
+    @property
+    def has_cover_file(self):
+        return bool(self.cover_image and default_storage.exists(self.cover_image.name))
 
 # Señales para crear el perfil automáticamente
 from django.db.models.signals import post_save
@@ -253,10 +287,14 @@ class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     rating = models.PositiveIntegerField(default=5)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
 
     def __str__(self):
         return f"Review de {self.user.username} en {self.listing.title}"
+
+    class Meta:
+        verbose_name = "Reseña"
+        verbose_name_plural = "Reseñas"
 
 class Story(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
@@ -265,9 +303,11 @@ class Story(models.Model):
     audio_start = models.FloatField(default=0)
     audio_name = models.CharField(max_length=120, blank=True)
     metadata = models.TextField(blank=True, null=True) # Para JSON de stickers
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
 
     class Meta:
+        verbose_name = "Historia"
+        verbose_name_plural = "Historias"
         ordering = ['-created_at']
 
     def __str__(self):
@@ -284,9 +324,11 @@ class ProfileReview(models.Model):
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_reviews')
     rating = models.IntegerField(default=5)
     comment = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
 
     class Meta:
+        verbose_name = "Valoración de perfil"
+        verbose_name_plural = "Valoraciones de perfil"
         unique_together = ('profile_user', 'reviewer')
 
     def __str__(self):
@@ -295,10 +337,14 @@ class BugReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField()
     screenshot = models.ImageField(upload_to='bugs/', null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
 
     def __str__(self):
         return f"Fallo reportado el {self.created_at.strftime('%d/%m/%Y')}"
+
+    class Meta:
+        verbose_name = "Reporte de fallo"
+        verbose_name_plural = "Reportes de fallo"
 class MarketingConsent(models.Model):
     CONSENT_TYPES = [
         ('notifications', 'Notificaciones'),
@@ -309,14 +355,39 @@ class MarketingConsent(models.Model):
     email = models.EmailField(max_length=255, null=True, blank=True)
     allows_notifications = models.BooleanField(default=False)
     allows_marketing = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
 
     class Meta:
-        verbose_name = "Consentimiento de Marketing"
-        verbose_name_plural = "Consentimientos de Marketing"
+        verbose_name = "Consentimiento de marketing"
+        verbose_name_plural = "Consentimientos de marketing"
 
     def __str__(self):
         return f"{self.email or 'Usuario ' + str(self.user.id)} - {self.created_at.strftime('%d/%m/%Y')}"
+
+
+class SystemPaymentSetting(models.Model):
+    enabled = models.BooleanField(
+        default=False,
+        verbose_name="Sistema de pagos activo",
+        help_text="Activa o desactiva Pro, estrellas y promociones de anuncios en toda la web.",
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado el")
+
+    class Meta:
+        verbose_name = "Sistema de pago"
+        verbose_name_plural = "Sistema de pago"
+
+    def __str__(self):
+        return "Sistema de pago"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1, defaults={"enabled": False})
+        return obj
 
 class SearchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_history')
@@ -325,11 +396,11 @@ class SearchHistory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     results_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado el")
 
     class Meta:
-        verbose_name = "Historial de Búsqueda"
-        verbose_name_plural = "Historiales de Búsqueda"
+        verbose_name = "Historial de búsqueda"
+        verbose_name_plural = "Historiales de búsqueda"
         ordering = ['-updated_at']
 
     def __str__(self):

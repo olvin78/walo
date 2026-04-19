@@ -1,6 +1,7 @@
 import json
 import math
 import re
+import os
 import unicodedata
 import requests
 from django.shortcuts import render, get_object_or_404, redirect
@@ -17,7 +18,7 @@ from django.utils import timezone
 import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
-from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory
+from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory, SystemPaymentSetting
 
 CITY_LANDINGS = {
     "managua": "Managua",
@@ -44,7 +45,7 @@ def home(request):
     search_results = None
     
     if query:
-        search_results = Listing.objects.filter(
+        search_results = Listing.objects.select_related('user', 'user__profile').filter(
             Q(title__icontains=query) | 
             Q(description__icontains=query) | 
             Q(category__name__icontains=query) |
@@ -55,7 +56,7 @@ def home(request):
         ).filter(is_active=True).order_by('-created_at')[:4]
 
     categories = Category.objects.all()[:6]
-    latest_listings = Listing.objects.filter(is_active=True).order_by('-created_at')[:4]
+    latest_listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True).order_by('-created_at')[:4]
     
     context = {
         'categories': categories,
@@ -83,7 +84,7 @@ def explore(request):
     user_lng = request.GET.get('user_lng')
     radius = request.GET.get('radius') # en KM
 
-    listings = Listing.objects.filter(is_active=True)
+    listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True)
 
     if query:
         synonyms = {
@@ -478,6 +479,7 @@ def create_listing(request):
         subcategory_id = request.POST.get('subcategory')
         location = request.POST.get('location', 'Nicaragua')
         image = request.FILES.get('image')
+        publish_mode = request.POST.get('publish_mode', 'free')
         payment_methods_list = request.POST.getlist('payment_methods')
         payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
         
@@ -494,7 +496,7 @@ def create_listing(request):
             # Capturar múltiples imágenes
             images = request.FILES.getlist('images')
             main_image = images[0] if images else None
-
+            system_payments_enabled = SystemPaymentSetting.get_solo().enabled
             listing = Listing.objects.create(
                 user=request.user,
                 title=title,
@@ -504,7 +506,8 @@ def create_listing(request):
                 subcategory=subcategory,
                 location=location,
                 image=main_image,
-                payment_methods=payment_methods
+                payment_methods=payment_methods,
+                is_featured_paid=(system_payments_enabled and publish_mode == 'promoted')
             )
             
             # Guardar resto de imágenes en el modelo relacionado
@@ -519,7 +522,12 @@ def create_listing(request):
     
     categories = Category.objects.all()
     subcategories = Subcategory.objects.select_related('category').all()
-    return render(request, 'core/create_listing.html', {'categories': categories, 'subcategories': subcategories})
+    return render(request, 'core/create_listing.html', {
+        'categories': categories,
+        'subcategories': subcategories,
+        'profile_is_pro': getattr(getattr(request.user, 'profile', None), 'is_pro', False),
+        'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
+    })
 
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
@@ -658,28 +666,91 @@ def chat_view(request, conversation_id):
         return redirect('home')
     
     if request.method == 'POST':
-        text = request.POST.get('text')
-        image = request.FILES.get('image')
+        text = request.POST.get('text', '').strip()
+        images = request.FILES.getlist('image')
         audio = request.FILES.get('audio')
-        is_view_once = request.POST.get('is_view_once') == 'true'
+        # Robustez en la detección del modo efímero
+        is_view_once_raw = request.POST.get('is_view_once', 'false').lower()
+        is_view_once = is_view_once_raw in ['true', 'on', '1', 'yes']
 
-        if text or image or audio:
-            Message.objects.create(
-                conversation=conversation, 
-                sender=request.user, 
-                text=text,
-                image=image,
-                audio=audio,
-                is_view_once=is_view_once
-            )
-            conversation.save() # Actualiza updated_at
+        if text or images or audio:
+            if images:
+                for i, img in enumerate(images):
+                    Message.objects.create(
+                        conversation=conversation, 
+                        sender=request.user, 
+                        text=text if i == 0 else "", 
+                        image=img,
+                        is_view_once=is_view_once
+                    )
+            elif audio:
+                Message.objects.create(
+                    conversation=conversation, 
+                    sender=request.user, 
+                    audio=audio,
+                    is_view_once=is_view_once
+                )
+            else:
+                Message.objects.create(
+                    conversation=conversation, 
+                    sender=request.user, 
+                    text=text
+                )
+            
+            conversation.save()
             return redirect(reverse('chat_detail', args=[conversation_id]))
     
-    messages = conversation.messages.all()
+    # Lógica de agrupación de mensajes para el rediseño "Bonito"
+    raw_messages = conversation.messages.all().order_by('created_at')
+    
+    # Pre-filtrado: Eliminar mensajes efímeros ya vistos para no dejar rastro
+    filtered_messages = []
+    for msg in raw_messages:
+        hide = False
+        if msg.is_view_once:
+            if msg.sender == request.user and msg.viewed_by_sender:
+                hide = True
+            elif msg.sender != request.user and msg.viewed_by_receiver:
+                hide = True
+        if not hide:
+            filtered_messages.append(msg)
+            
+    grouped_messages = []
+    if filtered_messages:
+        current_group = {
+            'sender': filtered_messages[0].sender,
+            'messages': [filtered_messages[0]],
+            'is_media_group': bool(filtered_messages[0].image),
+            'id': filtered_messages[0].id
+        }
+        
+        for msg in filtered_messages[1:]:
+            time_diff = (msg.created_at - current_group['messages'][-1].created_at).total_seconds()
+            can_group = (
+                msg.sender == current_group['sender'] and 
+                msg.image and 
+                current_group['is_media_group'] and 
+                not msg.text and 
+                not msg.audio and
+                time_diff < 180
+            )
+            
+            if can_group:
+                current_group['messages'].append(msg)
+            else:
+                grouped_messages.append(current_group)
+                current_group = {
+                    'sender': msg.sender,
+                    'messages': [msg],
+                    'is_media_group': bool(msg.image),
+                    'id': msg.id
+                }
+        grouped_messages.append(current_group)
+
     other_user = conversation.participants.exclude(id=request.user.id).first()
     return render(request, "core/chat.html", {
         'conversation': conversation, 
-        'messages': messages,
+        'grouped_messages': grouped_messages,
         'other_user': other_user
     })
 
@@ -744,7 +815,7 @@ def delete_conversation(request, conversation_id):
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     Profile.objects.get_or_create(user=profile_user)
-    listings = Listing.objects.filter(user=profile_user, is_active=True).order_by('-created_at')
+    listings = Listing.objects.select_related('user', 'user__profile').filter(user=profile_user, is_active=True).order_by('-created_at')
     
     # Rating stats
     reviews = ProfileReview.objects.filter(profile_user=profile_user)
@@ -769,7 +840,13 @@ def user_profile(request, username):
 @login_required
 def edit_profile(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
+    system_payments_enabled = SystemPaymentSetting.get_solo().enabled
     if request.method == 'POST':
+        if request.POST.get('toggle_plan') == '1' and system_payments_enabled:
+            profile.is_pro = not profile.is_pro
+            profile.save(update_fields=['is_pro'])
+            return redirect('edit_profile')
+
         avatar = request.FILES.get('avatar')
         cover_image = request.FILES.get('cover_image')
         location = request.POST.get('location')
@@ -802,7 +879,10 @@ def edit_profile(request):
         profile.save()
         return redirect('user_profile', username=request.user.username)
             
-    return render(request, "core/edit_profile.html", {'profile': profile})
+    return render(request, "core/edit_profile.html", {
+        'profile': profile,
+        'system_payments_enabled': system_payments_enabled,
+    })
 
 @login_required
 def toggle_follow(request, username):
@@ -969,7 +1049,7 @@ def my_listings(request):
     """
     Vista para que el usuario gestione sus propias publicaciones.
     """
-    listings = Listing.objects.filter(user=request.user).order_by('-created_at')
+    listings = Listing.objects.select_related('user', 'user__profile').filter(user=request.user).order_by('-created_at')
     return render(request, "core/my_listings.html", {'listings': listings})
 
 @login_required
@@ -987,8 +1067,10 @@ def edit_listing(request, listing_id):
         subcategory_id = request.POST.get('subcategory')
         location = request.POST.get('location', 'Nicaragua')
         is_active = request.POST.get('is_active') == 'on'
+        publish_mode = request.POST.get('publish_mode', 'free')
         payment_methods_list = request.POST.getlist('payment_methods')
         payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
+        system_payments_enabled = SystemPaymentSetting.get_solo().enabled
         
         if not all([title, price, category_id]):
             messages.error(request, "Por favor completa todos los campos obligatorios.")
@@ -1008,6 +1090,8 @@ def edit_listing(request, listing_id):
             listing.location = location
             listing.is_active = is_active
             listing.payment_methods = payment_methods
+            if system_payments_enabled and publish_mode == 'promoted':
+                listing.is_featured_paid = True
             
             # Gestionar eliminación de imágenes existentes
             deleted_images = request.POST.get('deleted_images', '')
@@ -1048,5 +1132,46 @@ def edit_listing(request, listing_id):
         'categories': categories, 
         'subcategories': subcategories,
         'listing': listing,
-        'is_edit': True
+        'is_edit': True,
+        'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
     })
+
+
+@login_required
+def delete_listing(request, listing_id):
+    """
+    Elimina un anuncio del usuario actual junto con sus archivos asociados.
+    """
+    listing = get_object_or_404(Listing, id=listing_id, user=request.user)
+
+    if request.method != "POST":
+        messages.error(request, "La eliminación debe confirmarse desde el formulario.")
+        return redirect('my_listings')
+
+    from .utils import get_thumbnail_path
+
+    media_files = []
+    if listing.image:
+        media_files.append(listing.image.path)
+
+    for listing_image in listing.images.all():
+        if listing_image.image:
+            media_files.append(listing_image.image.path)
+            for suffix in ('thumb', 'medium', 'large'):
+                media_files.append(os.path.join(settings.MEDIA_ROOT, get_thumbnail_path(listing_image.image.name, suffix)))
+
+    if listing.image:
+        for suffix in ('thumb', 'medium', 'large'):
+            media_files.append(os.path.join(settings.MEDIA_ROOT, get_thumbnail_path(listing.image.name, suffix)))
+
+    listing.delete()
+
+    for file_path in media_files:
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+
+    messages.success(request, "Tu anuncio se eliminó correctamente.")
+    return redirect('my_listings')

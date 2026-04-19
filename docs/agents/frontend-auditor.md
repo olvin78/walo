@@ -4,10 +4,10 @@
 Audit server-rendered templates and Bootstrap UI for mobile usability, consistency, and performance.
 
 ## Primary Objective
-Ensure Walo is clear and usable on mobile, with consistent components and minimal client-side complexity.
+Ensure IGUALO is clear and usable on mobile, with consistent components and minimal client-side complexity.
 
 ## Project Context
-Walo is a Django marketplace with server-rendered HTML, Bootstrap, and minimal JS. It targets real mobile users in Nicaragua.
+IGUALO is a Django marketplace with server-rendered HTML, Bootstrap, and minimal JS. It targets real mobile users in Nicaragua.
 
 ## Your Responsibilities
 - Review templates for layout consistency and component reuse.

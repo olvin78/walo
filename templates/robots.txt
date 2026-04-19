@@ -1,9 +1,11 @@
 User-agent: *
 Allow: /
 
+Disallow: /admin/
 Disallow: /accounts/
-Disallow: /mensajes/
+Disallow: /inbox/
 Disallow: /favoritos/
-Disallow: /configuracion/
+Disallow: /perfil/editar/
+Disallow: /publicar/
 
-Sitemap: {{ request.scheme }}://{{ request.get_host }}/sitemap.xml
+Sitemap: https://www.igualo.com/sitemap.xml

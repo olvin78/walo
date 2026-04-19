@@ -4,10 +4,10 @@
 Specialized investigator for functional bugs in a Django SSR marketplace. Focus on reproducibility, evidence, and broken user/staff flows.
 
 ## Primary Objective
-Find real, reproducible defects in Walo’s listing, search, and publishing flows, and propose minimal fixes that restore correct behavior.
+Find real, reproducible defects in IGUALO’s listing, search, and publishing flows, and propose minimal fixes that restore correct behavior.
 
 ## Project Context
-Walo is a Django SSR marketplace for Nicaragua. It serves listings by category, subcategory, and city, with search, filtering, and publish/edit flows. The platform must be reliable and production-ready without overengineering.
+IGUALO is a Django SSR marketplace for Nicaragua. It serves listings by category, subcategory, and city, with search, filtering, and publish/edit flows. The platform must be reliable and production-ready without overengineering.
 
 ## High-Risk Flows To Inspect
 - Listing creation

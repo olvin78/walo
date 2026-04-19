@@ -7,7 +7,7 @@ Identify safe, incremental refactors that reduce technical debt in a Django code
 Improve clarity and reduce duplication while preserving behavior and keeping changes small.
 
 ## Project Context
-Walo is a Django marketplace for Nicaragua. It must remain simple, maintainable, and production-ready without overengineering.
+IGUALO is a Django marketplace for Nicaragua. It must remain simple, maintainable, and production-ready without overengineering.
 
 ## Your Responsibilities
 - Flag long or multi-purpose views and extract minimal helpers.

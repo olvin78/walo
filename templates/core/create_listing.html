@@ -24,6 +24,7 @@
 
         <form method="POST" enctype="multipart/form-data" id="publish-form">
             {% csrf_token %}
+            <input type="hidden" name="publish_mode" id="publish-mode" value="free">
             <div class="studio-layout" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: start;">
                 
                 <!-- Columna 1: Live Preview -->
@@ -147,7 +148,35 @@
                         <textarea name="description" id="form-description" required rows="4" placeholder="Detalles del producto..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; font-size: 1rem; color: #fff; padding: 20px; outline: none; resize: none;" oninput="updatePublishScore()">{% if is_edit %}{{ listing.description }}{% endif %}</textarea>
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                    <div style="margin-bottom: 18px; display: grid; gap: 14px;">
+                    {% if system_payments_enabled and is_edit %}
+                        {% if not profile_is_pro and not listing.is_promoted %}
+                        <div class="publish-plan-card" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 22px; padding: 20px; display: grid; gap: 14px;">
+                            <div>
+                                <h4 style="margin: 0 0 8px; font-size: 1rem; color: #fff; font-weight: 800;">Mejora tu anuncio</h4>
+                                <p style="margin: 0; color: rgba(255,255,255,0.55); font-size: 0.9rem;">Puedes destacar este anuncio o pasarte a Pro para no ver este aviso en futuras publicaciones.</p>
+                            </div>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <button type="button" class="f-btn plan-toggle-btn plan-toggle-danger" onclick="setPublishMode('promoted', this)">Publicitar este anuncio</button>
+                                <a href="{% url 'edit_profile' %}#tab-plan" class="f-btn pro-link-cta" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">Hacerte Pro <span class="pro-link-pill">PRO</span></a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% elif system_payments_enabled and not profile_is_pro %}
+                    <div class="publish-plan-card" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 22px; padding: 20px; display: grid; gap: 14px;">
+                        <div>
+                            <h4 style="margin: 0 0 8px; font-size: 1rem; color: #fff; font-weight: 800;">Elige cómo publicar</h4>
+                            <p style="margin: 0; color: rgba(255,255,255,0.55); font-size: 0.9rem;">Por defecto se publicará gratis. Si quieres destacar solo este anuncio, actívalo aquí.</p>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button type="button" class="f-btn plan-toggle-btn plan-toggle-danger" onclick="setPublishMode('promoted', this)">Publicitar solo esta publicación</button>
+                            <a href="{% url 'edit_profile' %}#tab-plan" class="f-btn pro-link-cta" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">Hacerte Pro <span class="pro-link-pill">PRO</span></a>
+                        </div>
+                    </div>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
                         <a href="{% if is_edit %}{% url 'my_listings' %}{% else %}{% url 'explore' %}{% endif %}" style="color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 0.9rem;">Cancelar</a>
                         <button type="submit" class="studio-publish-btn" style="background: var(--primary); border: none; padding: 18px 40px; border-radius: 30px; color: #000; font-weight: 900; font-size: 1.1rem; cursor: pointer; flex: 1; max-width: 300px;">
                             {% if is_edit %}Guardar Cambios ✨{% else %}Publicar 🚀{% endif %}
@@ -165,6 +194,13 @@ let deletedImageIds = [];
 let currentSlide = 0;
 let originalSubcategories = null;
 let preselectedSubcategory = "{% if is_edit and listing.subcategory %}{{ listing.subcategory.id }}{% endif %}";
+
+function setPublishMode(mode, btn) {
+    const field = document.getElementById('publish-mode');
+    if (field) field.value = mode;
+    document.querySelectorAll('.publish-plan-card .plan-toggle-btn').forEach(b => b.classList.remove('is-selected'));
+    if (btn) btn.classList.add('is-selected');
+}
 
 function removeExistingImage(id, btn) {
     if (confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
@@ -368,6 +404,76 @@ document.addEventListener('DOMContentLoaded', () => {
 .payment-card span { font-size: 1.2rem; display: block; }
 .payment-card p { font-size: 0.65rem; margin: 4px 0 0; font-weight: 700; color: var(--text-muted); }
 .payment-option input:checked + .payment-card { border-color: var(--primary); background: rgba(34,197,94,0.1); }
+
+.plan-toggle-btn {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 22px;
+    border-radius: 14px;
+    font-weight: 800;
+    transition: 0.25s ease;
+    cursor: pointer;
+}
+
+.plan-toggle-primary {
+    background: rgba(34, 197, 94, 0.14);
+    color: #dcfce7;
+}
+
+.plan-toggle-primary:hover {
+    background: rgba(34, 197, 94, 0.22);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.plan-toggle-danger {
+    background: rgba(14, 165, 233, 0.14);
+    color: #dbeafe;
+}
+
+.plan-toggle-danger:hover {
+    background: rgba(14, 165, 233, 0.22);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.plan-toggle-btn.is-selected {
+    outline: 2px solid rgba(255,255,255,0.22);
+    transform: translateY(-1px);
+}
+
+.pro-link-cta {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.15));
+    color: #fff7d6;
+    border: 1px solid rgba(251, 191, 36, 0.18);
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.18);
+    border-radius: 999px;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.pro-link-cta:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(251, 191, 36, 0.22));
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.pro-link-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(251,191,36,0.18);
+    border: 1px solid rgba(251,191,36,0.24);
+    color: #fde68a;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
 
 /* Estilo universal para todos los selectores de la página */
 .studio-input-block select, 

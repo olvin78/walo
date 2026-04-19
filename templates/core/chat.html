@@ -3,297 +3,748 @@
 
 {% block title %}Chat con {{ other_user.username }} | Igualo{% endblock %}
 
-{% block body_class %}page-chat-pro{% endblock %}
+{% block body_class %}page-chat-shell{% endblock %}
 
 {% block extra_head %}
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
-    /* RESET & LAYOUT */
-    .page-chat-pro footer.cmp-footer, 
-    .page-chat-pro .cookie-banner { display: none !important; }
+    /* 1. RESET & ESTILO GLOBAL DEL SHELL */
+    .page-chat-shell footer.cmp-footer, 
+    .page-chat-shell .cookie-banner { display: none !important; }
     
-    .chat-pro-wrapper {
+    :root {
+        --chat-navy: #0f172a;
+        --chat-bg: #f3f4f6; /* Gris muy suave tipo iOS */
+        --chat-bubble-me: #22c55e;
+        --chat-bubble-me-text: #ffffff;
+        --chat-bubble-their: #ffffff;
+        --chat-bubble-their-text: #1e293b;
+        --chat-online: #10b981;
+    }
+
+    .chat-shell {
         position: fixed;
         inset: 0;
-        top: 70px;
+        top: 70px; /* Debajo de la navbar global */
         display: flex;
         flex-direction: column;
-        background: #080a0f;
-        z-index: 100;
+        background: var(--chat-bg);
+        z-index: 1000;
         height: calc(100dvh - 70px);
+        font-family: 'Sora', 'Inter', sans-serif;
     }
 
     @media (max-width: 768px) {
-        .chat-pro-wrapper { top: 60px; height: calc(100dvh - 60px); }
-        .bubble { max-width: 85%; }
-        .chat-pro-input-bar { padding: 10px 15px 20px; }
-        .msg-img { max-width: 120px; border-radius: 8px; }
+        .chat-shell { top: 60px; height: calc(100dvh - 60px); }
     }
 
-    /* HEADER PRO */
-    .chat-pro-header {
-        background: rgba(15, 22, 36, 0.8);
-        backdrop-filter: blur(20px);
-        padding: 12px 20px;
+    /* 2. TOPBAR (HEADER DEL CHAT) */
+    .chat-topbar {
+        background: var(--chat-navy);
+        color: white;
+        padding: 12px 18px;
         display: flex;
         align-items: center;
-        gap: 15px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        z-index: 10;
+        gap: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 20;
     }
-    
-    .btn-back-chat {
-        color: #fff; background: rgba(255,255,255,0.05);
-        width: 36px; height: 36px; border-radius: 50%;
+
+    .btn-chat-back {
+        width: 36px; height: 36px;
         display: flex; align-items: center; justify-content: center;
-        text-decoration: none;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%; color: white;
+        transition: 0.3s;
+    }
+    .btn-chat-back:hover { background: rgba(255,255,255,0.2); }
+
+    .chat-conversation-info {
+        flex: 1; display: flex; flex-direction: column; gap: 2px;
+    }
+    .chat-user-name {
+        font-size: 1rem; font-weight: 700;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .chat-online-dot {
+        width: 8px; height: 8px;
+        background: var(--chat-online);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--chat-online);
+    }
+    .chat-product-context {
+        font-size: 0.75rem; 
+        opacity: 0.6; 
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
     }
 
-    .header-user-info { flex: 1; display: flex; flex-direction: column; }
-    .header-user-info b { color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
-    .status-online { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; display: inline-block; }
+    .chat-header-avatar {
+        width: 42px; height: 42px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid rgba(255,255,255,0.1);
+        background: #1e293b;
+    }
+    .chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .header-listing-thumb { width: 35px; height: 35px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-    .header-listing-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
-    /* MESSAGES AREA */
-    .chat-pro-messages {
+    /* 3. THREAD (ÁREA DE MENSAJES) */
+    .chat-thread {
         flex: 1;
         overflow-y: auto;
-        padding: 20px;
+        padding: 20px 14px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-    }
-    
-    /* BUBBLES */
-    .bubble {
-        max-width: 75%;
-        padding: 6px 12px;
-        font-size: 0.9rem;
-        position: relative;
-    }
-    
-    .bubble.me { align-self: flex-end; background: var(--primary); color: #000; font-weight: 500; border-radius: 18px 18px 4px 18px; }
-    .bubble.other { align-self: flex-start; background: #242f41; color: #fff; border-radius: 18px 18px 18px 4px; }
-    
-    .bubble-img-container {
-        margin: -4px -8px 4px -8px;
-        overflow: hidden;
-        border-radius: 14px;
-        display: flex;
-        justify-content: center;
-        position: relative;
+        gap: 4px; /* Proximidad mayor */
+        scroll-behavior: smooth;
+        background-color: var(--chat-bg);
     }
 
-    /* MODO UNA VEZ - ESTILOS */
-    .view-once-cover {
-        width: 120px;
-        height: 120px;
-        background: #1a2230;
-        border: 2px dashed rgba(255,255,255,0.15);
-        border-radius: 12px;
+    /* 4. CHAT BUBBLES & WRAPPERS */
+    .chat-bubble-wrapper {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px; /* Tighter gap */
+        max-width: 85%;
+        margin-bottom: 2px;
+    }
+    .chat-bubble-wrapper.mine { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-bubble-wrapper.their { align-self: flex-start; }
+
+    /* AVATAR SISTEMA */
+    .chat-message-avatar {
+        width: 28px; height: 28px; /* Slightly smaller for elegance */
+        border-radius: 50%;
+        background: #f1f5f9;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.7rem; color: #64748b;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .chat-message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .chat-bubble-wrapper.mine .chat-message-avatar { display: none; }
+
+    .chat-bubble {
+        padding: 8px 12px; /* Tighter padding for elegance */
+        border-radius: 16px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        position: relative;
+        transition: 0.3s;
+        word-wrap: break-word;
+    }
+
+    /* BURBUJA PROPIA (VERDE PREMIUM) */
+    .chat-bubble.mine { 
+        background: var(--chat-bubble-me);
+        color: var(--chat-bubble-me-text);
+        border-radius: 18px 18px 4px 18px; 
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+    }
+    .chat-bubble.their { 
+        background: var(--chat-bubble-their);
+        color: var(--chat-bubble-their-text);
+        border-radius: 18px 18px 18px 4px; 
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    /* BURBUJA MULTIMEDIA (PREMIUM CARD LOOK) */
+    .chat-bubble--has-image {
+        padding: 0 !important;
+        overflow: hidden;
+        max-width: 280px;
+        background: white !important; /* Media cards usually white/clean */
+        border: 1px solid rgba(0,0,0,0.08) !important;
+        color: #1e293b !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .chat-bubble-wrapper.mine .chat-bubble--has-image .bubble-meta {
+        color: #64748b; /* Meta oscura sobre fondo blanco */
+    }
+
+    .chat-bubble-media-container {
+        width: 100%;
+        background: #f8fafc;
+    }
+    .chat-bubble-media-container img {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        display: block;
+        cursor: pointer;
+    }
+
+    .chat-bubble-caption {
+        padding: 12px 14px 10px;
+    }
+    .chat-bubble-caption .chat-text {
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #0f172a;
+    }
+
+    /* PRIVACIDAD: VIEW ONCE */
+    .view-once-pro {
+        height: 200px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 12px;
+        color: white;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .view-once-pro:hover {
+        opacity: 0.9;
+    }
+    .view-once-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        opacity: 0.9;
+    }
+
+    /* Agrupación inteligente */
+    .chat-bubble-wrapper + .chat-bubble-wrapper { margin-top: 2px; }
+    .chat-bubble-wrapper.mine + .chat-bubble-wrapper.mine .chat-bubble { border-radius: 18px 4px 4px 18px; }
+    .chat-bubble-wrapper.their + .chat-bubble-wrapper.their .chat-bubble { border-radius: 4px 18px 18px 4px; }
+    .chat-bubble-wrapper.their + .chat-bubble-wrapper.their .chat-message-avatar { visibility: hidden; }
+
+    /* MENSAJE DE SISTEMA / OFERTA */
+    .chat-bubble--offer {
+        background: #fdf2f8; 
+        border: 1px solid #f9a8d4;
+        color: #9d174d;
+        text-align: center;
+        padding: 14px 24px;
+        border-radius: 20px;
+        width: fit-content;
+        max-width: 90% !important;
+        font-weight: 700;
+        align-self: center !important;
+        margin: 12px auto;
+        box-shadow: 0 4px 12px rgba(157, 23, 77, 0.08);
+        font-size: 0.88rem;
+    }
+
+    .bubble-meta {
+        font-size: 0.65rem;
+        margin-top: 4px;
+        opacity: 0.6;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        justify-content: flex-end;
+    }
+    .mine .bubble-meta { color: rgba(255,255,255,0.85); }
+
+    /* 5. MEDIA GRID (PREMIUM ADAPTIVE LOOK) */
+    .chat-media-grid--multi {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2px;
+        padding: 0;
+        background: #f1f5f9;
+        width: 280px;
+    }
+    .chat-media-grid--multi img {
+        aspect-ratio: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 0; /* Let the container handle outer radius */
+    }
+    .grid-span-full {
+        grid-column: span 2;
+        aspect-ratio: 16 / 9 !important;
+    }
+
+    /* 6. INPUT (COMPOSER) */
+    .chat-composer {
+        background: white;
+        padding: 12px 18px 32px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        z-index: 20;
+    }
+    .chat-composer__inner {
+        background: #f1f5f9;
+        border-radius: 28px;
+        padding: 6px 6px 6px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .chat-composer__input {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        font-size: 0.95rem;
+        color: var(--chat-bubble-their-text);
+        padding: 8px 0;
+    }
+
+    .composer-action {
+        width: 38px; height: 38px;
+        display: flex; align-items: center; justify-content: center;
+        color: #64748b;
+        cursor: pointer; transition: 0.3s;
+        border-radius: 50%;
+    }
+    .composer-action:hover { background: rgba(0,0,0,0.05); color: var(--chat-navy); }
+
+    .btn-composer-send {
+        width: 40px; height: 40px;
+        background: var(--chat-bubble-me);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+        transition: 0.3s;
+    }
+    .btn-composer-send:hover { 
+        transform: scale(1.05);
+        background: #16a34a;
+    }
+    
+    /* ESPECIAL RECORDING */
+    .btn-composer-rec.active {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+        animation: pulse-rec 1.5s infinite;
+    }
+    @keyframes pulse-rec {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    /* VIEW ONCE PREMIUM */
+    .view-once-pro {
+        padding: 20px;
+        background: rgba(0,0,0,0.05);
+        border-radius: 16px;
+        border: 1px dashed rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         gap: 8px;
         cursor: pointer;
         transition: 0.3s;
     }
-    .bubble.me .view-once-cover { background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.2); }
-    .view-once-cover:hover { border-color: var(--primary); background: #242f41; }
-    .view-once-cover svg { color: var(--primary); }
-    .bubble.me .view-once-cover svg { color: #000; }
-    .view-once-text { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--primary); }
-    .bubble.me .view-once-text { color: #000; }
+    .view-once-pro:hover { background: rgba(0,0,0,0.08); border-color: var(--chat-bubble-me); }
+    .view-once-title { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* AUDIO */
-    .msg-audio-player { display: flex; align-items: center; gap: 10px; min-width: 200px; padding: 5px 0; }
-    .audio-btn { background: none; border: none; color: inherit; cursor: pointer; padding: 0; display: flex; align-items: center; }
-    .audio-progress { flex: 1; height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; position: relative; }
-    .audio-progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: currentColor; border-radius: 2px; width: 0%; }
-    .msg-time { font-size: 0.65rem; margin-top: 4px; opacity: 0.6; text-align: right; }
-
-    /* INPUT & PREVIEW */
-    .chat-pro-input-bar { padding: 10px 15px 30px; background: rgba(15, 22, 36, 0.98); border-top: 1px solid rgba(255,255,255,0.05); }
-    .input-container-pro { background: #161b22; border-radius: 25px; padding: 5px 5px 5px 15px; display: flex; align-items: center; gap: 8px; }
-    .input-container-pro input { flex: 1; background: none; border: none; color: #fff; outline: none; font-size: 0.9rem; }
-    
-    .action-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; border-radius: 50%; }
-    .btn-send-pro { width: 38px; height: 38px; background: var(--primary); color: #000; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-    #image-preview-container {
-        display: none; padding: 15px; background: #0f1624; border-top: 1px solid rgba(255,255,255,0.1);
-        position: relative; align-items: center; gap: 20px;
+    /* AUDIO PREMIUM */
+    .chat-audio-player {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 220px;
+        padding: 5px 0;
     }
-    #image-preview-container img { height: 90px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.05); }
-    
-    .btn-view-once-toggle {
-        width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1);
-        display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
-        transition: 0.3s; font-weight: 900; font-size: 1.2rem;
+    .audio-play-btn {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.2);
+        color: inherit;
+        display: flex; align-items: center; justify-content: center;
     }
-    .btn-view-once-toggle.active { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+    /* 7. AUDIO PLAYER (PREMIUM & MINIMAL) */
+    .chat-audio-player {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 180px;
+        padding: 4px 0;
+    }
+    .audio-play-btn {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.25);
+        color: inherit;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .chat-bubble.their .audio-play-btn { background: rgba(0,0,0,0.06); }
+    .audio-play-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
+    
+    .audio-play-btn i { width: 14px; height: 14px; }
 
-    .btn-remove-preview { position: absolute; top: 5px; left: 95px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-weight: 800; font-size: 14px; }
+    .audio-scrubber {
+        flex: 1;
+        height: 3px;
+        background: rgba(0,0,0,0.1);
+        border-radius: 2px;
+        position: relative;
+        cursor: pointer;
+    }
+    .audio-progress {
+        position: absolute;
+        left: 0; top: 0; height: 100%;
+        background: currentColor;
+        border-radius: 2px;
+        transition: width 0.1s linear;
+    }
+
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="chat-pro-wrapper">
-    <header class="chat-pro-header">
-        <a href="{% url 'inbox' %}" class="btn-back-chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
-        <div class="header-user-info"><b>{{ other_user.username }} <span class="status-online"></span></b><span>{{ conversation.listing.title }}</span></div>
-        <a href="{{ conversation.listing.get_absolute_url }}" class="header-listing-thumb">{% if conversation.listing.image %}<img src="{{ conversation.listing.image.url }}" alt="P">{% else %}<div style="background: #111; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">📦</div>{% endif %}</a>
+<div class="chat-shell">
+    <!-- TOPBAR -->
+    <header class="chat-topbar">
+        <a href="{% url 'inbox' %}" class="btn-chat-back">
+            <i data-lucide="chevron-left"></i>
+        </a>
+        
+        <div class="chat-conversation-info {% if other_user.username %}chat-trigger-profile{% endif %}" 
+             {% if other_user.username %}data-url="{% url 'user_profile' other_user.username %}"{% endif %} 
+             style="cursor: pointer;">
+            <div class="chat-user-name">
+                {{ other_user.username }}
+                {% if other_user.profile.is_verified %}
+                    <i data-lucide="check-circle" style="width: 14px; color: #3b82f6;"></i>
+                {% endif %}
+                <span class="chat-online-dot"></span>
+            </div>
+            <div class="chat-product-context">
+                {% if conversation.listing %}{{ conversation.listing.title }}{% else %}Consulta General{% endif %}
+            </div>
+        </div>
+
+        <a href="{% if conversation.listing %}{{ conversation.listing.get_absolute_url }}{% else %}#{% endif %}" class="chat-header-avatar">
+            {% if conversation.listing.image %}
+                <img src="{{ conversation.listing.image.url }}" alt="P">
+            {% elif other_user.profile.avatar %}
+                <img src="{{ other_user.profile.avatar.url }}" alt="U">
+            {% else %}
+                <div style="height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #64748b;">📦</div>
+            {% endif %}
+        </a>
     </header>
 
-    <div id="chat-messages" class="chat-pro-messages">
-        {% for message in messages %}
-            {% if message.is_view_once %}
-                {# Lógica de ocultación TOTAL con IFs anidados (más seguro) #}
-                {% if message.sender_id == request.user.pk %}
-                    {% if not message.viewed_by_sender %}
-                        <div class="msg-group" id="msg-{{ message.id }}" style="display: flex; flex-direction: column;">
-                            <div class="bubble me">
-                                <div class="bubble-img-container">
-                                    <div class="view-once-cover" onclick="openViewOnce('{{ message.image.url }}', {{ message.id }})">
-                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><text x="9.5" y="16" fill="currentColor" style="font-size: 12px; font-weight: 900; stroke: none;">1</text></svg>
-                                        <span class="view-once-text">Tu Foto (1)</span>
-                                    </div>
-                                </div>
-                                <div class="msg-time">{{ message.created_at|date:"H:i" }}</div>
-                            </div>
-                        </div>
-                    {% endif %}
+    <!-- THREAD -->
+    <div id="chat-thread" class="chat-thread">
+        {% for group in grouped_messages %}
+            {% with first_msg=group.messages|first %}
+                {% if "HE HECHO UNA OFERTA" in first_msg.text %}
+                    <div class="chat-bubble--offer">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; opacity: 0.7;">Propuesta recibida</div>
+                        📣 {{ first_msg.text }}
+                    </div>
                 {% else %}
-                    {% if not message.viewed_by_receiver %}
-                        <div class="msg-group" id="msg-{{ message.id }}" style="display: flex; flex-direction: column;">
-                            <div class="bubble other">
-                                <div class="bubble-img-container">
-                                    <div class="view-once-cover" onclick="openViewOnce('{{ message.image.url }}', {{ message.id }})">
-                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><text x="9.5" y="16" fill="currentColor" style="font-size: 12px; font-weight: 900; stroke: none;">1</text></svg>
-                                        <span class="view-once-text">Ver Foto</span>
-                                    </div>
-                                </div>
-                                <div class="msg-time">{{ message.created_at|date:"H:i" }}</div>
-                            </div>
-                        </div>
-                    {% endif %}
-                {% endif %}
-            {% else %}
-                <div class="msg-group" id="msg-{{ message.id }}" style="display: flex; flex-direction: column;">
-                    <div class="bubble {% if message.sender_id == request.user.pk %}me{% else %}other{% endif %}">
-                        {% if message.image %}<div class="bubble-img-container"><img src="{{ message.image.url }}" class="msg-img" onclick="window.open(this.src)" style="max-width: 120px; border-radius: 12px;"></div>{% endif %}
-                        {% if message.audio %}
-                            <div class="msg-audio-player">
-                                <button class="audio-btn" onclick="toggleAudio('audio-{{ message.id }}', this)"><svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg><svg class="pause-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg></button>
-                                <div class="audio-progress"><div id="progress-audio-{{ message.id }}" class="audio-progress-fill"></div></div>
-                                <audio id="audio-{{ message.id }}" src="{{ message.audio.url }}" ontimeupdate="updateAudioProgress('audio-{{ message.id }}')" onended="resetAudioPlayer('audio-{{ message.id }}', this.parentElement.querySelector('.audio-btn'))"></audio>
+                    <div class="chat-bubble-wrapper {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %}" id="msg-{{ first_msg.id }}">
+                        
+                        {# AVATAR DEL OTRO USUARIO #}
+                        {% if first_msg.sender_id != request.user.pk %}
+                            <div class="chat-message-avatar">
+                                {% if other_user.profile.avatar %}
+                                    <img src="{{ other_user.profile.avatar.url }}" alt="U">
+                                {% else %}
+                                    {{ other_user.username|slice:":1"|upper }}
+                                {% endif %}
                             </div>
                         {% endif %}
-                        {% if message.text %}<div class="msg-text">{{ message.text }}</div>{% endif %}
-                        <div class="msg-time">{{ message.created_at|date:"H:i" }}</div>
+
+                        <div class="chat-bubble {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %} {% if group.is_media_group %}chat-bubble--has-image{% endif %}">
+                            
+                            {# IMAGEN (GRID ADAPTATIVO: Ocultación total de vistos) #}
+                            {% if group.is_media_group %}
+                                <div class="chat-bubble-media-container {% if group.messages|length > 1 %}chat-media-grid--multi{% endif %}">
+                                    {% for m in group.messages %}
+                                        {# Determinamos si debe ocultarse totalmente #}
+                                        {% if m.is_view_once and m.sender_id == request.user.pk and m.viewed_by_sender %}
+                                            {# No renderizar nada #}
+                                        {% elif m.is_view_once and m.sender_id != request.user.pk and m.viewed_by_receiver %}
+                                            {# No renderizar nada #}
+                                        {% else %}
+                                            {% if m.is_view_once %}
+                                                <div class="view-once-pro" onclick="openViewOnce('{{ m.image.url }}', {{ m.id }})">
+                                                    <i data-lucide="eye-off" style="width: 28px; color: #fff;"></i>
+                                                    <span class="view-once-title" style="color:#fff;">Foto</span>
+                                                </div>
+                                            {% else %}
+                                                <img src="{{ m.image.url }}" alt="Media" onclick="window.open(this.src)" 
+                                                     class="{% if group.messages|length == 3 and forloop.first %}grid-span-full{% endif %}">
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {# CONTENIDO DE TEXTO / CAPTION #}
+                            {% for m in group.messages %}
+                                {% if m.text or m.audio %}
+                                    <div class="chat-bubble-caption">
+                                        {# AUDIO #}
+                                        {% if m.audio %}
+                                            <div class="chat-audio-player">
+                                                <button class="audio-play-btn" onclick="toggleAudio('audio-{{ m.id }}', this)">
+                                                    <i data-lucide="play" class="lucide-play"></i>
+                                                    <i data-lucide="pause" class="lucide-pause" style="display:none;"></i>
+                                                </button>
+                                                <div class="audio-scrubber">
+                                                    <div id="progress-audio-{{ m.id }}" class="audio-progress" style="width: 0%;"></div>
+                                                </div>
+                                                <audio id="audio-{{ m.id }}" src="{{ m.audio.url }}" 
+                                                       ontimeupdate="updateAudioProgress('audio-{{ m.id }}')" 
+                                                       onended="resetAudioPlayer('audio-{{ m.id }}', this.parentElement.querySelector('button'))"></audio>
+                                            </div>
+                                        {% endif %}
+
+                                        {# TEXTO #}
+                                        {% if m.text and "HE HECHO UNA OFERTA" not in m.text %}
+                                            <div class="chat-text">{{ m.text }}</div>
+                                        {% endif %}
+
+                                        <div class="bubble-meta">
+                                            {{ m.created_at|date:"H:i" }}
+                                            {% if m.sender_id == request.user.pk %}
+                                                <i data-lucide="check-check" style="width: 12px; margin-left: 2px;"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% elif forloop.last %}
+                                    {# Meta para mensajes que son solo imagen (sin texto ni audio) #}
+                                    {% with last_msg=group.messages|last %}
+                                        {% if not last_msg.text and not last_msg.audio %}
+                                            <div class="chat-bubble-caption" style="padding-top: 0;">
+                                                <div class="bubble-meta">
+                                                    {{ m.created_at|date:"H:i" }}
+                                                    {% if m.sender_id == request.user.pk %}
+                                                        <i data-lucide="check-check" style="width: 12px; margin-left: 2px;"></i>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+
+                        </div>
                     </div>
-                </div>
-            {% endif %}
+                {% endif %}
+            {% endwith %}
         {% endfor %}
     </div>
 
-    <!-- PREVIEW IMAGE -->
-    <div id="image-preview-container">
-        <div style="position: relative;"><img id="img-preview" src=""><button class="btn-remove-preview" onclick="clearImage()">×</button></div>
-        <div style="flex: 1;"><div id="btn-view-once" class="btn-view-once-toggle" onclick="toggleViewOnce()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><text x="9.5" y="15.8" fill="currentColor" style="font-size: 11px; font-weight: 900; stroke: none;">1</text></svg></div><p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 5px; font-weight: 700;">UNA VEZ</p></div>
+    <!-- PREVIEW AREA (IF SELECTED IMAGES) -->
+    <div id="image-preview-v4" style="display: none; padding: 12px; background: white; border-top: 1px solid #eee; flex-direction: column; gap: 10px;">
+        <div id="preview-gallery-v4" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px;">
+            <!-- Thumbnails will be injected here -->
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div id="btn-view-once-v4" onclick="toggleViewOnceV4()" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #64748b; font-weight: 700; font-size: 0.8rem;">
+                <i data-lucide="eye-off" style="width: 20px;"></i> VER UNA VEZ
+            </div>
+            <button onclick="clearImageV4()" style="background: #f1f5f9; color: #ef4444; border: none; border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">ELIMINAR TODO</button>
+        </div>
     </div>
 
-    <footer class="chat-pro-input-bar">
-        <form id="chat-form" method="POST" enctype="multipart/form-data">
+    <!-- COMPOSER -->
+    <footer class="chat-composer">
+        <form id="chat-form-v4" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="hidden" name="is_view_once" id="is_view_once_val" value="false">
-            <div class="input-container-pro">
-                <label for="img-input" class="action-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></label>
-                <input type="file" id="img-input" name="image" accept="image/*" style="display: none;" onchange="previewImage(this)">
-                <div id="rec-btn" class="action-btn" onclick="toggleRecording()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></div>
-                <input type="text" id="chat-input" name="text" placeholder="Escribe un mensaje..." autocomplete="off">
-                <input type="file" id="audio-blob-input" name="audio" style="display: none;">
-                <button type="submit" class="btn-send-pro"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+            <input type="hidden" name="is_view_once" id="is_view_once_v4" value="false">
+            
+            <div class="chat-composer__inner">
+                <label for="img-input-v4" class="composer-action">
+                    <i data-lucide="image"></i>
+                </label>
+                <input type="file" id="img-input-v4" name="image" accept="image/*" multiple style="display: none;" onchange="previewImageV4(this)">
+                
+                <div id="rec-btn-v4" class="composer-action btn-composer-rec" onclick="toggleRecordingV4()">
+                    <i data-lucide="mic"></i>
+                </div>
+                
+                <input type="text" id="chat-input-v4" name="text" class="chat-composer__input" placeholder="Escribe un mensaje..." autocomplete="off">
+                
+                <input type="file" id="audio-input-v4" name="audio" style="display: none;">
+                
+                <button type="submit" class="btn-composer-send">
+                    <i data-lucide="send"></i>
+                </button>
             </div>
         </form>
     </footer>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const chatMessages = document.getElementById('chat-messages');
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+    // Inicializar Iconos
+    lucide.createIcons();
+
+    const thread = document.getElementById('chat-thread');
+
+    // Navegación al perfil desde el header
+    document.querySelector('.chat-trigger-profile').addEventListener('click', function() {
+        window.location.href = this.getAttribute('data-url');
     });
 
-    let viewOnceActive = false;
-    function toggleViewOnce() {
-        viewOnceActive = !viewOnceActive;
-        const btn = document.getElementById('btn-view-once');
-        document.getElementById('is_view_once_val').value = viewOnceActive ? "true" : "false";
-        btn.classList.toggle('active', viewOnceActive);
+    // Auto-scroll al final
+    function scrollToBottom() {
+        thread.scrollTop = thread.scrollHeight;
     }
+    window.onload = scrollToBottom;
 
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('img-preview').src = e.target.result;
-                document.getElementById('image-preview-container').style.display = 'flex';
-            };
-            reader.readAsDataURL(input.files[0]);
+    // --- Lógica de Imagen ---
+    let isViewOnce = false;
+    
+    function updateViewOnceUI() {
+        const btn = document.getElementById('btn-view-once-v4');
+        const input = document.getElementById('img-input-v4');
+        const hiddenInput = document.getElementById('is_view_once_v4');
+        const count = (input && input.files) ? input.files.length : 0;
+        
+        if (btn) {
+            btn.innerHTML = `<i data-lucide="eye-off" style="width: 20px;"></i> ${count > 1 ? 'VER TODOS UNA VEZ' : 'VER UNA VEZ'}`;
+            lucide.createIcons();
+            btn.style.color = isViewOnce ? '#22c55e' : '#64748b';
+            btn.style.borderColor = isViewOnce ? '#22c55e' : 'transparent';
+        }
+        if (hiddenInput) {
+            hiddenInput.value = isViewOnce ? 'true' : 'false';
         }
     }
-    function clearImage() {
-        document.getElementById('img-input').value = '';
-        document.getElementById('image-preview-container').style.display = 'none';
-        viewOnceActive = false;
-        document.getElementById('btn-view-once').classList.remove('active');
-        document.getElementById('is_view_once_val').value = "false";
+
+    async function previewImageV4(input) {
+        const gallery = document.getElementById('preview-gallery-v4');
+        const container = document.getElementById('image-preview-v4');
+        if (!gallery || !container) return;
+        
+        gallery.innerHTML = ''; 
+
+        if (input.files && input.files.length > 0) {
+            container.style.display = 'flex';
+            for (const file of input.files) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.height = '70px'; img.style.borderRadius = '10px';
+                    img.style.border = '1px solid #ddd'; img.style.objectFit = 'cover';
+                    img.style.width = '70px';
+                    gallery.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+            updateViewOnceUI(); 
+            setTimeout(scrollToBottom, 100);
+        } else {
+            container.style.display = 'none';
+        }
     }
 
+    function clearImageV4() {
+        const input = document.getElementById('img-input-v4');
+        if (input) input.value = '';
+        const container = document.getElementById('image-preview-v4');
+        if (container) container.style.display = 'none';
+        isViewOnce = false;
+        updateViewOnceUI();
+    }
+
+    function toggleViewOnceV4() {
+        isViewOnce = !isViewOnce;
+        updateViewOnceUI();
+        console.log("View once toggled:", isViewOnce);
+    }
+
+    // --- Lógica de Audio ---
+    function toggleAudio(id, btn) {
+        const audio = document.getElementById(id);
+        if (!audio) return;
+        const playIcon = btn.querySelector('.lucide-play');
+        const pauseIcon = btn.querySelector('.lucide-pause');
+        
+        if (audio.paused) {
+            audio.play();
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+        } else {
+            audio.pause();
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+        }
+    }
+    function updateAudioProgress(id) {
+        const audio = document.getElementById(id);
+        if (!audio) return;
+        const progress = document.getElementById(`progress-${id}`);
+        if (progress) {
+            progress.style.width = (audio.currentTime / audio.duration) * 100 + '%';
+        }
+    }
+    function resetAudioPlayer(id, btn) {
+        const playIcon = btn.querySelector('.lucide-play');
+        const pauseIcon = btn.querySelector('.lucide-pause');
+        if (playIcon) playIcon.style.display = 'block';
+        if (pauseIcon) pauseIcon.style.display = 'none';
+        const progress = document.getElementById(`progress-${id}`);
+        if (progress) progress.style.width = '0%';
+    }
+
+    // --- Grabación ---
+    let mediaRecorder, audioChunks = [], isRecording = false;
+    async function toggleRecordingV4() {
+        const btn = document.getElementById('rec-btn-v4');
+        const input = document.getElementById('chat-input-v4');
+
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const file = new File([blob], "voice.webm", { type: 'audio/webm' });
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    document.getElementById('audio-input-v4').files = dt.files;
+                    input.value = "Nota de voz lista 🎙️";
+                    input.readOnly = true;
+                };
+                audioChunks = [];
+                mediaRecorder.start();
+                isRecording = true;
+                btn.classList.add('active');
+            } catch (err) {
+                alert("Error al acceder al micrófono.");
+            }
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            btn.classList.remove('active');
+        }
+    }
+
+    // --- Ver una sola vez ---
     function openViewOnce(url, msgId) {
         window.open(url, '_blank');
         fetch(`/mensajes/visto/${msgId}/`).then(res => {
             if (res.ok) {
-                // ELIMINACIÓN VISUAL INSTANTÁNEA
-                const bubble = document.getElementById(`msg-${msgId}`);
-                if (bubble) bubble.style.display = 'none';
+                location.reload(); 
             }
         });
     }
 
-    // AUDIO & RECORDING
-    function toggleAudio(id, btn) {
-        const audio = document.getElementById(id);
-        const playIcon = btn.querySelector('.play-icon'), pauseIcon = btn.querySelector('.pause-icon');
-        if (audio.paused) { audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
-        else { audio.pause(); playIcon.style.display = 'block'; pauseIcon.style.display = 'none'; }
-    }
-    function updateAudioProgress(id) { document.getElementById('progress-' + id).style.width = (document.getElementById(id).currentTime / document.getElementById(id).duration) * 100 + '%'; }
-    function resetAudioPlayer(id, btn) { btn.querySelector('.play-icon').style.display = 'block'; btn.querySelector('.pause-icon').style.display = 'none'; document.getElementById('progress-' + id).style.width = '0%'; }
-
-    let mediaRecorder, audioChunks = [], isRecording = false;
-    async function toggleRecording() {
-        if (!isRecording) {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const file = new File([new Blob(audioChunks, { type: 'audio/webm' })], "voice.webm", { type: 'audio/webm' });
-                const dt = new DataTransfer(); dt.items.add(file);
-                document.getElementById('audio-blob-input').files = dt.files;
-                document.getElementById('chat-input').value = "Nota de voz lista 🎙️";
-                document.getElementById('chat-input').readOnly = true;
-            };
-            audioChunks = []; mediaRecorder.start();
-            document.getElementById('rec-btn').classList.add('active-rec');
-            isRecording = true;
-        } else {
-            mediaRecorder.stop(); document.getElementById('rec-btn').classList.remove('active-rec');
-            isRecording = false;
-        }
-    }
 </script>
 {% endblock %}

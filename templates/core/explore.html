@@ -1,12 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Explorar | Igualo Marketplace{% endblock %}
-{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{% url 'explore' %}{% endblock %}
+{% block title %}
+  {% if query %}"{{ query }}" en Nicaragua | IGUALO
+  {% elif current_category %}{{ current_category.name }} en Nicaragua | IGUALO
+  {% else %}Explorar anuncios en Nicaragua | IGUALO{% endif %}
+{% endblock %}
+
+{% block meta_description %}
+  {% if current_category %}Encontrá lo mejor de {{ current_category.name }} en Nicaragua. Comprá y vendé en IGUALO.{% else %}Explorá miles de anuncios en Nicaragua. Celulares, carros, motos, tecnología y más en IGUALO.{% endif %}
+{% endblock %}
+
+{% block canonical %}https://www.igualo.com{% url 'explore' %}{% endblock %}
+
 {% block robots %}
-{% if query or min_price or max_price or loc or radius or current_category or current_subcategory %}
-noindex, follow
-{% elif sort and sort != '-created_at' %}
+{% if query or min_price or max_price or loc or radius or current_subcategory %}
 noindex, follow
 {% else %}
 index, follow
@@ -86,8 +94,7 @@ index, follow
           <!-- Rango de Distancia -->
           <div class="filter-distance-row">
             <div class="distance-header">
-              <label>Radio de búsqueda: <span id="radiusVal" style="color:var(--primary); font-weight: 900;">{{
-                  radius|default:'20' }}</span> km</label>
+              <label>Radio de búsqueda: <span id="radiusVal" style="color:var(--primary); font-weight: 900;">{{ radius|default:'20' }}</span> km</label>
               <span class="range-hint">Ajusta para ver cosas más cerca</span>
             </div>
             <input type="range" name="radius" min="0" max="100" step="5" class="distance-slider"
@@ -716,6 +723,7 @@ index, follow
         color: #000 !important;
       }
     }
+    
   </style>
 
   <!-- Catálogo de Productos -->
@@ -746,6 +754,11 @@ index, follow
           {% for listing in personalized_recommendations|slice:":4" %}
           <a href="{{ listing.get_absolute_url }}" class="product-card" style="border-radius: 18px;">
             <div class="product-img-wrapper">
+              {% if listing.is_promoted %}
+              <div class="featured-badge-pro" title="Anuncio Priorizado">
+                  <span class="star-icon">★</span>
+              </div>
+              {% endif %}
               {% if listing.image %}
               <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
               {% else %}
@@ -767,6 +780,11 @@ index, follow
         {% for listing in listings %}
         <a href="{{ listing.get_absolute_url }}" class="product-card">
           <div class="product-img-wrapper">
+            {% if listing.is_promoted %}
+            <div class="featured-badge-pro" title="Anuncio Priorizado">
+                <span class="star-icon">★</span>
+            </div>
+            {% endif %}
             {% if listing.image %}
             <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
             {% else %}
@@ -814,20 +832,25 @@ index, follow
         <div class="products-grid">
             {% for listing in recommended_listings %}
                 <a href="{{ listing.get_absolute_url }}" class="product-card">
-                <div class="product-img-wrapper">
-                {% if listing.image %}
-                <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
-                {% else %}
-                <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
-                {% endif %}
-                </div>
-                <div class="product-info">
+                  <div class="product-img-wrapper">
+                    {% if listing.is_promoted %}
+                    <div class="featured-badge-pro" title="Anuncio Priorizado">
+                        <span class="star-icon">★</span>
+                    </div>
+                    {% endif %}
+                    {% if listing.image %}
+                    <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
+                    {% else %}
+                    <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
+                    {% endif %}
+                  </div>
+                  <div class="product-info">
                     <div class="product-price">C$ {{ listing.price }}</div>
                     <div class="product-title">{{ listing.title }}</div>
                     <div class="product-footer">
-                    <span class="product-location">📍 {{ listing.location }}</span>
+                      <span class="product-location">📍 {{ listing.location }}</span>
                     </div>
-                </div>
+                  </div>
                 </a>
             {% endfor %}
         </div>

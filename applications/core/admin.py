@@ -1,6 +1,10 @@
 from django.contrib import admin
-from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport, SearchHistory
+from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport, SearchHistory, SystemPaymentSetting
 from django.utils.safestring import mark_safe
+
+admin.site.site_header = "Administración de IGUALO"
+admin.site.site_title = "IGUALO Admin"
+admin.site.index_title = "Panel de administración"
 
 
 @admin.register(BugReport)
@@ -37,9 +41,9 @@ class SubcategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "price", "category", "subcategory", "is_active", "location", "user", "created_at")
+    list_display = ("id", "title", "price", "category", "subcategory", "is_active", "is_featured_paid", "location", "user", "created_at")
     list_editable = ("is_active",)
-    list_filter = ("is_active", "category", "subcategory", "location", "created_at")
+    list_filter = ("is_active", "is_featured_paid", "category", "subcategory", "location", "created_at")
     search_fields = ("title", "description", "location")
     autocomplete_fields = ("category", "subcategory", "user")
     date_hierarchy = "created_at"
@@ -47,11 +51,15 @@ class ListingAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "show_verification_photo", "is_verified", "phone", "location")
-    list_filter = ("is_verified", "location")
+    list_display = ("user", "show_verification_photo", "is_verified", "es_pro", "phone", "location")
+    list_filter = ("is_verified", "is_pro", "location")
     list_editable = ("is_verified",)
     search_fields = ("user__username", "phone", "location")
     readonly_fields = ("show_details_verification_photo",)
+
+    @admin.display(boolean=True, description="Usuario Pro")
+    def es_pro(self, obj):
+        return obj.is_pro
 
     def show_verification_photo(self, obj):
         if obj.verification_photo:
@@ -78,6 +86,18 @@ class MarketingConsentAdmin(admin.ModelAdmin):
     list_filter = ("allows_notifications", "allows_marketing", "created_at")
     search_fields = ("email", "user__username", "user__email")
     readonly_fields = ("created_at",)
+
+
+@admin.register(SystemPaymentSetting)
+class SystemPaymentSettingAdmin(admin.ModelAdmin):
+    list_display = ("enabled", "updated_at")
+    readonly_fields = ("updated_at",)
+
+    def has_add_permission(self, request):
+        return not SystemPaymentSetting.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(SearchHistory)
 class SearchHistoryAdmin(admin.ModelAdmin):

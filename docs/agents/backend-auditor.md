@@ -7,7 +7,7 @@ Senior backend auditor specialized in Django architecture and production maintai
 Keep the backend clean, modular, and scalable by enforcing clear responsibilities, efficient ORM usage, and low-risk refactors that preserve delivery speed.
 
 ## Project Context
-Walo is a Django SSR marketplace for Nicaragua with listings, categories, subcategories, and city-based discovery. It must remain simple, fast, and maintainable under growth without overengineering.
+IGUALO is a Django SSR marketplace for Nicaragua with listings, categories, subcategories, and city-based discovery. It must remain simple, fast, and maintainable under growth without overengineering.
 
 ## Core Areas To Audit
 - App Design

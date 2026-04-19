@@ -19,11 +19,18 @@
         {% for listing in listings %}
         <div class="product-card" style="position: relative;">
             <a href="{{ listing.get_absolute_url }}" style="text-decoration: none; color: inherit; display: block;">
-                {% if listing.image %}
-                <img src="{{ listing.image.url }}" alt="{{ listing.title }}" class="product-img">
-                {% else %}
-                <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img">
-                {% endif %}
+                <div class="product-img-wrapper">
+                    {% if listing.is_promoted %}
+                    <div class="featured-badge-pro" title="Anuncio Priorizado">
+                        <span class="star-icon">★</span>
+                    </div>
+                    {% endif %}
+                    {% if listing.image %}
+                    <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy">
+                    {% else %}
+                    <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
+                    {% endif %}
+                </div>
                 
                 {% if not listing.is_active %}
                 <div style="position: absolute; top: 15px; left: 15px; background: #ef4444; color: #fff; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.7rem; z-index: 2;">
@@ -40,11 +47,13 @@
                 </div>
             </a>
             
-            <!-- Botón de Editar Flotante / Accion Primaria -->
-            <div style="padding: 0 20px 20px;">
+            <div style="padding: 0 20px 20px; display: grid; gap: 10px;">
                 <a href="{% url 'edit_listing' listing.id %}" class="cmp-btn" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; align-items: center; gap: 8px; font-weight: 700;">
                     <i data-lucide="edit-3" style="width: 16px;"></i> Editar Anuncio
                 </a>
+                <button type="button" class="cmp-btn" style="width: 100%; justify-content: center; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fecaca; display: flex; align-items: center; gap: 8px; font-weight: 700;" onclick="openDeleteModal('{{ listing.id }}', '{{ listing.title|escapejs }}')">
+                    <i data-lucide="trash-2" style="width: 16px;"></i> Eliminar Anuncio
+                </button>
             </div>
         </div>
         {% empty %}
@@ -55,6 +64,24 @@
             <a href="{% url 'create_listing' %}" class="cmp-btn cmp-btn-primary">Publicar mi primer anuncio</a>
         </div>
         {% endfor %}
+    </div>
+</div>
+
+<div id="delete-listing-modal" class="delete-modal-overlay" aria-hidden="true">
+    <div class="delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="delete-listing-title">
+        <button type="button" class="delete-modal-close" onclick="closeDeleteModal()">&times;</button>
+        <div style="font-size: 2.2rem; margin-bottom: 10px;">🗑️</div>
+        <h3 id="delete-listing-title" style="font-size: 1.4rem; margin-bottom: 10px; color: #fff;">Eliminar anuncio</h3>
+        <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;" id="delete-listing-text">
+            Esta acción quitará el anuncio de la vista pública y borrará sus imágenes asociadas.
+        </p>
+        <form id="delete-listing-form" method="post" action="">
+            {% csrf_token %}
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="cmp-btn" style="flex: 1; min-width: 140px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" onclick="closeDeleteModal()">Cancelar</button>
+                <button type="submit" class="cmp-btn" style="flex: 1; min-width: 140px; background: #ef4444; color: #fff; border: 1px solid #ef4444;">Sí, eliminar</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -117,9 +144,77 @@
         font-weight: 600;
     }
 
+    .delete-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.72);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1000;
+    }
+
+    .delete-modal-overlay.is-active {
+        display: flex;
+    }
+
+    .delete-modal-content {
+        width: min(100%, 520px);
+        background: #111;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 28px;
+        padding: 28px;
+        position: relative;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    .delete-modal-close {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.8rem;
+        cursor: pointer;
+    }
+
     @media (max-width: 768px) {
         .products-grid { grid-template-columns: 1fr; gap: 20px; }
         h1 { font-size: 2.2rem !important; }
     }
 </style>
+
+<script>
+    const deleteModal = document.getElementById('delete-listing-modal');
+    const deleteForm = document.getElementById('delete-listing-form');
+    const deleteText = document.getElementById('delete-listing-text');
+
+    function openDeleteModal(listingId, listingTitle) {
+        deleteForm.action = `{% url 'delete_listing' 0 %}`.replace('/0/', `/${listingId}/`);
+        deleteText.textContent = `Vas a eliminar "${listingTitle}". Esta acción lo quitará de la plataforma y borrará sus imágenes asociadas. No se puede deshacer.`;
+        deleteModal.classList.add('is-active');
+        deleteModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+        deleteModal.classList.remove('is-active');
+        deleteModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = 'auto';
+    }
+
+    deleteModal.addEventListener('click', function (event) {
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && deleteModal.classList.contains('is-active')) {
+            closeDeleteModal();
+        }
+    });
+</script>
 {% endblock %}

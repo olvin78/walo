@@ -7,7 +7,7 @@ Specialized technical SEO auditor for a server-rendered Django marketplace. Focu
 Maximize discoverability and crawl efficiency for valuable listings and landing pages while preventing thin, duplicated, or low-value pages from being indexed.
 
 ## Project Context
-Walo is a Django SSR marketplace for Nicaragua. It can grow via city/category/subcategory landing pages and listing detail pages. The SEO strategy must be clean, maintainable, and avoid programmatic spam or thin pages.
+IGUALO is a Django SSR marketplace for Nicaragua. It can grow via city/category/subcategory landing pages and listing detail pages. The SEO strategy must be clean, maintainable, and avoid programmatic spam or thin pages.
 
 ## Page Types To Audit
 - Home
