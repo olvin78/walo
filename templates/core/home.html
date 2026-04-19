@@ -269,8 +269,12 @@
                 {% for list in search_results %}
                 <div class="item-card-pro">
                     <a href="{{ list.get_absolute_url }}" class="card-link">
-                        <div class="card-img-wrapper">
-                            <img src="{% if list.image %}{{ list.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ list.title }}" loading="lazy">
+                        <div class="product-img-wrapper">
+                            <img src="{% if list.image %}{{ list.get_thumb }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
+                                 alt="{{ list.title }}" 
+                                 loading="lazy" 
+                                 decoding="async"
+                                 width="400" height="400">
                             <div class="card-badge-loc">{{ list.location }}</div>
                         </div>
                         <div class="card-body-pro">
@@ -350,7 +354,11 @@
                         <a href="{% url 'signup' %}" class="btn-pro-white">Empezar a Vender ahora</a>
                     </div>
                     <div class="bento-visual-pro">
-                        <img src="{% static 'img/walo_items_to_sell_premium.png' %}" alt="Vender productos online en Nicaragua" loading="lazy">
+                        <img src="{% static 'img/walo_items_to_sell_premium.png' %}" 
+                             alt="Vender productos online en Nicaragua" 
+                             loading="lazy" 
+                             decoding="async"
+                             width="600" height="400">
                     </div>
                 </div>
 
@@ -385,8 +393,12 @@
                 {% for list in latest_listings %}
                 <div class="item-card-pro">
                     <a href="{{ list.get_absolute_url }}" class="card-link">
-                        <div class="card-img-wrapper">
-                            <img src="{% if list.image %}{{ list.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" alt="{{ list.title }} en {{ list.location }}" loading="lazy">
+                        <div class="product-img-wrapper">
+                            <img src="{% if list.image %}{{ list.get_thumb }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
+                                 alt="{{ list.title }} en {{ list.location }}" 
+                                 loading="lazy" 
+                                 decoding="async"
+                                 width="400" height="400">
                             <div class="card-badge-loc">{{ list.location }}</div>
                         </div>
                         <div class="card-body-pro">
@@ -746,12 +758,63 @@
     .section-feed { padding: 80px 0; }
     .feed-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
     .feed-grid-pro { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
-    .item-card-pro { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 24px; overflow: hidden; transition: 0.3s; }
+    
+    @media (max-width: 768px) {
+        .feed-grid-pro {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            align-items: start;
+        }
+        .card-body-pro {
+            padding: 12px;
+        }
+        .card-price {
+            font-size: 1.1rem;
+        }
+        .card-title-pro {
+            font-size: 0.9rem;
+            line-clamp: 2;
+            -webkit-line-clamp: 2;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.4em;
+        }
+        .card-badge-loc {
+            top: 10px;
+            left: 10px;
+            font-size: 0.65rem;
+            padding: 2px 10px;
+        }
+    }
+    .item-card-pro { 
+        background: var(--glass-bg); 
+        border: 1px solid var(--glass-border); 
+        border-radius: 20px; 
+        overflow: hidden; 
+        transition: 0.3s; 
+        display: flex;
+        flex-direction: column;
+        height: 100%; /* Permitir que todas las cards de una fila tengan igual altura si se desea, o quitar para altura variable */
+    }
     .item-card-pro:hover { transform: translateY(-10px); border-color: var(--primary); }
-    .card-img-wrapper { position: relative; aspect-ratio: 1; }
-    .card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-    .card-badge-loc { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; }
-    .card-body-pro { padding: 20px; }
+    .product-img-wrapper { 
+        position: relative; 
+        width: 100%;
+        padding-top: 100%;
+        height: 0;
+        overflow: hidden;
+    }
+    .product-img-wrapper img { 
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+    }
+    .card-badge-loc { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; z-index: 2; }
+    .card-body-pro { padding: 20px; flex: 1; display: flex; flex-direction: column; }
     .card-price { font-size: 1.4rem; font-weight: 900; color: var(--primary); }
 
     /* PRO TOOLS */

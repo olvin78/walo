@@ -22,6 +22,40 @@ class Category(models.Model):
     def get_absolute_url(self):
         return reverse("category_detail", kwargs={"slug": self.slug})
 
+    def save(self, *args, **kwargs):
+        is_new_image = False
+        if self.pk:
+            old_obj = Category.objects.filter(pk=self.pk).first()
+            if old_obj and old_obj.image != self.image:
+                is_new_image = True
+        else:
+            if self.image:
+                is_new_image = True
+
+        super().save(*args, **kwargs)
+        
+        if is_new_image and self.image:
+            from .utils import process_image
+            process_image(self.image)
+
+    @property
+    def get_thumb(self):
+        return self._get_size_url('thumb')
+
+    def _get_size_url(self, suffix):
+        if not self.image:
+            return None
+        from .utils import get_thumbnail_path
+        import os
+        from django.conf import settings
+        
+        thumb_relative_path = get_thumbnail_path(self.image.name, suffix)
+        thumb_full_path = os.path.join(settings.MEDIA_ROOT, thumb_relative_path)
+        
+        if os.path.exists(thumb_full_path):
+            return settings.MEDIA_URL + thumb_relative_path
+        return self.image.url
+
 class Subcategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     name = models.CharField(max_length=100)
@@ -59,10 +93,51 @@ class Listing(models.Model):
         return reverse('listing_detail', kwargs={'listing_id': self.pk, 'slug': self.slug})
 
     def save(self, *args, **kwargs):
+        is_new_image = False
+        if self.pk:
+            old_listing = Listing.objects.filter(pk=self.pk).first()
+            if old_listing and old_listing.image != self.image:
+                is_new_image = True
+        else:
+            if self.image:
+                is_new_image = True
+
         if not self.slug:
             base = slugify(self.title or "anuncio")
             self.slug = base or "anuncio"
+        
         super().save(*args, **kwargs)
+        
+        # Procesar imágenes después de guardar para tener la ruta física
+        if is_new_image and self.image:
+            from .utils import process_image
+            process_image(self.image)
+
+    @property
+    def get_thumb(self):
+        return self._get_size_url('thumb')
+
+    @property
+    def get_medium(self):
+        return self._get_size_url('medium')
+
+    @property
+    def get_large(self):
+        return self._get_size_url('large')
+
+    def _get_size_url(self, suffix):
+        if not self.image:
+            return None
+        from .utils import get_thumbnail_path
+        import os
+        from django.conf import settings
+        
+        thumb_relative_path = get_thumbnail_path(self.image.name, suffix)
+        thumb_full_path = os.path.join(settings.MEDIA_ROOT, thumb_relative_path)
+        
+        if os.path.exists(thumb_full_path):
+            return settings.MEDIA_URL + thumb_relative_path
+        return self.image.url
 
     def __str__(self):
         return self.title
@@ -71,6 +146,44 @@ class ListingImage(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='listings/extra/')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        is_new_image = False
+        if self.pk:
+            old_img = ListingImage.objects.filter(pk=self.pk).first()
+            if old_img and old_img.image != self.image:
+                is_new_image = True
+        else:
+            if self.image:
+                is_new_image = True
+
+        super().save(*args, **kwargs)
+        
+        if is_new_image and self.image:
+            from .utils import process_image
+            process_image(self.image)
+
+    @property
+    def get_thumb(self):
+        return self._get_size_url('thumb')
+
+    @property
+    def get_medium(self):
+        return self._get_size_url('medium')
+
+    def _get_size_url(self, suffix):
+        if not self.image:
+            return None
+        from .utils import get_thumbnail_path
+        import os
+        from django.conf import settings
+        
+        thumb_relative_path = get_thumbnail_path(self.image.name, suffix)
+        thumb_full_path = os.path.join(settings.MEDIA_ROOT, thumb_relative_path)
+        
+        if os.path.exists(thumb_full_path):
+            return settings.MEDIA_URL + thumb_relative_path
+        return self.image.url
 
     def __str__(self):
         return f"Imagen de {self.listing.title}"

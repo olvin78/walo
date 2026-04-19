@@ -39,12 +39,14 @@
     color: var(--text-main);
 }
 
-.nav-icon, .sub-icon {
+.nav-icon,
+.sub-icon {
     width: 18px;
     height: 18px;
     stroke-width: 1.5px;
     margin-right: 8px;
-    vertical-align: -4px; /* Centrado preciso con el texto */
+    vertical-align: -4px;
+    /* Centrado preciso con el texto */
     transition: transform 0.2s ease;
 }
 
@@ -105,11 +107,19 @@
 }
 
 @keyframes slideUpFast {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.dropdown-menu a, .dropdown-menu form button {
+.dropdown-menu a,
+.dropdown-menu form button {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -125,7 +135,8 @@
     transition: all 0.2s ease;
 }
 
-.dropdown-menu a:hover, .dropdown-menu form button:hover {
+.dropdown-menu a:hover,
+.dropdown-menu form button:hover {
     background: rgba(255, 255, 255, 0.03);
     color: var(--primary);
 }
@@ -161,6 +172,7 @@
     .cmp-navbar-inner {
         padding: 26px 0;
     }
+
     .cmp-navbar-toggle {
         display: flex;
     }
@@ -186,7 +198,9 @@
         left: 0;
     }
 
-    .cmp-navbar-menu a, .dropdown-trigger, .report-bug-trigger {
+    .cmp-navbar-menu a,
+    .dropdown-trigger,
+    .report-bug-trigger {
         width: 100% !important;
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -202,7 +216,8 @@
         text-align: left;
     }
 
-    .cmp-navbar-menu a:hover, .dropdown-trigger:hover {
+    .cmp-navbar-menu a:hover,
+    .dropdown-trigger:hover {
         background: rgba(255, 255, 255, 0.08);
         border-color: var(--primary);
     }
@@ -215,10 +230,20 @@
     }
 
     /* Ajuste para el dropdown en movil */
-    .cmp-navbar-dropdown { width: 100%; }
-    .dropdown-trigger { width: 100%; background: rgba(34, 197, 94, 0.05) !important; color: var(--primary) !important; }
-    .dropdown-trigger .arrow { margin-left: auto; }
-    
+    .cmp-navbar-dropdown {
+        width: 100%;
+    }
+
+    .dropdown-trigger {
+        width: 100%;
+        background: rgba(34, 197, 94, 0.05) !important;
+        color: var(--primary) !important;
+    }
+
+    .dropdown-trigger .arrow {
+        margin-left: auto;
+    }
+
     .dropdown-menu {
         position: static !important;
         width: 100% !important;
@@ -228,21 +253,23 @@
         flex-direction: column;
         margin: 15px 0 !important;
         border-radius: 20px !important;
-        border: 1px solid rgba(255,255,255,0.05) !important;
-        overflow: hidden; /* Para que el hover respete el redondeado */
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        overflow: hidden;
+        /* Para que el hover respete el redondeado */
     }
-    
+
     .dropdown-menu.is-active {
         display: flex;
     }
 
-    .dropdown-menu a, .dropdown-menu form button {
+    .dropdown-menu a,
+    .dropdown-menu form button {
         background: transparent !important;
         border: none !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
         padding: 16px 20px !important;
         font-size: 1rem !important;
-        color: rgba(255,255,255,0.8) !important;
+        color: rgba(255, 255, 255, 0.8) !important;
         width: 100% !important;
         text-align: left !important;
         display: flex !important;
@@ -251,18 +278,27 @@
         transition: 0.2s;
     }
 
-    .dropdown-menu a:last-child, .dropdown-menu form:last-child button {
+    .dropdown-menu a:last-child,
+    .dropdown-menu form:last-child button {
         border-bottom: none !important;
     }
 
-    .dropdown-menu a:hover, .dropdown-menu form button:hover {
+    .dropdown-menu a:hover,
+    .dropdown-menu form button:hover {
         background: rgba(34, 197, 94, 0.05) !important;
         color: var(--primary) !important;
-        padding-left: 25px !important; /* Pequeño efecto de desplazamiento */
+        padding-left: 25px !important;
+        /* Pequeño efecto de desplazamiento */
     }
 
-    .dropdown-menu form { width: 100%; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-    .dropdown-menu form:last-child { border-bottom: none; }
+    .dropdown-menu form {
+        width: 100%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .dropdown-menu form:last-child {
+        border-bottom: none;
+    }
 
     .nav-cta-mobile {
         background: var(--primary) !important;

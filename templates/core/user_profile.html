@@ -16,7 +16,7 @@
             <div class="pro-fluid-avatar-zone">
                 <div class="fluid-avatar">
                     {% if profile_user.profile.avatar %}
-                        <img src="{{ profile_user.profile.avatar.url }}" alt="{{ profile_user.username }}">
+                        <img src="{{ profile_user.profile.avatar.url }}" alt="{{ profile_user.username }}" loading="lazy" decoding="async">
                     {% else %}
                         <div class="fluid-avatar-abbr">{{ profile_user.username|slice:":1"|upper }}</div>
                     {% endif %}
@@ -89,7 +89,7 @@
                 {% for list in listings %}
                 <a href="{{ list.get_absolute_url }}" class="product-card">
                     {% if list.image %}
-                    <img src="{{ list.image.url }}" alt="{{ list.title }} en {{ list.location }}" class="product-img" loading="lazy">
+                    <img src="{{ list.get_thumb }}" alt="{{ list.title }} en {{ list.location }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
                     {% else %}
                     <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
                     {% endif %}
@@ -114,7 +114,6 @@
 .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 28px; }
 .product-card { background: var(--bg-main); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; transition: all 0.3s; text-decoration: none; color: inherit; }
 .product-card:hover { transform: translateY(-6px); border-color: #22c55e; }
-.product-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
 .product-info { padding: 18px; }
 .product-price { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
 .product-title { font-size: 1.05rem; font-weight: 700; color: #fff; }
