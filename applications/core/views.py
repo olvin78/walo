@@ -915,7 +915,7 @@ def report_bug(request):
                 description=description,
                 screenshot=screenshot
             )
-            messages.success(request, "¡Gracias! Hemos recibido tu reporte. El equipo técnico lo revisará lo antes posible para seguir mejorando Walo.")
+            messages.success(request, "¡Gracias! Hemos recibido tu reporte. El equipo técnico lo revisará lo antes posible para seguir mejorando Igualo.")
             return redirect(request.META.get('HTTP_REFERER', 'home'))
             
     return redirect('home')

@@ -1,5 +1,5 @@
 /* 
-   Walo Nicaragua - Ultra Minimalist (No Cards)
+   Igualo Nicaragua - Ultra Minimalist (No Cards)
    Concept: Pure Content on Dark Background
 */
 
@@ -11,7 +11,7 @@
 }
 
 /* --- Container Control --- */
-.walo-main-container {
+.igualo-main-container {
     max-width: 1100px; /* Increased for split layout */
     margin: 0 auto;
     padding: 0 15px;
@@ -33,7 +33,7 @@
 }
 
 /* --- Gallery Area (Pure Image) --- */
-.walo-media-card {
+.igualo-media-card {
     background: transparent;
     border-radius: 0;
     overflow: hidden;
@@ -42,7 +42,7 @@
     aspect-ratio: 4 / 3;
 }
 
-.walo-media-carousel {
+.igualo-media-carousel {
     display: flex;
     height: 100%;
     width: 100%;
@@ -93,7 +93,7 @@
 }
 
 /* --- Info Section (No Background) --- */
-.walo-info-section {
+.igualo-info-section {
     padding: 10px 0;
     margin-bottom: 35px;
 }
@@ -184,14 +184,14 @@
 }
 
 /* --- Action Buttons --- */
-.walo-actions-group {
+.igualo-actions-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-bottom: 40px;
 }
 
-.btn-walo-action {
+.btn-igualo-action {
     height: 60px;
     display: flex;
     align-items: center;
@@ -273,12 +273,12 @@
         position: static;
     }
 
-    .walo-main-container { max-width: 700px; }
+    .igualo-main-container { max-width: 700px; }
 }
 
 @media (max-width: 767.98px) {
-    .walo-main-container { padding: 0 15px; }
-    .walo-actions-group { grid-template-columns: 1fr; gap: 12px; }
+    .igualo-main-container { padding: 0 15px; }
+    .igualo-actions-group { grid-template-columns: 1fr; gap: 12px; }
     .listing-title-main { font-size: 2.2rem; }
     .listing-price-main { font-size: 2.1rem; }
     .detail-split-layout { gap: 20px; }

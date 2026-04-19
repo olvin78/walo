@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ category.name }} | Walo Nicaragua{% endblock %}
-{% block meta_description %}Explora anuncios de {{ category.name }} en Walo. Compra y vende online en Nicaragua con personas cerca de ti.{% endblock %}
-{% block og_title %}{{ category.name }} | Walo Nicaragua{% endblock %}
+{% block title %}{{ category.name }} | Igualo Nicaragua{% endblock %}
+{% block meta_description %}Explora anuncios de {{ category.name }} en Igualo. Compra y vende online en Nicaragua con personas cerca de ti.{% endblock %}
+{% block og_title %}{{ category.name }} | Igualo Nicaragua{% endblock %}
 {% block og_description %}Anuncios de {{ category.name }} en Nicaragua. Publica y encuentra ofertas cerca de ti.{% endblock %}
-{% block twitter_title %}{{ category.name }} | Walo Nicaragua{% endblock %}
-{% block twitter_description %}Compra y vende {{ category.name }} en Nicaragua. Marketplace local Walo.{% endblock %}
+{% block twitter_title %}{{ category.name }} | Igualo Nicaragua{% endblock %}
+{% block twitter_description %}Compra y vende {{ category.name }} en Nicaragua. Marketplace local Igualo.{% endblock %}
 {% block canonical %}{{ request.build_absolute_uri }}{% endblock %}
 {% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
 {% block og_image %}{% if category.image %}{{ request.scheme }}://{{ request.get_host }}{{ category.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endif %}{% endblock %}
@@ -51,7 +51,7 @@
 {% endblock %}
 
 {% block content %}
-  <div class="walo-container">
+  <div class="igualo-container">
     <section class="section-header" style="margin-bottom: 30px;">
       <h1>{{ category.name }}</h1>
       <p style="color: var(--text-muted);">Encuentra anuncios recientes en esta categoria.</p>

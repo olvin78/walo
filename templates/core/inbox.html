@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Mensajes | Walo{% endblock %}
+{% block title %}Mensajes | Igualo{% endblock %}
 
 {% block content %}
-<div class="walo-container" style="padding: 40px 0;">
+<div class="igualo-container" style="padding: 40px 0;">
   
-  <!-- Sistema de Historias (Walo Pro Editor) -->
+  <!-- Sistema de Historias (Igualo Pro Editor) -->
   <section class="section-stories" style="margin-bottom: 30px;">
     <div class="stories-container" style="display: flex; gap: 15px; overflow-x: auto; padding: 10px 0;">
       
@@ -50,7 +50,7 @@
     </div>
   </section>
 
-  <!-- WALO PRO EDITOR MODAL -->
+  <!-- IGUALO PRO EDITOR MODAL -->
   <div id="storyEditor" class="story-editor-modal-pro">
     <div class="pro-editor-layout">
       <div class="pro-sidebar">
@@ -636,7 +636,7 @@
     .pro-draggable-label[data-type="clock"] { font-size: 70px; font-weight: 900; text-shadow: 0 5px 20px rgba(0,0,0,0.5); }
     .pro-draggable-label[data-type="date"] { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 10px 25px; border-radius: 15px; font-weight: 800; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; }
     .pro-draggable-label[data-type="location"] { background: var(--primary); color: #000; padding: 10px 20px; border-radius: 30px; font-weight: 900; }
-    .pro-draggable-label[data-type="walo"] { background: #fff; color: #000; padding: 8px 15px; font-weight: 900; letter-spacing: 2px; }
+    .pro-draggable-label[data-type="igualo"] { background: #fff; color: #000; padding: 8px 15px; font-weight: 900; letter-spacing: 2px; }
 
     .pro-rotate-handle {
       position: absolute;
@@ -1031,7 +1031,7 @@
       const now = new Date();
       if(type === 'clock') div.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toUpperCase();
       else if(type === 'date') div.innerText = `${now.getDate()} ${['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][now.getMonth()]}`;
-      else if(type === 'hashtag') { div.innerText = '#WALO'; div.ondblclick = () => openTextEditor(div); }
+      else if(type === 'hashtag') { div.innerText = '#IGUALO'; div.ondblclick = () => openTextEditor(div); }
       else if(type === 'weather') { div.innerHTML = `<span>32°</span> <span style="font-size:1.8rem;">☀️</span>`; }
       else if(type === 'poll') {
         div.innerHTML = `<div class="poll-title">HAZ UNA PREGUNTA</div><div style="display:flex;gap:10px;"><div style="flex:1;background:var(--primary);color:#000;padding:8px;border-radius:10px;font-weight:900;font-size:0.8rem;">SÍ</div><div style="flex:1;background:var(--primary);color:#000;padding:8px;border-radius:10px;font-weight:900;font-size:0.8rem;">NO</div></div>`;

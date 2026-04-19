@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Explorar | Walo Marketplace{% endblock %}
+{% block title %}Explorar | Igualo Marketplace{% endblock %}
 {% block canonical %}{{ request.scheme }}://{{ request.get_host }}{% url 'explore' %}{% endblock %}
 {% block robots %}
 {% if query or min_price or max_price or loc or radius or current_category or current_subcategory %}
@@ -15,7 +15,7 @@ index, follow
 {% block body_class %}page-home page-explore{% endblock %}
 
 {% block content %}
-<div class="walo-container">
+<div class="igualo-container">
   <!-- Cabecera de Exploración Minimalista -->
   <header class="explore-header-pro">
     <div class="header-main-search">
@@ -720,7 +720,7 @@ index, follow
 
   <!-- Catálogo de Productos -->
   <section class="section-products">
-    <div class="walo-container">
+    <div class="igualo-container">
       <div class="section-header">
         <h2>
           {% if current_category %}
@@ -809,7 +809,7 @@ index, follow
       <div class="recommendations-container" id="recommendations-target" style="grid-column: 1/-1; margin-top: 20px; scroll-margin-top: 100px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;">
             <h3 style="font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px;">Te recomendamos estos productos</h3>
-            <span style="background: var(--primary); color: #000; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.65rem; text-transform: uppercase;">Walo Picks ✨</span>
+            <span style="background: var(--primary); color: #000; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.65rem; text-transform: uppercase;">Igualo Picks ✨</span>
         </div>
         <div class="products-grid">
             {% for listing in recommended_listings %}
@@ -892,7 +892,7 @@ index, follow
 
         let msg = "No pudimos obtener tu ubicación.";
         if (err.code === 1) {
-          msg = "Permiso denegado. Por favor, haz clic en el candado 🔒 de la barra de direcciones y permite la 'Ubicación' para WALO.";
+          msg = "Permiso denegado. Por favor, haz clic en el candado 🔒 de la barra de direcciones y permite la 'Ubicación' para IGUALO.";
         } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
           msg = "La geolocalización requiere una conexión segura (HTTPS). Por ahora, usa el filtro de Ciudad.";
         }

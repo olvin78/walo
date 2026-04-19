@@ -2,22 +2,22 @@
 {% load static %}
 
 {% block title %}
-  {% if category %}{{ category.name }} en {{ city_name }} | Walo Nicaragua{% else %}Anuncios en {{ city_name }} | Walo Nicaragua{% endif %}
+  {% if category %}{{ category.name }} en {{ city_name }} | Igualo Nicaragua{% else %}Anuncios en {{ city_name }} | Igualo Nicaragua{% endif %}
 {% endblock %}
 {% block meta_description %}
-  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }}. Compra y vende en Walo con personas cerca de ti.{% else %}Explora anuncios en {{ city_name }}. Compra y vende en Walo con personas cerca de ti.{% endif %}
+  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }}. Compra y vende en Igualo con personas cerca de ti.{% else %}Explora anuncios en {{ city_name }}. Compra y vende en Igualo con personas cerca de ti.{% endif %}
 {% endblock %}
 {% block og_title %}
-  {% if category %}{{ category.name }} en {{ city_name }} | Walo Nicaragua{% else %}Anuncios en {{ city_name }} | Walo Nicaragua{% endif %}
+  {% if category %}{{ category.name }} en {{ city_name }} | Igualo Nicaragua{% else %}Anuncios en {{ city_name }} | Igualo Nicaragua{% endif %}
 {% endblock %}
 {% block og_description %}
-  {% if category %}Compra y vende {{ category.name|lower }} en {{ city_name }} con Walo.{% else %}Compra y vende en {{ city_name }} con Walo.{% endif %}
+  {% if category %}Compra y vende {{ category.name|lower }} en {{ city_name }} con Igualo.{% else %}Compra y vende en {{ city_name }} con Igualo.{% endif %}
 {% endblock %}
 {% block twitter_title %}
-  {% if category %}{{ category.name }} en {{ city_name }} | Walo Nicaragua{% else %}Anuncios en {{ city_name }} | Walo Nicaragua{% endif %}
+  {% if category %}{{ category.name }} en {{ city_name }} | Igualo Nicaragua{% else %}Anuncios en {{ city_name }} | Igualo Nicaragua{% endif %}
 {% endblock %}
 {% block twitter_description %}
-  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }} con Walo.{% else %}Encuentra ofertas en {{ city_name }} con Walo.{% endif %}
+  {% if category %}Encuentra {{ category.name|lower }} en {{ city_name }} con Igualo.{% else %}Encuentra ofertas en {{ city_name }} con Igualo.{% endif %}
 {% endblock %}
 {% block canonical %}
   {% if category %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'city_landing' city_slug %}{% endif %}
@@ -28,7 +28,7 @@
 {% block robots %}{% if has_results %}index, follow{% else %}noindex, follow{% endif %}{% endblock %}
 
 {% block content %}
-<div class="walo-container">
+<div class="igualo-container">
   <section class="section-header" style="margin-bottom: 30px;">
     <h1>
       {% if category %}{{ category.name }} en {{ city_name }}{% else %}Anuncios en {{ city_name }}{% endif %}

@@ -5,22 +5,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Walo | Compra y venta online en Nicaragua{% endblock %}</title>
+  <title>{% block title %}Igualo | Compra y venta online en Nicaragua{% endblock %}</title>
   <meta name="description"
-    content="{% block meta_description %}Walo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios, encuentra ofertas y conecta con personas cerca de ti.{% endblock %}" />
+    content="{% block meta_description %}Igualo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios, encuentra ofertas y conecta con personas cerca de ti.{% endblock %}" />
   <meta name="robots" content="{% block robots %}index, follow{% endblock %}" />
   <link rel="canonical" href="{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}" />
-  <meta property="og:site_name" content="Walo" />
-  <meta property="og:title" content="{% block og_title %}Walo | Compra y venta online en Nicaragua{% endblock %}" />
+  <meta property="og:site_name" content="Igualo" />
+  <meta property="og:title" content="{% block og_title %}Igualo | Compra y venta online en Nicaragua{% endblock %}" />
   <meta property="og:description"
-    content="{% block og_description %}Compra y vende online en Nicaragua con Walo. Marketplace local con anuncios reales cerca de ti.{% endblock %}" />
+    content="{% block og_description %}Compra y vende online en Nicaragua con Igualo. Marketplace local con anuncios reales cerca de ti.{% endblock %}" />
   <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
   <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}" />
   <meta property="og:image"
     content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endblock %}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title"
-    content="{% block twitter_title %}Walo | Compra y venta online en Nicaragua{% endblock %}" />
+    content="{% block twitter_title %}Igualo | Compra y venta online en Nicaragua{% endblock %}" />
   <meta name="twitter:description"
     content="{% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Encuentra ofertas cerca de ti.{% endblock %}" />
   <meta name="twitter:image"
@@ -30,7 +30,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&family=Montserrat:wght@800;900&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="{% static 'css/walo.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/igualo.css' %}" />
   {% block extra_head %}{% endblock %}
   <style>
     /* Bug Report Styles */
@@ -548,8 +548,8 @@
 
 <body class="{% block body_class %}page-home{% endblock %}">
   <nav class="cmp-navbar">
-    <div class="walo-container cmp-navbar-inner">
-      <a href="/" class="logo">WALO <span class="logo-spark">✦</span></a>
+    <div class="igualo-container cmp-navbar-inner">
+      <a href="/" class="logo">IGUALO <span class="logo-spark">✦</span></a>
 
       <div class="cmp-navbar-menu" id="navbar-menu">
         <a href="{% url 'home' %}"><i data-lucide="home" class="nav-icon"></i> Inicio</a>
@@ -629,7 +629,7 @@
   <main>
     {% block flash_messages %}
     {% if messages %}
-    <div class="walo-container" style="margin-top: 20px;">
+    <div class="igualo-container" style="margin-top: 20px;">
       {% for message in messages %}
       <div
         style="padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; background: {% if message.tags == 'error' %}#ef4444{% else %}#161b22{% endif %}; color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
@@ -645,10 +645,10 @@
   </main>
 
   <footer class="footer">
-    <div class="walo-container">
+    <div class="igualo-container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a href="/" class="logo">WALO <span class="logo-spark">✦</span></a>
+          <a href="/" class="logo">IGUALO <span class="logo-spark">✦</span></a>
           <p style="margin-top: 15px; color: var(--text-muted); line-height: 1.6; font-size: 0.95rem;">
             El marketplace de confianza en Nicaragua. Compra, vende y conecta con tu comunidad local de forma segura y
             rápida.
@@ -697,7 +697,7 @@
 
       <div class="footer-bottom"
         style="margin-top: 60px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-        <p style="color: var(--text-muted); font-size: 0.85rem;">&copy; 2026 Walo. Hecho con ❤️ en Nicaragua para vos.
+        <p style="color: var(--text-muted); font-size: 0.85rem;">&copy; 2026 Igualo. Hecho con ❤️ en Nicaragua para vos.
         </p>
         <div class="footer-socials" style="display: flex; gap: 20px;">
           <a href="#" style="color: var(--text-muted); transition: 0.3s;"><i data-lucide="facebook"
@@ -753,7 +753,7 @@
     <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center;">
       <div style="display: flex; align-items: center; gap: 10px; color: #fff; font-size: 0.9rem; font-weight: 500;">
         <span style="font-size: 1.2rem;">🍪</span>
-        <p>¿Aceptas las cookies para una experiencia premium en WALO?</p>
+        <p>¿Aceptas las cookies para una experiencia premium en IGUALO?</p>
       </div>
       <div class="cookie-actions" style="width: 100%; justify-content: center;">
         <button class="cookie-btn-secondary" style="flex: 1;" onclick="openCookiePreferences()">CONFIGURAR</button>
@@ -775,7 +775,7 @@
       </div>
 
       <div class="pref-item">
-        <div class="pref-info"><strong>Analíticas</strong><span>Para mejorar Walo.</span></div>
+        <div class="pref-info"><strong>Analíticas</strong><span>Para mejorar Igualo.</span></div>
         <label class="switch"><input type="checkbox" id="pref-analytics" checked><span class="slider"></span></label>
       </div>
 
@@ -796,16 +796,16 @@
     function closeCookiePreferences() { document.getElementById('cookie-prefs-modal').classList.remove('is-active'); }
 
     function acceptAllCookies() {
-      localStorage.setItem('walo_cookies_accepted', 'all');
-      localStorage.setItem('walo_marketing_consent', 'true'); // Guardamos para el futuro
+      localStorage.setItem('igualo_cookies_accepted', 'all');
+      localStorage.setItem('igualo_marketing_consent', 'true'); // Guardamos para el futuro
       syncConsentWithBackend(true, true);
       document.getElementById('cookie-banner').classList.remove('is-active');
     }
 
     function saveCookiePreferences() {
       const mark = document.getElementById('pref-marketing').checked;
-      localStorage.setItem('walo_cookies_accepted', 'custom');
-      localStorage.setItem('walo_marketing_consent', mark ? 'true' : 'false');
+      localStorage.setItem('igualo_cookies_accepted', 'custom');
+      localStorage.setItem('igualo_marketing_consent', mark ? 'true' : 'false');
       syncConsentWithBackend(mark, mark);
       closeCookiePreferences();
       document.getElementById('cookie-banner').classList.remove('is-active');
@@ -819,21 +819,21 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allows_notifications: notif, allows_marketing: mark })
       }).then(() => {
-        localStorage.setItem('walo_consent_synced', 'true');
+        localStorage.setItem('igualo_consent_synced', 'true');
       });
       {% endif %}
     }
 
     document.addEventListener('DOMContentLoaded', function () {
       // 1. Mostrar banner si no hay respuesta
-      if (!localStorage.getItem('walo_cookies_accepted')) {
+      if (!localStorage.getItem('igualo_cookies_accepted')) {
         setTimeout(() => { document.getElementById('cookie-banner').classList.add('is-active'); }, 2000);
       }
 
       // 2. SCRIPT DETECTIVE: Si el usuario acaba de entrar logueado y aceptó marketing antes... ¡ZAS!
       {% if user.is_authenticated %}
-      const hasConsent = localStorage.getItem('walo_marketing_consent') === 'true';
-      const alreadySynced = localStorage.getItem('walo_consent_synced') === 'true';
+      const hasConsent = localStorage.getItem('igualo_marketing_consent') === 'true';
+      const alreadySynced = localStorage.getItem('igualo_consent_synced') === 'true';
 
       if (hasConsent && !alreadySynced) {
         syncConsentWithBackend(true, true);

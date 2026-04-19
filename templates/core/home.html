@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Walo | Compra y venta online en Nicaragua{% endblock %}
-{% block meta_description %}Walo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios gratis, encuentra ofertas locales y conecta con compradores reales.{% endblock %}
-{% block og_title %}Walo | Compra y venta online en Nicaragua{% endblock %}
-{% block og_description %}Compra y vende en Nicaragua con Walo. Marketplace local con ofertas reales cerca de ti.{% endblock %}
-{% block twitter_title %}Walo | Compra y venta online en Nicaragua{% endblock %}
+{% block title %}Igualo | Compra y venta online en Nicaragua{% endblock %}
+{% block meta_description %}Igualo es el marketplace para comprar y vender online en Nicaragua. Publica anuncios gratis, encuentra ofertas locales y conecta con compradores reales.{% endblock %}
+{% block og_title %}Igualo | Compra y venta online en Nicaragua{% endblock %}
+{% block og_description %}Compra y vende en Nicaragua con Igualo. Marketplace local con ofertas reales cerca de ti.{% endblock %}
+{% block twitter_title %}Igualo | Compra y venta online en Nicaragua{% endblock %}
 {% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Publica anuncios y encuentra ofertas.{% endblock %}
 {% block canonical %}{{ request.scheme }}://{{ request.get_host }}{% endblock %}
 {% block og_url %}{{ request.scheme }}://{{ request.get_host }}{% endblock %}
-{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/walo_hero_bg_nicaragua.png' %}{% endblock %}
+{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endblock %}
 {% block body_class %}page-home-pro{% endblock %}
 
 {% block extra_head %}
@@ -17,7 +17,7 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Walo",
+    "name": "Igualo",
     "url": "{{ request.scheme }}://{{ request.get_host }}/",
     "potentialAction": {
       "@type": "SearchAction",
@@ -30,7 +30,7 @@
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Walo",
+    "name": "Igualo",
     "url": "{{ request.scheme }}://{{ request.get_host }}/"
   }
 </script>
@@ -119,7 +119,7 @@
     <!-- 1. HERO SEARCH (REMODELADO PRO) -->
     <section class="section-hero">
         <div class="hero-bg-wrapper">
-            <img src="{% static 'img/walo_hero_bg_nicaragua.png' %}" alt="Marketplace Walo en Nicaragua" class="hero-ken-burns" fetchpriority="high">
+            <img src="{% static 'img/igualo_hero_bg_nicaragua.png' %}" alt="Marketplace Igualo en Nicaragua" class="hero-ken-burns" fetchpriority="high">
             <div class="hero-overlay"></div>
         </div>
         <div class="container hero-container">
@@ -245,7 +245,7 @@
 
     <!-- 2. HISTORIAS / CATEGORÍAS (APP-FIRST FEEL) -->
     <section class="section-stories-discovery">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div class="stories-scroll" id="storiesScroll">
                 <a href="{% if user.is_authenticated %}/publicar/{% else %}{% url 'account_signup' %}{% endif %}" class="story-btn yours">
                     <div class="story-circle-pro"><span>+</span></div>
@@ -263,7 +263,7 @@
 
     {% if search_results is not None %}
     <section id="results" class="section-search-results" style="padding: 40px 0; background: #0b0f1a; border-bottom: 1px solid var(--glass-border);">
-        <div class="walo-container" style="animation: slideUp 0.6s ease-out;">
+        <div class="igualo-container" style="animation: slideUp 0.6s ease-out;">
             <h3 style="color: var(--primary); margin-bottom: 30px; font-weight: 800; font-size: 1.8rem;">🔍 {{ search_results|length }} resultados para "{{ query }}"</h3>
             <div class="feed-grid-pro">
                 {% for list in search_results %}
@@ -336,7 +336,7 @@
 
     <!-- 3. BENTO GRID (PRODUCTO & BENEFICIOS) -->
     <section class="section-bento">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div class="bento-grid-pro">
                 <!-- Bloque Venta Grande -->
                 <div class="bento-item bento-main-cta">
@@ -354,7 +354,7 @@
                         <a href="{% url 'signup' %}" class="btn-pro-white">Empezar a Vender ahora</a>
                     </div>
                     <div class="bento-visual-pro">
-                        <img src="{% static 'img/walo_items_to_sell_premium.png' %}" 
+                        <img src="{% static 'img/igualo_items_to_sell_premium.png' %}" 
                              alt="Vender productos online en Nicaragua" 
                              loading="lazy" 
                              decoding="async"
@@ -367,7 +367,7 @@
                     <div class="bento-content">
                         <h3>Tratos de confianza</h3>
                         <p>Seguridad y cercanía en cada intercambio en Nicaragua.</p>
-                        <img src="{% static 'img/walo_community_deal.png' %}" alt="Tratos seguros en Nicaragua" class="bento-img-mini" loading="lazy">
+                        <img src="{% static 'img/igualo_community_deal.png' %}" alt="Tratos seguros en Nicaragua" class="bento-img-mini" loading="lazy">
                     </div>
                 </div>
 
@@ -384,9 +384,9 @@
 
     <!-- 4. EL MARKETPLACE (FEED) -->
     <section class="section-feed">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div class="feed-header">
-                <h2>Recién llegados a Walo</h2>
+                <h2>Recién llegados a Igualo</h2>
                 <a href="{% url 'explore' %}" class="link-pro">Ver todo el mercado →</a>
             </div>
             <div class="feed-grid-pro">
@@ -416,12 +416,12 @@
 
     <!-- 5. GESTIÓN PRO: Herramientas para el usuario -->
     <section class="section-pro-tools">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div class="tools-grid-pro">
                 <div class="tools-text">
                     <span class="pro-tag">SOLUCIONES PRO</span>
                     <h2>Gestiona tus ventas con control total.</h2>
-                    <p>En Walo no solo publicas; tienes un panel completo para cerrar tratos con éxito.</p>
+                    <p>En Igualo no solo publicas; tienes un panel completo para cerrar tratos con éxito.</p>
                     <ul class="tools-list">
                         <li><strong>Chat en Tiempo Real:</strong> Habla con compradores al instante.</li>
                         <li><strong>Favoritos:</strong> Mira quién está interesado en tus cosas.</li>
@@ -430,7 +430,7 @@
                     <a href="{% url 'signup' %}" class="btn-primary-glow">CREAR MI CUENTA GRATIS</a>
                 </div>
                 <div class="tools-visual-card">
-                    <img src="{% static 'img/walo_dashboard_mockup.png' %}" alt="Panel de ventas de Walo" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.1);">
+                    <img src="{% static 'img/igualo_dashboard_mockup.png' %}" alt="Panel de ventas de Igualo" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.1);">
                 </div>
             </div>
         </div>
@@ -438,10 +438,10 @@
 
     <!-- 6. PRUEBA SOCIAL: Historias de Éxito -->
     <section class="section-testimonials">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div class="section-header-centered">
                 <span class="pro-tag">COMUNIDAD</span>
-                <h2>Historias Reales en Walo.</h2>
+                <h2>Historias Reales en Igualo.</h2>
                 <p>Miles de nicaragüenses ya están transformando su forma de comprar y vender.</p>
             </div>
             <div class="testimonials-grid">
@@ -486,7 +486,7 @@
 
     <!-- 7. CIUDADES DESTACADAS (SEO LOCAL) -->
     <section class="section-cities" style="padding: 60px 0; border-top: 1px solid rgba(255,255,255,0.08);">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div style="display: flex; flex-direction: column; gap: 20px; text-align: center;">
                 <h2 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Ciudades destacadas</h2>
                 <p style="color: var(--text-muted);">Explora anuncios locales en las principales ciudades de Nicaragua.</p>
@@ -557,12 +557,12 @@
 
     <!-- 8. CONFIANZA & CERCANÍA (HUMAN-FIRST) -->
     <section class="section-trust-human">
-        <div class="walo-container">
+        <div class="igualo-container">
             <div class="trust-human-flex">
                 <div class="trust-human-text">
-                    <span class="friendly-tag">CONFÍANZA Walo</span>
+                    <span class="friendly-tag">CONFÍANZA Igualo</span>
                     <h2>Gente real, <br>tratos seguros.</h2>
-                    <p>Walo es más que un marketplace; es una comunidad donde nos cuidamos entre todos. Conoce a quién le compras y vende con tranquilidad.</p>
+                    <p>Igualo es más que un marketplace; es una comunidad donde nos cuidamos entre todos. Conoce a quién le compras y vende con tranquilidad.</p>
                     
                     <ul class="human-checks">
                         <li><strong>Identidad Verificada:</strong> Perfiles reales con fotos y reputación transparente.</li>
@@ -573,7 +573,7 @@
                 </div>
                 <div class="trust-human-visual">
                     <div class="human-photo-wrapper">
-                        <img src="{% static 'img/walo_safe_deal_community.png' %}" alt="Trato seguro en Nicaragua" class="trust-main-img" loading="lazy">
+                        <img src="{% static 'img/igualo_safe_deal_community.png' %}" alt="Trato seguro en Nicaragua" class="trust-main-img" loading="lazy">
                         <div class="floating-badge-human">
                             <span class="fb-icon">✓</span>
                             <div class="fb-text">
@@ -901,7 +901,7 @@
        THE ULTIMATE MOBILE POLISH (PIXEL PERFECT)
        ============================================================ */
     @media (max-width: 768px) {
-        .container, .walo-container { padding: 0 25px; }
+        .container, .igualo-container { padding: 0 25px; }
 
         /* 1. Hero Refinement */
         .section-hero { min-height: 70vh; padding: 40px 0 80px; }
