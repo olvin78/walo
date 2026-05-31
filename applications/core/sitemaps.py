@@ -1,7 +1,7 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
-from .models import Category, Listing
+from .models import Category, Listing, Profile
 
 CITY_LANDINGS = {
     "managua": "Managua",
@@ -26,22 +26,40 @@ class HomeSitemap(Sitemap):
 
 class CategorySitemap(Sitemap):
     changefreq = "weekly"
-    priority = 0.7
+    priority = 0.8
 
     def items(self):
         return Category.objects.filter(listings__is_active=True).distinct()
 
+    def lastmod(self, obj):
+        latest = obj.listings.filter(is_active=True).order_by("-created_at").first()
+        return latest.created_at if latest else obj.listings.first().created_at if obj.listings.exists() else None
+
 
 class ListingSitemap(Sitemap):
     changefreq = "daily"
-    priority = 0.8
+    priority = 0.9
 
     def items(self):
-        # TODO: filter only public/published listings when that state exists.
         return Listing.objects.filter(is_active=True).order_by("-created_at")
 
     def lastmod(self, obj):
         return obj.created_at
+
+
+class ProfileSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.5
+
+    def items(self):
+        return Profile.objects.filter(user__is_active=True).exclude(user__username__startswith="_")
+
+    def location(self, obj):
+        return reverse("user_profile", kwargs={"username": obj.user.username})
+
+    def lastmod(self, obj):
+        latest_listing = obj.user.listings.filter(is_active=True).order_by("-created_at").first()
+        return latest_listing.created_at if latest_listing else obj.user.date_joined
 
 
 class CitySitemap(Sitemap):
@@ -88,6 +106,7 @@ sitemaps = {
     "home": HomeSitemap,
     "categories": CategorySitemap,
     "listings": ListingSitemap,
+    "profiles": ProfileSitemap,
     "cities": CitySitemap,
     "city_categories": CityCategorySitemap,
 }

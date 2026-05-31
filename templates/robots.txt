@@ -1,11 +1,52 @@
 User-agent: *
 Allow: /
+Allow: /explorar/
+Allow: /categoria/
+Allow: /ciudad/
+Allow: /anuncio/
+Allow: /perfil/
+Allow: /terminos/
+Allow: /privacidad/
 
 Disallow: /admin/
 Disallow: /accounts/
+Disallow: /mensajes/
 Disallow: /inbox/
 Disallow: /favoritos/
-Disallow: /perfil/editar/
+Disallow: /configuracion/
 Disallow: /publicar/
+Disallow: /api/
+Disallow: /registro/
+Disallow: /historias/
+Disallow: /reportar-fallo/
+Disallow: /save-preferences/
+Disallow: /mis-anuncios/
+Disallow: /anuncio/*/editar/
+Disallow: /anuncio/*/eliminar/
+Disallow: /anuncio/*/comentar/
+Disallow: /anuncio/*/oferta/
+Disallow: /favoritos/toggle/
+Disallow: /mensajes/eliminar/
+Disallow: /mensajes/visto/
+Disallow: /mensajes/nuevo/
+Disallow: /historias/subir/
+Disallow: /historias/eliminar/
+Disallow: /perfil/*/toggle-follow/
+Disallow: /perfil/*/calificar/
+Disallow: /configuracion/verificar/
+
+Disallow: /explorar/*?*q=*
+Disallow: /explorar/*?*min_price=*
+Disallow: /explorar/*?*max_price=*
+Disallow: /explorar/*?*sort=*
+Disallow: /explorar/*?*radius=*
+Disallow: /explorar/*?*user_lat=*
+Disallow: /explorar/*?*user_lng=*
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
 
 Sitemap: https://www.igualo.com/sitemap.xml
