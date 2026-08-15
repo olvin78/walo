@@ -158,27 +158,65 @@
     font-style: italic;
 }
 
-.btn-celebration-close {
-    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
-    color: #000;
-    border: none;
-    padding: 14px 40px;
-    border-radius: 14px;
-    font-size: 1rem;
-    font-weight: 900;
-    letter-spacing: 1px;
-    cursor: pointer;
-    box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+.celebration-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
 }
 
-.btn-celebration-close:hover {
+.btn-celebration-primary {
+    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    color: #000 !important;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none !important;
+    box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: block;
+    will-change: transform, box-shadow;
+}
+
+.btn-celebration-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(34, 197, 94, 0.5);
+    box-shadow: 0 12px 25px rgba(34, 197, 94, 0.45);
     filter: brightness(1.1);
 }
 
-.btn-celebration-close:active {
+.btn-celebration-primary:active {
+    transform: translateY(1px);
+}
+
+.btn-celebration-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #c9d1d9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform, background-color;
+}
+
+.btn-celebration-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn-celebration-secondary:active {
     transform: translateY(1px);
 }
 </style>
@@ -195,9 +233,14 @@
         <p class="celebration-subtitle">¡Tu anuncio ya está activo en Igualo!</p>
         <p class="celebration-listing-name" id="celebration-listing-name"></p>
         
-        <button class="btn-celebration-close" onclick="closeCelebration()">
-            ¡A VENDER!
-        </button>
+        <div class="celebration-buttons">
+            <a href="{% url 'create_listing' %}" class="btn-celebration-primary">
+                Publicar otro producto
+            </a>
+            <button class="btn-celebration-secondary" onclick="closeCelebration()">
+                Ver mi anuncio
+            </button>
+        </div>
     </div>
 </div>
 
