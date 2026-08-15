@@ -496,12 +496,12 @@
                         ease: "sine.inOut"
                     });
                 }
-
-                // Start generating fairy dust sparkles
-                if (fairyDustInterval) clearInterval(fairyDustInterval);
-                fairyDustInterval = setInterval(spawnSparkle, 100);
             }
         });
+
+        // Start generating fairy dust sparkles immediately to trail behind the coin during its entry spiral
+        if (fairyDustInterval) clearInterval(fairyDustInterval);
+        fairyDustInterval = setInterval(spawnSparkle, 80); // slightly faster rate (80ms) for denser trail
 
         entryTimeline.to(mascot, {
             opacity: 1,
