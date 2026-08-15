@@ -388,17 +388,33 @@
             { scale: 1, opacity: 1, y: 0, duration: 0.35, delay: 0.05, ease: "back.out(1.5)" }
         );
         
-        // GSAP Bird Pop and Wiggle (super fast & lively)
+        // GSAP Bird Pop and Squish-and-Stretch entry (motion graphics feel)
         gsap.fromTo(bird, 
-            { scale: 0, rotation: -30 }, 
-            { scale: 1, rotation: 0, duration: 0.4, delay: 0.1, ease: "elastic.out(1.1, 0.5)", onComplete: () => {
-                // Energetic floating/hovering animation (faster)
-                gsap.to(bird, {
-                    y: -15,
-                    rotation: 5,
+            { scale: 0, scaleY: 0.5, scaleX: 1.4, y: 50 }, 
+            { scale: 1, scaleY: 1, scaleX: 1, y: 0, duration: 0.45, delay: 0.05, ease: "back.out(1.6)", onComplete: () => {
+                // Organic breathing loop (squish & stretch like high-end character design)
+                const tl = gsap.timeline({ repeat: -1 });
+                tl.to(bird, {
+                    y: -18,
+                    scaleY: 1.07,
+                    scaleX: 0.93,
+                    rotation: 2,
                     duration: 0.7,
-                    repeat: -1,
-                    yoyo: true,
+                    ease: "sine.inOut"
+                })
+                .to(bird, {
+                    y: 0,
+                    scaleY: 0.93,
+                    scaleX: 1.07,
+                    rotation: -2,
+                    duration: 0.65,
+                    ease: "sine.inOut"
+                })
+                .to(bird, {
+                    scaleY: 1,
+                    scaleX: 1,
+                    rotation: 0,
+                    duration: 0.1,
                     ease: "sine.inOut"
                 });
             }}
@@ -411,59 +427,34 @@
     function triggerConfettiBurst() {
         if (!customConfetti) return;
 
-        const shapesList = ['square', 'circle', 'star', ribbonShape];
+        // Clean confetti list (no stars/brillitos, just squares, circles, and serpentina ribbons)
+        const shapesList = ['square', 'circle', ribbonShape];
 
-        // Main burst behind the center card, flying outwards at high velocity
+        // Main burst behind the center card, flying outwards
         customConfetti({
-            particleCount: 170,
-            spread: 95,
-            startVelocity: 65,
-            gravity: 1.8, // Pulls down much faster!
-            decay: 0.94, // Slows down less per frame, keeping high speed longer
+            particleCount: 100, // Reduced count so it is cleaner and less cluttered
+            spread: 90,
+            startVelocity: 60,
+            gravity: 1.6,
+            decay: 0.93,
             shapes: shapesList,
-            scalar: 1.3,
+            scalar: 1.2,
             origin: { x: 0.5, y: 0.5 }
         });
         
-        // Secondary outer burst to fill the space
+        // Minor secondary burst to give a bit of depth
         setTimeout(() => {
             customConfetti({
-                particleCount: 90,
-                spread: 120,
-                startVelocity: 50,
-                gravity: 1.8,
-                decay: 0.94,
+                particleCount: 40,
+                spread: 110,
+                startVelocity: 45,
+                gravity: 1.6,
+                decay: 0.93,
                 shapes: shapesList,
-                scalar: 1.2,
+                scalar: 1.1,
                 origin: { x: 0.5, y: 0.5 }
             });
-        }, 120);
-        
-        // Dynamic edge accents
-        setTimeout(() => {
-            customConfetti({
-                particleCount: 50,
-                angle: 45,
-                spread: 60,
-                startVelocity: 45,
-                gravity: 1.8,
-                decay: 0.94,
-                shapes: shapesList,
-                scalar: 1.1,
-                origin: { x: 0.2, y: 0.8 }
-            });
-            customConfetti({
-                particleCount: 50,
-                angle: 135,
-                spread: 60,
-                startVelocity: 45,
-                gravity: 1.8,
-                decay: 0.94,
-                shapes: shapesList,
-                scalar: 1.1,
-                origin: { x: 0.8, y: 0.8 }
-            });
-        }, 220);
+        }, 150);
     }
 
     function closeCelebration() {
