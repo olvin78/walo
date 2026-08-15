@@ -79,6 +79,7 @@ class Listing(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_negotiable = models.BooleanField(default=False, verbose_name="precio negociable", help_text="Si está marcado, se muestra 'Negociable' en vez de un precio fijo.")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='listings')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='listings')
     slug = models.SlugField(blank=True)
@@ -116,6 +117,13 @@ class Listing(models.Model):
         if is_new_image and self.image:
             from .utils import process_image
             process_image(self.image)
+
+    @property
+    def display_price(self):
+        from django.utils.safestring import mark_safe
+        if self.is_negotiable or (self.price is not None and self.price == 0):
+            return mark_safe('<span class="walo-badge-negotiable">🤝 Negociable</span>')
+        return f"C$ {self.price:,.2f}".replace(",", ".")
 
     @property
     def get_thumb(self):
@@ -248,6 +256,29 @@ class Profile(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=5.00)
     reviews_count = models.PositiveIntegerField(default=1) # Empezar con 1 para usuarios nuevos premium
     is_pro = models.BooleanField(default=False, verbose_name="pro", help_text="¿Es usuario Pro?")
+
+    def save(self, *args, **kwargs):
+        is_new_avatar = False
+        is_new_cover = False
+        
+        if self.pk:
+            old = Profile.objects.filter(pk=self.pk).first()
+            if old:
+                if old.avatar != self.avatar:
+                    is_new_avatar = True
+                if old.cover_image != self.cover_image:
+                    is_new_cover = True
+        else:
+            if self.avatar: is_new_avatar = True
+            if self.cover_image: is_new_cover = True
+
+        super().save(*args, **kwargs)
+
+        from .utils import process_image
+        if is_new_avatar and self.avatar:
+            process_image(self.avatar)
+        if is_new_cover and self.cover_image:
+            process_image(self.cover_image)
     
     # Sistema de Verificación Biométrico
     verification_photo = models.ImageField(upload_to='verification_docs/', blank=True, null=True)
@@ -269,7 +300,7 @@ class Profile(models.Model):
         return bool(self.cover_image and default_storage.exists(self.cover_image.name))
 
 # Señales para crear el perfil automáticamente
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 
 @receiver(post_save, sender=User)
@@ -299,11 +330,14 @@ class Review(models.Model):
 class Story(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
     image = models.ImageField(upload_to='stories/')
+    text = models.TextField(blank=True)
     audio_url = models.URLField(blank=True)
     audio_start = models.FloatField(default=0)
     audio_name = models.CharField(max_length=120, blank=True)
     metadata = models.TextField(blank=True, null=True) # Para JSON de stickers
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Historia"
@@ -313,11 +347,17 @@ class Story(models.Model):
     def __str__(self):
         return f"Historia de {self.user.username} @ {self.created_at}"
 
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            from django.utils import timezone
+            import datetime
+            self.expires_at = timezone.now() + datetime.timedelta(hours=24)
+        super().save(*args, **kwargs)
+
     @property
     def is_expired(self):
         from django.utils import timezone
-        import datetime
-        return self.created_at < timezone.now() - datetime.timedelta(hours=24)
+        return bool(self.expires_at and self.expires_at <= timezone.now())
 
 class ProfileReview(models.Model):
     profile_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_reviews')
@@ -405,3 +445,96 @@ class SearchHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.query}"
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('message', 'Nuevo mensaje'),
+        ('offer', 'Nueva oferta'),
+        ('favorite', 'Anuncio guardado'),
+        ('system', 'Sistema'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    related_listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, blank=True)
+    related_conversation = models.ForeignKey(Conversation, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Notificación"
+        verbose_name_plural = "Notificaciones"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.notification_type} para {self.user.username}"
+
+
+@receiver(post_save, sender=Message)
+def create_message_notification(sender, instance, created, **kwargs):
+    if created:
+        conversation = instance.conversation
+        receiver_user = conversation.participants.exclude(id=instance.sender.id).first()
+        if receiver_user:
+            # Check if it's an offer
+            if instance.text and ("📢 HE HECHO UNA OFERTA" in instance.text or "OFERTA" in instance.text.upper()):
+                Notification.objects.create(
+                    user=receiver_user,
+                    notification_type='offer',
+                    title='Nueva oferta recibida',
+                    body=f'{instance.sender.username} ha hecho una oferta por "{conversation.listing.title[:30]}..."',
+                    related_listing=conversation.listing,
+                    related_conversation=conversation
+                )
+            else:
+                Notification.objects.create(
+                    user=receiver_user,
+                    notification_type='message',
+                    title='Nuevo mensaje',
+                    body=f'{instance.sender.username} te ha enviado un mensaje',
+                    related_listing=conversation.listing,
+                    related_conversation=conversation
+                )
+
+
+@receiver(m2m_changed, sender=Listing.favorites.through)
+def create_favorite_notification(sender, instance, action, pk_set, **kwargs):
+    if action == "post_add":
+        for user_id in pk_set:
+            try:
+                favorited_by = User.objects.get(id=user_id)
+                if favorited_by != instance.user:
+                    Notification.objects.create(
+                        user=instance.user,
+                        notification_type='favorite',
+                        title='¡Nuevo favorito!',
+                        body=f'{favorited_by.username} guardó "{instance.title[:30]}..."',
+                        related_listing=instance
+                    )
+            except User.DoesNotExist:
+                continue
+
+class ListingReport(models.Model):
+    REPORT_REASONS = [
+        ('fraud', 'Fraude o estafa'),
+        ('spam', 'Spam / Anuncio repetido'),
+        ('inappropriate', 'Contenido inapropiado / Ofensivo'),
+        ('wrong_category', 'Categoría incorrecta'),
+        ('sold', 'Ya se vendió'),
+        ('other', 'Otro motivo'),
+    ]
+
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='reports')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    reason = models.CharField(max_length=20, choices=REPORT_REASONS)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Reporte de anuncio"
+        verbose_name_plural = "Reportes de anuncio"
+
+    def __str__(self):
+        return f"Reporte de {self.get_reason_display()} para {self.listing.title}"

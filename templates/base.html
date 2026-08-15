@@ -1,4 +1,5 @@
 {% load static %}
+{% load captcha_tags %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -9,6 +10,8 @@
   <meta name="description"
     content="{% block meta_description %}IGUALO es el marketplace para comprar y vender online en Nicaragua. Publicá anuncios gratis, encontrá ofertas y conectá con personas cerca de vos.{% endblock %}" />
   <meta name="robots" content="{% block robots %}index, follow{% endblock %}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}" />
+  <link rel="icon" type="image/png" sizes="48x48" href="{% static 'img/favicon-48.png' %}" />
   <link rel="canonical" href="{% block canonical %}https://www.igualo.com{{ request.path }}{% endblock %}" />
   <meta property="og:site_name" content="IGUALO" />
   <meta property="og:title" content="{% block og_title %}IGUALO | Comprá y vendé fácil en Nicaragua{% endblock %}" />
@@ -28,7 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&family=Montserrat:wght@800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&family=Montserrat:wght@800;900&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/igualo.css' %}" />
   <link rel="stylesheet" href="{% static 'css/components/cards.css' %}" />
@@ -43,6 +46,11 @@
   {% endif %}
   {% block extra_head %}{% endblock %}
   <style>
+    html,
+    body {
+      overflow-x: hidden;
+    }
+
     /* Bug Report Styles */
     .report-bug-trigger {
       background: rgba(251, 191, 36, 0.1);
@@ -636,8 +644,14 @@
             </label>
           </div>
         </div>
+        <div class="bug-form-group">
+          <label>Captcha de verificación:</label>
+          <div style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 15px; border-radius: 10px;">
+            <span style="font-weight: 700; color: #fff; white-space: nowrap;">{% math_captcha %}</span>
+            <input type="text" name="captcha_answer" id="captcha-answer" required placeholder="Tu respuesta" autocomplete="off" style="flex: 1; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 5px 0; outline: none;">
+          </div>
+        </div>
         <button type="submit" class="cmp-btn cmp-btn-primary" style="width: 100%; margin-top: 15px;">ENVIAR
-          COMENTARIO</button>
       </form>
     </div>
   </div>

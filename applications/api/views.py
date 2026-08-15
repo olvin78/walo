@@ -1,29 +1,47 @@
 from __future__ import annotations
 
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q
+from django.contrib.auth import get_user_model
+from django.db.models import Avg, Count, Exists, OuterRef, Prefetch, Q
 from django.http import Http404
 from django.conf import settings
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from applications.api.filters import apply_listing_search, normalize_listing_ordering
+from applications.api.filters import normalize_listing_ordering, search_listing_queryset
 from applications.api.permissions import IsOwnerOrAdminOrReadOnly
 from applications.api.serializers import (
     CategorySerializer,
+    ConversationSerializer,
     ListingDetailSerializer,
     ListingSummarySerializer,
     ListingWriteSerializer,
     MeSerializer,
+    MessageSerializer,
     MobileTokenObtainPairSerializer,
+    NotificationSerializer,
+    PasswordChangeSerializer,
+    ProfileRatingSerializer,
+    ProfileReviewSerializer,
+    ProfileUpdateSerializer,
     RegisterSerializer,
+    StorySerializer,
+    ListingReportSerializer,
+    BugReportSerializer,
+    absolute_media_url,
 )
-from applications.core.models import Category, Listing, ListingImage, SearchHistory
+from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, MarketingConsent, Message, Notification, Profile, ProfileReview, SearchHistory, Story
+
+
+User = get_user_model()
 
 
 def listing_queryset(include_inactive: bool = False):
@@ -46,12 +64,17 @@ def annotate_favorite_flag(queryset, user):
 
 
 def filter_listing_queryset(queryset, params):
+    queryset, _ = filter_listing_queryset_with_metadata(queryset, params)
+    return queryset
+
+
+def filter_listing_queryset_with_metadata(queryset, params):
     query = params.get("q") or params.get("search")
     category_value = params.get("category")
     location = params.get("location")
     ordering = normalize_listing_ordering(params.get("ordering") or params.get("sort"))
-
-    queryset = apply_listing_search(queryset, query)
+    min_price = params.get("min_price")
+    max_price = params.get("max_price")
 
     if category_value:
         if str(category_value).isdigit():
@@ -59,10 +82,23 @@ def filter_listing_queryset(queryset, params):
         else:
             queryset = queryset.filter(Q(category__slug=category_value) | Q(category__name__iexact=category_value))
 
-    if location:
+    if location and location != 'Todo Nicaragua':
         queryset = queryset.filter(location__icontains=location)
 
-    return queryset.order_by(ordering)
+    if min_price:
+        try:
+            queryset = queryset.filter(price__gte=float(min_price))
+        except (ValueError, TypeError):
+            pass
+
+    if max_price:
+        try:
+            queryset = queryset.filter(price__lte=float(max_price))
+        except (ValueError, TypeError):
+            pass
+
+    queryset, exact_matches = search_listing_queryset(queryset, query)
+    return queryset.order_by(ordering), exact_matches
 
 
 class CategoryListAPIView(generics.ListAPIView):
@@ -110,7 +146,14 @@ class ListingSearchAPIView(generics.ListAPIView):
     def get_queryset(self):
         queryset = listing_queryset(include_inactive=False)
         queryset = annotate_favorite_flag(queryset, self.request.user)
-        return filter_listing_queryset(queryset, self.request.query_params)
+        queryset, self.exact_matches = filter_listing_queryset_with_metadata(queryset, self.request.query_params)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if isinstance(response.data, dict):
+            response.data["exact_matches"] = getattr(self, "exact_matches", True)
+        return response
 
 
 class ListingDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -191,9 +234,75 @@ class HomeAPIView(APIView):
 
 class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
         return Response(MeSerializer(request.user, context={"request": request}).data)
+
+    def patch(self, request):
+        # Update User fields (email)
+        user = request.user
+        email = request.data.get("email")
+        first_name = request.data.get("first_name")
+        last_name = request.data.get("last_name")
+        allows_notifications = request.data.get("allows_notifications")
+        
+        should_save_user = False
+        if email:
+            if User.objects.exclude(pk=user.pk).filter(email=email).exists():
+                return Response({"email": ["Este correo ya está en uso."]}, status=status.HTTP_400_BAD_REQUEST)
+            user.email = email
+            should_save_user = True
+        
+        if first_name is not None:
+            user.first_name = first_name
+            should_save_user = True
+            
+        if last_name is not None:
+            user.last_name = last_name
+            should_save_user = True
+
+        if allows_notifications is not None:
+            if isinstance(allows_notifications, str):
+                allows_notifications = allows_notifications.strip().lower() in {"1", "true", "yes", "on"}
+            else:
+                allows_notifications = bool(allows_notifications)
+
+            MarketingConsent.objects.update_or_create(
+                user=user,
+                defaults={
+                    "email": user.email,
+                    "allows_notifications": allows_notifications,
+                    "allows_marketing": MarketingConsent.objects.filter(user=user).order_by("-created_at").values_list("allows_marketing", flat=True).first() or False,
+                },
+            )
+            
+        if should_save_user:
+            user.save()
+
+        # Update Profile fields
+        profile, _ = Profile.objects.get_or_create(user=user)
+        serializer = ProfileUpdateSerializer(profile, data=request.data, partial=True, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(MeSerializer(user, context={"request": request}).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data["old_password"]):
+                return Response({"old_password": ["Contraseña actual incorrecta."]}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+            return Response({"detail": "Contraseña actualizada correctamente."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MeListingsAPIView(generics.ListAPIView):
@@ -230,6 +339,264 @@ class FavoriteToggleAPIView(APIView):
             raise Http404
         listing.favorites.remove(request.user)
         return Response({"is_favorite": False}, status=status.HTTP_200_OK)
+
+
+class ListingOfferAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        listing = get_object_or_404(Listing, pk=pk, is_active=True)
+        amount = request.data.get("amount")
+        message_text = request.data.get("message", "")
+
+        if not amount:
+            return Response({"detail": "El monto de la oferta es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Formatear el mensaje igual que en la web
+        full_message = f"📢 HE HECHO UNA OFERTA: C$ {amount}\n\nNota: {message_text}"
+
+        # Obtener o crear conversación
+        conversation = (
+            Conversation.objects.filter(listing=listing, participants=request.user)
+            .filter(participants=listing.user)
+            .first()
+        )
+        if not conversation:
+            conversation = Conversation.objects.create(listing=listing)
+            conversation.participants.add(request.user, listing.user)
+
+        # Crear el mensaje
+        message = Message.objects.create(conversation=conversation, sender=request.user, text=full_message)
+        conversation.save(update_fields=["updated_at"])
+
+        return Response(
+            {
+                "status": "success",
+                "conversation_id": conversation.id,
+                "message": MessageSerializer(message, context={"request": request}).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ProfileDetailAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, username):
+        profile_user = User.objects.select_related("profile").filter(username=username).first()
+        if not profile_user:
+            raise Http404
+
+        profile, _ = Profile.objects.get_or_create(user=profile_user)
+        reviews = ProfileReview.objects.select_related("reviewer").filter(profile_user=profile_user).order_by("-created_at")
+        average_rating = reviews.aggregate(avg=Avg("rating"))["avg"] or 5.0
+        listings = annotate_favorite_flag(
+            listing_queryset(include_inactive=False).filter(user=profile_user),
+            request.user,
+        )[:12]
+        user_review = None
+        if request.user.is_authenticated:
+            user_review = reviews.filter(reviewer=request.user).first()
+
+        return Response(
+            {
+                "id": profile_user.id,
+                "username": profile_user.username,
+                "display_name": profile_user.get_full_name().strip() or profile_user.username,
+                "date_joined": profile_user.date_joined,
+                "profile": {
+                    "avatar": absolute_media_url(request, profile.avatar) if profile.avatar else None,
+                    "cover_image": absolute_media_url(request, profile.cover_image) if profile.cover_image else None,
+                    "location": profile.location,
+                    "bio": profile.bio,
+                    "is_verified": profile.is_verified,
+                    "is_pro": profile.is_pro,
+                },
+                "stats": {
+                    "followers_count": profile.followers.count(),
+                    "listings_count": Listing.objects.filter(user=profile_user, is_active=True).count(),
+                    "average_rating": round(average_rating, 1),
+                    "reviews_count": reviews.count(),
+                    "user_rating": user_review.rating if user_review else 0,
+                    "user_comment": user_review.comment if user_review else "",
+                    "can_review": bool(request.user.is_authenticated and request.user != profile_user),
+                },
+                "reviews": ProfileReviewSerializer(reviews[:20], many=True, context={"request": request}).data,
+                "listings": ListingSummarySerializer(listings, many=True, context={"request": request}).data,
+            }
+        )
+
+
+class ProfileReviewAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, username):
+        profile_user = User.objects.filter(username=username).first()
+        if not profile_user:
+            raise Http404
+        if profile_user == request.user:
+            return Response({"detail": "No puedes calificarte a ti mismo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ProfileRatingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        review, _ = ProfileReview.objects.update_or_create(
+            profile_user=profile_user,
+            reviewer=request.user,
+            defaults={
+                "rating": serializer.validated_data["rating"],
+                "comment": serializer.validated_data.get("comment", ""),
+            },
+        )
+
+
+class ConversationListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        conversations = (
+            Conversation.objects.filter(participants=request.user, messages__isnull=False)
+            .select_related("listing", "listing__category", "listing__user", "listing__user__profile")
+            .prefetch_related("participants", "participants__profile", "messages", "messages__sender", "messages__sender__profile")
+            .distinct()
+            .order_by("-updated_at")
+        )
+        serializer = ConversationSerializer(conversations, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        listing_id = request.data.get("listing") or request.data.get("listing_id")
+        if not listing_id:
+            return Response({"listing": "El anuncio es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+
+        listing = Listing.objects.select_related("user").filter(pk=listing_id, is_active=True).first()
+        if not listing:
+            raise Http404
+        if listing.user_id == request.user.id:
+            return Response({"detail": "No puedes iniciar un chat contigo mismo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation = (
+            Conversation.objects.filter(listing=listing, participants=request.user)
+            .filter(participants=listing.user)
+            .first()
+        )
+        if not conversation:
+            conversation = Conversation.objects.create(listing=listing)
+            conversation.participants.add(request.user, listing.user)
+
+        text = (request.data.get("text") or "").strip()
+        if text:
+            Message.objects.create(conversation=conversation, sender=request.user, text=text)
+            conversation.save(update_fields=["updated_at"])
+
+        serializer = ConversationSerializer(conversation, context={"request": request, "include_messages": True})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ConversationDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, request, pk):
+        conversation = (
+            Conversation.objects.filter(pk=pk, participants=request.user)
+            .select_related("listing", "listing__category", "listing__user", "listing__user__profile")
+            .prefetch_related("participants", "participants__profile", "messages", "messages__sender", "messages__sender__profile")
+            .first()
+        )
+        if not conversation:
+            raise Http404
+        return conversation
+
+    def get(self, request, pk):
+        conversation = self.get_object(request, pk)
+        conversation.messages.exclude(sender=request.user).filter(is_read=False).update(is_read=True)
+        serializer = ConversationSerializer(conversation, context={"request": request, "include_messages": True})
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        conversation = self.get_object(request, pk)
+        conversation.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MessageCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MessageSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        message = serializer.save()
+        message.conversation.save(update_fields=["updated_at"])
+        return Response(MessageSerializer(message, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+
+class MessageReadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        message = Message.objects.filter(pk=pk, conversation__participants=request.user).first()
+        if not message:
+            raise Http404
+        if message.sender_id != request.user.id:
+            message.is_read = True
+            message.save(update_fields=["is_read"])
+        return Response(MessageSerializer(message, context={"request": request}).data)
+
+
+class StoryListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
+
+    def get_queryset(self):
+        time_threshold = timezone.now() - timezone.timedelta(hours=24)
+        return Story.objects.select_related("user", "user__profile").filter(
+            is_active=True,
+        ).filter(
+            Q(expires_at__gt=timezone.now()) | Q(expires_at__isnull=True, created_at__gte=time_threshold),
+        ).order_by("-created_at")
+
+    def get(self, request):
+        return Response(StorySerializer(self.get_queryset(), many=True, context={"request": request}).data)
+
+    def post(self, request):
+        image = request.FILES.get("image")
+        if not image:
+            return Response({"image": "La imagen es obligatoria."}, status=status.HTTP_400_BAD_REQUEST)
+        story = Story.objects.create(
+            user=request.user,
+            image=image,
+            text=request.data.get("text", ""),
+            audio_url=request.data.get("audio_url", ""),
+            audio_start=request.data.get("audio_start") or 0,
+            audio_name=request.data.get("audio_name", ""),
+            metadata=request.data.get("metadata", ""),
+        )
+        return Response(StorySerializer(story, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+
+class StoryDetailAPIView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_object(self, pk):
+        story = Story.objects.select_related("user", "user__profile").filter(
+            pk=pk,
+            is_active=True,
+            expires_at__gt=timezone.now(),
+        ).first()
+        if not story:
+            raise Http404
+        return story
+
+    def get(self, request, pk):
+        return Response(StorySerializer(self.get_object(pk), context={"request": request}).data)
+
+    def delete(self, request, pk):
+        story = Story.objects.filter(pk=pk).first()
+        if not story:
+            raise Http404
+        if story.user_id != request.user.id and not request.user.is_staff:
+            return Response({"detail": "No autorizado."}, status=status.HTTP_403_FORBIDDEN)
+        story.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RegisterAPIView(APIView):
@@ -274,3 +641,51 @@ class LogoutAPIView(APIView):
             raise ValidationError({"refresh": "Token refresh inválido."})
 
         return Response({"detail": "Sesión cerrada."}, status=status.HTTP_200_OK)
+class NotificationListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificationSerializer
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at")
+
+
+class NotificationUnreadCountAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({"unread_count": count})
+
+
+class NotificationMarkReadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        notification = get_object_or_404(Notification, pk=pk, user=request.user)
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+        return Response(NotificationSerializer(notification, context={"request": request}).data)
+
+
+class NotificationReadAllAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({"status": "success"})
+
+
+class ListingReportAPIView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ListingReportSerializer
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+class BugReportCreateAPIView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = BugReportSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def perform_create(self, serializer):
+        serializer.save()

@@ -12,56 +12,59 @@
 
   <div class="products-grid" style="margin-top: 40px;">
     {% for listing in listings %}
-      <a href="{{ listing.get_absolute_url }}" class="product-card">
-        <div class="product-img-wrapper">
-          {% if listing.is_promoted %}
-            <div class="featured-badge-pro" title="Anuncio Priorizado">
-              <span class="star-icon">★</span>
-            </div>
-          {% endif %}
-          {% if listing.image %}
-            <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async">
-          {% else %}
-            <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
-          {% endif %}
+    <a href="{{ listing.get_absolute_url }}" class="product-card">
+      <div class="product-img-wrapper">
+        {% if listing.is_promoted %}
+        <div class="featured-badge-pro" title="Anuncio Priorizado">
+          <span class="star-icon">★</span>
         </div>
-        <div class="product-info">
-          <div class="product-price">C$ {{ listing.price }}</div>
-          <div class="product-title">{{ listing.title }}</div>
-          <div class="product-footer">
-            <span class="product-location">📍 {{ listing.location }}</span>
-            <button class="btn-favorite active" onclick="event.preventDefault(); toggleFav(this, {{ listing.id }});">
-              <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </a>
-    {% empty %}
-      <div style="grid-column: 1/-1; text-align: center; padding: 100px 0;">
-        <div style="font-size: 4rem; margin-bottom: 20px;">❤️</div>
-        <h2>Aún no tienes favoritos</h2>
-        <p style="color: var(--text-muted); margin-bottom: 30px;">Explora el marketplace y guarda lo que más te guste.</p>
-        <a href="/" class="cmp-btn cmp-btn-primary">Explorar productos</a>
+        {% endif %}
+        {% if listing.image %}
+        <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy"
+          decoding="async">
+        {% else %}
+        <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
+        {% endif %}
       </div>
+      <div class="product-info">
+        <div class="product-price">{{ listing.display_price }}</div>
+        <div class="product-title">{{ listing.title }}</div>
+        <div class="product-footer">
+          <span class="product-location">📍 {{ listing.location }}</span>
+          <button class="btn-favorite active" onclick="event.preventDefault(); toggleFav(this, {{ listing.id }});">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+              </path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <div style="grid-column: 1/-1; text-align: center; padding: 100px 0;">
+      <div style="font-size: 4rem; margin-bottom: 20px;">❤️</div>
+      <h2>Aún no tienes favoritos</h2>
+      <p style="color: var(--text-muted); margin-bottom: 30px;">Explora el marketplace y guarda lo que más te guste.</p>
+      <a href="/" class="cmp-btn cmp-btn-primary">Explorar productos</a>
+    </div>
     {% endfor %}
   </div>
 </div>
 
 <script>
-function toggleFav(btn, id) {
+  function toggleFav(btn, id) {
     fetch(`/favoritos/toggle/${id}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.is_favorite) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-                // Si estamos en la página de favoritos, podríamos querer ocultar la card
-                // btn.closest('.product-card').remove();
-            }
-        });
-}
+      .then(response => response.json())
+      .then(data => {
+        if (data.is_favorite) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+          // Si estamos en la página de favoritos, podríamos querer ocultar la card
+          // btn.closest('.product-card').remove();
+        }
+      });
+  }
 </script>
 {% endblock %}

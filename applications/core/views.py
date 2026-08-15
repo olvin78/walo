@@ -475,6 +475,7 @@ def create_listing(request):
         title = request.POST.get('title')
         description = request.POST.get('description')
         price = request.POST.get('price')
+        is_negotiable = request.POST.get('is_negotiable') == 'on'
         category_id = request.POST.get('category')
         subcategory_id = request.POST.get('subcategory')
         location = request.POST.get('location', 'Nicaragua')
@@ -483,15 +484,46 @@ def create_listing(request):
         payment_methods_list = request.POST.getlist('payment_methods')
         payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
         
-        if not all([title, price, category_id]):
+        if not all([title, price, category_id]) and not is_negotiable:
             messages.error(request, "Por favor completa todos los campos obligatorios.")
-            return redirect('create_listing')
+            categories = Category.objects.all()
+            subcategories = Subcategory.objects.select_related('category').all()
+            return render(request, 'core/create_listing.html', {
+                'categories': categories,
+                'subcategories': subcategories,
+                'profile_is_pro': getattr(getattr(request.user, 'profile', None), 'is_pro', False),
+                'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
+                'form_data': {
+                    'title': title,
+                    'price': price,
+                    'is_negotiable': is_negotiable,
+                    'category_id': category_id,
+                    'subcategory_id': subcategory_id,
+                    'location': location,
+                    'description': description,
+                    'payment_methods': payment_methods_list,
+                },
+            })
 
         category = get_object_or_404(Category, id=category_id)
         subcategory = None
         if subcategory_id:
             subcategory = get_object_or_404(Subcategory, id=subcategory_id, category=category)
-        
+
+        # Evitar publicaciones duplicadas: si el mismo usuario ya publicó un
+        # anuncio idéntico (mismo título, precio y categoría) en los últimos 2
+        # minutos, se considera un doble envío y se redirige al anuncio existente.
+        duplicate = Listing.objects.filter(
+            user=request.user,
+            title=title,
+            price=price,
+            category=category,
+            created_at__gte=timezone.now() - datetime.timedelta(minutes=2),
+        ).order_by('-created_at').first()
+        if duplicate:
+            messages.info(request, "Ese anuncio ya fue publicado. No se creó un duplicado.")
+            return redirect(duplicate.get_absolute_url())
+
         try:
             # Capturar múltiples imágenes
             images = request.FILES.getlist('images')
@@ -501,7 +533,8 @@ def create_listing(request):
                 user=request.user,
                 title=title,
                 description=description,
-                price=price,
+                price=price if price not in (None, '') else 0,
+                is_negotiable=is_negotiable,
                 category=category,
                 subcategory=subcategory,
                 location=location,
@@ -518,7 +551,24 @@ def create_listing(request):
             return redirect(listing.get_absolute_url())
         except Exception as e:
             messages.error(request, f"Hubo un error al publicar: {str(e)}")
-            return redirect('create_listing')
+            categories = Category.objects.all()
+            subcategories = Subcategory.objects.select_related('category').all()
+            return render(request, 'core/create_listing.html', {
+                'categories': categories,
+                'subcategories': subcategories,
+                'profile_is_pro': getattr(getattr(request.user, 'profile', None), 'is_pro', False),
+                'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
+                'form_data': {
+                    'title': title,
+                    'price': price,
+                    'is_negotiable': is_negotiable,
+                    'category_id': category_id,
+                    'subcategory_id': subcategory_id,
+                    'location': location,
+                    'description': description,
+                    'payment_methods': payment_methods_list,
+                },
+            })
     
     categories = Category.objects.all()
     subcategories = Subcategory.objects.select_related('category').all()
@@ -988,7 +1038,13 @@ def report_bug(request):
     if request.method == "POST":
         description = request.POST.get("description")
         screenshot = request.FILES.get("screenshot")
-        
+        captcha_answer = request.POST.get("captcha_answer", "").strip()
+        correct_answer = request.session.pop("math_captcha_answer", "")
+
+        if not captcha_answer or captcha_answer != correct_answer:
+            messages.error(request, "La respuesta del captcha es incorrecta. Intentá de nuevo.")
+            return redirect(request.META.get('HTTP_REFERER', 'home'))
+
         if description:
             BugReport.objects.create(
                 user=request.user if request.user.is_authenticated else None,
@@ -1063,6 +1119,7 @@ def edit_listing(request, listing_id):
         title = request.POST.get('title')
         description = request.POST.get('description')
         price = request.POST.get('price')
+        is_negotiable = request.POST.get('is_negotiable') == 'on'
         category_id = request.POST.get('category')
         subcategory_id = request.POST.get('subcategory')
         location = request.POST.get('location', 'Nicaragua')
@@ -1072,9 +1129,27 @@ def edit_listing(request, listing_id):
         payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
         system_payments_enabled = SystemPaymentSetting.get_solo().enabled
         
-        if not all([title, price, category_id]):
+        if not all([title, price, category_id]) and not is_negotiable:
             messages.error(request, "Por favor completa todos los campos obligatorios.")
-            return redirect('edit_listing', listing_id=listing.id)
+            categories = Category.objects.all()
+            subcategories = Subcategory.objects.select_related('category').all()
+            return render(request, 'core/create_listing.html', {
+                'categories': categories,
+                'subcategories': subcategories,
+                'listing': listing,
+                'is_edit': True,
+                'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
+                'form_data': {
+                    'title': title,
+                    'price': price,
+                    'is_negotiable': is_negotiable,
+                    'category_id': category_id,
+                    'subcategory_id': subcategory_id,
+                    'location': location,
+                    'description': description,
+                    'payment_methods': payment_methods_list,
+                },
+            })
 
         category = get_object_or_404(Category, id=category_id)
         subcategory = None
@@ -1084,7 +1159,8 @@ def edit_listing(request, listing_id):
         try:
             listing.title = title
             listing.description = description
-            listing.price = price
+            listing.price = price if price not in (None, '') else 0
+            listing.is_negotiable = is_negotiable
             listing.category = category
             listing.subcategory = subcategory
             listing.location = location

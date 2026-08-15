@@ -56,3 +56,27 @@
 .featured-badge-pro:hover span.star-icon { 
     transform: rotate(360deg); 
 }
+
+.walo-badge-negotiable {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.08);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.walo-badge-negotiable:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.4);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+}

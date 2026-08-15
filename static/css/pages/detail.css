@@ -282,4 +282,37 @@
     .listing-title-main { font-size: 2.2rem; }
     .listing-price-main { font-size: 2.1rem; }
     .detail-split-layout { gap: 20px; }
+    .detail-left-col { margin-bottom: 4px; }
+    .igualo-media-card { margin-bottom: 18px; border-radius: 20px; }
+    .listing-meta-tags { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .location-box a { width: 100%; justify-content: center; }
+    .btn-igualo-action { min-height: 52px; font-size: 0.95rem; border-radius: 16px; }
+    .btn-fv-clean { padding: 13px 14px; border-radius: 16px; }
+    .info-block-clean { padding: 22px 0; }
+    .seller-avatar-pro { width: 48px; height: 48px; border-radius: 14px; }
+    .description-text-pro { font-size: 0.98rem; line-height: 1.75; }
+}
+
+.walo-badge-negotiable-detail {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 8px 16px;
+    border-radius: 24px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.08);
+    transition: all 0.3s ease;
+    vertical-align: middle;
+}
+
+.walo-badge-negotiable-detail:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.4);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.18);
 }

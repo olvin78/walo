@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from applications.core.models import Category, Listing, ListingImage
+from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, ListingReport, MarketingConsent, Message, Notification, Profile, ProfileReview, Story
 
 
 User = get_user_model()
@@ -82,6 +82,7 @@ class PublicSellerSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "id",
+            "username",
             "display_name",
             "avatar",
             "registered_at",
@@ -166,6 +167,7 @@ class ListingSummarySerializer(serializers.ModelSerializer):
             "main_image",
             "created_at",
             "is_favorite",
+            "is_active",
             "seller",
             "whatsapp",
             "contact_available",
@@ -250,6 +252,11 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
     )
+    deleted_images = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True,
+    )
 
     class Meta:
         model = Listing
@@ -265,8 +272,11 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             "payment_methods",
             "latitude",
             "longitude",
+            "latitude",
+            "longitude",
             "main_image",
             "images",
+            "deleted_images",
         )
         read_only_fields = ("id",)
 
@@ -322,18 +332,38 @@ class ListingWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         images = validated_data.pop("images", [])
         main_image = validated_data.pop("main_image", None)
+        deleted_images = validated_data.pop("deleted_images", [])
 
+        # 1. Handle Deletions
+        if deleted_images:
+            # Delete extra images
+            instance.images.filter(id__in=deleted_images).delete()
+            
+            # If main image was "deleted" (we represent main image deletion by sending its ID if it was in ListingImage OR a special flag)
+            # In our current schema, 'instance.image' is the main one.
+            # If the user wants to remove the main one, they should send 'main_image' as Null or a new one.
+        
+        # 2. Update normal fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
+        # 3. Handle Main Image
         if main_image:
             instance.image = main_image
-        elif not instance.image and images:
-            instance.image = images[0]
-            images = images[1:]
+        elif instance.image is None and (instance.images.exists() or images):
+             # If we have no main image but we have extras, pick the first one
+             if images:
+                 instance.image = images[0]
+                 images = images[1:]
+             else:
+                 first_extra = instance.images.first()
+                 if first_extra:
+                     instance.image = first_extra.image
+                     first_extra.delete()
 
         instance.save()
 
+        # 4. Add new images
         for image in images:
             ListingImage.objects.create(listing=instance, image=image)
 
@@ -345,22 +375,185 @@ class MeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "date_joined", "profile")
+        fields = ("id", "username", "email", "first_name", "last_name", "date_joined", "profile")
 
     def get_profile(self, obj):
         profile = getattr(obj, "profile", None)
         if not profile:
             return None
+        consent = MarketingConsent.objects.filter(user=obj).order_by("-created_at").first()
         return {
+            "id": profile.id,
             "avatar": absolute_media_url(self.context.get("request"), profile.avatar) if profile.avatar else None,
             "cover_image": absolute_media_url(self.context.get("request"), profile.cover_image) if profile.cover_image else None,
             "location": profile.location,
             "phone": profile.phone,
             "bio": profile.bio,
+            "latitude": profile.latitude,
+            "longitude": profile.longitude,
             "rating": profile.rating,
             "reviews_count": profile.reviews_count,
             "is_verified": profile.is_verified,
+            "is_pro": profile.is_pro,
+            "followers_count": profile.followers.count(),
+            "listings_count": obj.listing_set.filter(is_active=True).count(),
+            "allows_notifications": consent.allows_notifications if consent else True,
         }
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ("avatar", "cover_image", "bio", "phone", "location", "latitude", "longitude")
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data["new_password"] != data["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Las contraseñas no coinciden."})
+        return data
+
+
+class ProfileReviewSerializer(serializers.ModelSerializer):
+    reviewer = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProfileReview
+        fields = ("id", "reviewer", "rating", "comment", "created_at")
+
+    def get_reviewer(self, obj):
+        return obj.reviewer.get_full_name().strip() or obj.reviewer.username
+
+
+class ProfileRatingSerializer(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    comment = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+
+
+class ChatUserSerializer(serializers.ModelSerializer):
+    display_name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    is_verified = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "display_name", "avatar", "is_verified")
+
+    def get_display_name(self, obj):
+        return obj.get_full_name().strip() or obj.username
+
+    def get_avatar(self, obj):
+        profile = getattr(obj, "profile", None)
+        if not profile or not profile.avatar:
+            return None
+        return absolute_media_url(self.context.get("request"), profile.avatar)
+
+    def get_is_verified(self, obj):
+        profile = getattr(obj, "profile", None)
+        return bool(profile and profile.is_verified)
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender = ChatUserSerializer(read_only=True)
+    is_mine = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Message
+        fields = ("id", "conversation", "sender", "text", "created_at", "is_read", "is_mine")
+        read_only_fields = ("id", "sender", "created_at", "is_read", "is_mine")
+
+    def get_is_mine(self, obj):
+        request = self.context.get("request")
+        return bool(request and request.user.is_authenticated and obj.sender_id == request.user.id)
+
+    def validate_conversation(self, value):
+        request = self.context.get("request")
+        if not request or not value.participants.filter(id=request.user.id).exists():
+            raise ValidationError("No puedes enviar mensajes en esta conversación.")
+        return value
+
+    def validate_text(self, value):
+        value = (value or "").strip()
+        if not value:
+            raise ValidationError("El mensaje no puede estar vacío.")
+        return value
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        return Message.objects.create(sender=request.user, **validated_data)
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    listing = ListingSummarySerializer(read_only=True)
+    participants = ChatUserSerializer(many=True, read_only=True)
+    other_user = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+    messages = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = ("id", "listing", "participants", "other_user", "last_message", "messages", "created_at", "updated_at")
+
+    def get_other_user(self, obj):
+        request = self.context.get("request")
+        user = obj.participants.exclude(id=getattr(request.user, "id", None)).first() if request else None
+        return ChatUserSerializer(user, context=self.context).data if user else None
+
+    def get_last_message(self, obj):
+        message = obj.messages.order_by("-created_at").first()
+        return MessageSerializer(message, context=self.context).data if message else None
+
+    def get_messages(self, obj):
+        if not self.context.get("include_messages"):
+            return []
+        return MessageSerializer(obj.messages.select_related("sender", "sender__profile"), many=True, context=self.context).data
+
+
+class StorySerializer(serializers.ModelSerializer):
+    user = serializers.IntegerField(source="user_id", read_only=True)
+    user_display_name = serializers.SerializerMethodField()
+    user_avatar = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    is_own = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Story
+        fields = (
+            "id",
+            "user",
+            "user_display_name",
+            "user_avatar",
+            "image",
+            "text",
+            "audio_url",
+            "audio_start",
+            "audio_name",
+            "metadata",
+            "created_at",
+            "expires_at",
+            "is_own",
+        )
+        read_only_fields = ("id", "user", "user_display_name", "user_avatar", "created_at", "expires_at", "is_own")
+
+    def get_user_display_name(self, obj):
+        return obj.user.get_full_name().strip() or obj.user.username
+
+    def get_user_avatar(self, obj):
+        profile = getattr(obj.user, "profile", None)
+        if not profile or not profile.avatar:
+            return None
+        return absolute_media_url(self.context.get("request"), profile.avatar)
+
+    def get_image(self, obj):
+        return absolute_media_url(self.context.get("request"), obj.image)
+
+    def get_is_own(self, obj):
+        request = self.context.get("request")
+        return bool(request and request.user.is_authenticated and obj.user_id == request.user.id)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -419,3 +612,42 @@ class MobileTokenObtainPairSerializer(serializers.Serializer):
             "access": str(refresh.access_token),
             "user": MeSerializer(authenticated, context=self.context).data,
         }
+class NotificationSerializer(serializers.ModelSerializer):
+    listing_title = serializers.ReadOnlyField(source="related_listing.title")
+
+    class Meta:
+        model = Notification
+        fields = (
+            "id",
+            "notification_type",
+            "title",
+            "body",
+            "related_listing",
+            "listing_title",
+            "related_conversation",
+            "is_read",
+            "created_at",
+        )
+
+
+class ListingReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ListingReport
+        fields = ("id", "listing", "reason", "description", "created_at")
+        read_only_fields = ("id", "created_at")
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user if request and request.user.is_authenticated else None
+        return ListingReport.objects.create(user=user, **validated_data)
+
+class BugReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BugReport
+        fields = ("id", "description", "screenshot", "created_at")
+        read_only_fields = ("id", "created_at")
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user if request and request.user.is_authenticated else None
+        return BugReport.objects.create(user=user, **validated_data)

@@ -86,7 +86,11 @@
                     <h1 class="listing-title-main">{{ listing.title }}</h1>
                     
                     <div class="listing-price-main">
+                        {% if listing.is_negotiable or listing.price == 0 %}
+                        <span class="walo-badge-negotiable-detail">🤝 Precio Negociable</span>
+                        {% else %}
                         <b>C$</b> {{ listing.price|floatformat:2 }}
+                        {% endif %}
                     </div>
                     
                     <div class="listing-meta-tags">

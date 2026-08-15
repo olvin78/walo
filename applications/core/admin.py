@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport, SearchHistory, SystemPaymentSetting
+from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport, SearchHistory, SystemPaymentSetting, ListingReport
 from django.utils.safestring import mark_safe
 
 admin.site.site_header = "Administración de IGUALO"
@@ -106,3 +106,9 @@ class SearchHistoryAdmin(admin.ModelAdmin):
     search_fields = ('query', 'normalized_query', 'user__username')
     readonly_fields = ('created_at', 'updated_at')
     date_hierarchy = 'updated_at'
+@admin.register(ListingReport)
+class ListingReportAdmin(admin.ModelAdmin):
+    list_display = ("listing", "user", "reason", "created_at")
+    list_filter = ("reason", "created_at")
+    search_fields = ("listing__title", "user__username", "description")
+    readonly_fields = ("listing", "user", "reason", "description", "created_at")

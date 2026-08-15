@@ -80,7 +80,7 @@
           <img src="{% static 'img/hero_bg.png' %}" alt="Anuncio sin imagen" class="product-img" loading="lazy">
           {% endif %}
           <div class="product-info">
-            <div class="product-price">C$ {{ listing.price }}</div>
+            <div class="product-price">{{ listing.display_price }}</div>
             <div class="product-title">{{ listing.title }}</div>
             <div class="product-location">📍 {{ listing.location }}</div>
           </div>
