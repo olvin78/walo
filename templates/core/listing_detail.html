@@ -346,7 +346,7 @@
 
 <!-- Libraries for celebration animations -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
 <script>
     // Celebration animation logic using GSAP & Confetti
@@ -468,10 +468,11 @@
         }});
     }
 
-    // Trigger celebration automatically for testing (force isTest to true)
+    // Trigger celebration if success element exists or if test query parameter is present
     document.addEventListener("DOMContentLoaded", function() {
         const trigger = document.getElementById('success-celebration-trigger');
-        const isTest = true; // FORCE FOR TESTING
+        const urlParams = new URLSearchParams(window.location.search);
+        const isTest = urlParams.has('test') || urlParams.has('test_celebration');
         
         if (trigger || isTest) {
             const listingTitle = trigger ? trigger.getAttribute('data-title') : 'Anuncio de Prueba';
