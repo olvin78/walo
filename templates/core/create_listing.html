@@ -235,10 +235,31 @@
                                 </div>
                             </span>
                         </h4>
-                        <div class="payment-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Efectivo" {% if form_data %}{% if "Efectivo" in form_data.payment_methods %}checked{% endif %}{% elif is_edit %}{% if "Efectivo" in listing.payment_methods %}checked{% endif %}{% else %}checked{% endif %}><div class="payment-card"><span>💵</span><p>Cash</p></div></label>
-                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Transferencia" {% if form_data %}{% if "Transferencia" in form_data.payment_methods %}checked{% endif %}{% elif is_edit and "Transferencia" in listing.payment_methods %}checked{% endif %}><div class="payment-card"><span>🏦</span><p>Banco</p></div></label>
-                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Apps de Pago" {% if form_data %}{% if "Apps de Pago" in form_data.payment_methods %}checked{% endif %}{% elif is_edit and "Apps de Pago" in listing.payment_methods %}checked{% endif %}><div class="payment-card"><span>📱</span><p>Apps</p></div></label>
+                        <div class="payment-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Efectivo" {% if form_data %}{% if "Efectivo" in form_data.payment_methods %}checked{% endif %}{% elif is_edit %}{% if "Efectivo" in listing.payment_methods %}checked{% endif %}{% else %}checked{% endif %}>
+                                <div class="payment-card">
+                                    <span class="payment-icon-box" style="background: rgba(34, 197, 94, 0.12); color: #22c55e;"><i data-lucide="banknote"></i></span>
+                                    <p class="payment-title">Efectivo</p>
+                                    <p class="payment-desc">Pago en mano</p>
+                                    <span class="payment-check"><i data-lucide="check"></i></span>
+                                </div>
+                            </label>
+                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Transferencia" {% if form_data %}{% if "Transferencia" in form_data.payment_methods %}checked{% endif %}{% elif is_edit and "Transferencia" in listing.payment_methods %}checked{% endif %}>
+                                <div class="payment-card">
+                                    <span class="payment-icon-box" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;"><i data-lucide="landmark"></i></span>
+                                    <p class="payment-title">Transferencia</p>
+                                    <p class="payment-desc">Banco / SINPE</p>
+                                    <span class="payment-check"><i data-lucide="check"></i></span>
+                                </div>
+                            </label>
+                            <label class="payment-option"><input type="checkbox" name="payment_methods" value="Apps de Pago" {% if form_data %}{% if "Apps de Pago" in form_data.payment_methods %}checked{% endif %}{% elif is_edit and "Apps de Pago" in listing.payment_methods %}checked{% endif %}>
+                                <div class="payment-card">
+                                    <span class="payment-icon-box" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i data-lucide="smartphone"></i></span>
+                                    <p class="payment-title">Apps de Pago</p>
+                                    <p class="payment-desc">Tigo Money / Movii</p>
+                                    <span class="payment-check"><i data-lucide="check"></i></span>
+                                </div>
+                            </label>
                         </div>
                     </div>
 
@@ -291,9 +312,14 @@
                     </div>
 
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
-                        <a href="{% if is_edit %}{% url 'my_listings' %}{% else %}{% url 'explore' %}{% endif %}" style="color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 0.9rem;">Cancelar</a>
-                        <button type="submit" class="studio-publish-btn" style="background: var(--primary); border: none; padding: 18px 40px; border-radius: 30px; color: #000; font-weight: 900; font-size: 1.1rem; cursor: pointer; flex: 1; max-width: 300px;">
-                            {% if is_edit %}Guardar Cambios ✨{% else %}Publicar 🚀{% endif %}
+                        <a href="{% if is_edit %}{% url 'my_listings' %}{% else %}{% url 'explore' %}{% endif %}" class="publish-cancel-btn">
+                            <i data-lucide="x-circle" class="publish-cancel-icon"></i> Cancelar
+                        </a>
+                        <button type="submit" class="studio-publish-btn" id="publish-submit-btn">
+                            <span class="publish-btn-content">
+                                <i data-lucide="rocket" class="publish-btn-icon"></i>
+                                <span class="publish-btn-text">{% if is_edit %}Guardar Cambios{% else %}Publicar Anuncio{% endif %}</span>
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -318,9 +344,14 @@ function disablePublishButton() {
     const btn = form.querySelector('button[type="submit"]');
     if (btn) {
         btn.disabled = true;
-        btn.style.opacity = '0.6';
-        btn.style.cursor = 'not-allowed';
-        btn.textContent = 'Publicando... ⏳';
+        const text = btn.querySelector('.publish-btn-text');
+        const icon = btn.querySelector('.publish-btn-icon');
+        if (text) text.textContent = 'Publicando...';
+        if (icon) {
+            icon.setAttribute('data-lucide', 'loader-circle');
+            icon.classList.add('publish-btn-spinning');
+        }
+        if (window.lucide) window.lucide.createIcons();
     }
 }
 
@@ -917,10 +948,60 @@ document.addEventListener('click', () => {
 .negotiable-toggle-card { transition: all 0.3s ease; }
 .negotiable-toggle-card:hover { background: rgba(255, 255, 255, 0.05) !important; border-color: rgba(34, 197, 94, 0.3) !important; }
 .payment-option input { display: none; }
-.payment-card { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-.payment-card span { font-size: 1.2rem; display: block; }
-.payment-card p { font-size: 0.65rem; margin: 4px 0 0; font-weight: 700; color: var(--text-muted); }
-.payment-option input:checked + .payment-card { border-color: var(--primary); background: rgba(34,197,94,0.1); }
+.payment-card {
+    position: relative;
+    background: rgba(255,255,255,0.02);
+    padding: 22px 16px 18px;
+    border-radius: 18px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-height: 130px;
+    justify-content: center;
+}
+.payment-card:hover { background: rgba(255,255,255,0.05); transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+.payment-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+.payment-icon-box i { width: 22px; height: 22px; }
+.payment-title { font-size: 0.85rem; font-weight: 800; color: #fff; margin: 0; }
+.payment-desc { font-size: 0.65rem; color: var(--text-muted); margin: 0; font-weight: 600; }
+.payment-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all 0.25s ease;
+}
+.payment-check i { width: 14px; height: 14px; }
+.payment-option input:checked + .payment-card {
+    border-color: var(--primary);
+    background: rgba(34,197,94,0.08);
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.15);
+}
+.payment-option input:checked + .payment-card .payment-title { color: var(--primary); }
+.payment-option input:checked + .payment-card .payment-check {
+    background: var(--primary);
+    color: #000;
+}
 
 .plan-toggle-btn {
     text-decoration: none;
@@ -945,6 +1026,79 @@ document.addEventListener('click', () => {
     color: #fff;
     transform: translateY(-2px);
 }
+
+/* Botón Publicar premium */
+.studio-publish-btn {
+    position: relative;
+    flex: 1;
+    max-width: 300px;
+    border: none;
+    padding: 18px 40px;
+    border-radius: 30px;
+    color: #000;
+    font-weight: 900;
+    font-size: 1.05rem;
+    cursor: pointer;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #10b981 100%);
+    box-shadow: 0 8px 24px rgba(22, 163, 74, 0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+    transition: all 0.25s ease;
+    overflow: hidden;
+}
+.studio-publish-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.5s ease;
+}
+.studio-publish-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(22, 163, 74, 0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.studio-publish-btn:hover::before { left: 130%; }
+.studio-publish-btn:active { transform: translateY(0); box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3); }
+.studio-publish-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.studio-publish-btn:disabled::before { display: none; }
+.publish-btn-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.publish-btn-icon { width: 22px; height: 22px; }
+.publish-btn-spinning { animation: publish-spin 1s linear infinite; }
+@keyframes publish-spin { to { transform: rotate(360deg); } }
+
+/* Botón Cancelar premium */
+.publish-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 22px;
+    border-radius: 30px;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.03);
+    transition: all 0.25s ease;
+}
+.publish-cancel-btn:hover {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.55);
+    background: rgba(239, 68, 68, 0.08);
+}
+.publish-cancel-icon { width: 16px; height: 16px; }
 
 .plan-toggle-danger {
     background: rgba(14, 165, 233, 0.14);
@@ -1072,7 +1226,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     select#form-category,
     select#form-subcategory { font-size: 1rem !important; }
     .payment-grid { grid-template-columns: 1fr !important; }
-    .payment-card { min-height: 74px; }
+    .payment-card { min-height: 96px; }
     .availability-toggle { flex-direction: column; align-items: flex-start; gap: 14px; }
     #image-management-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
     .studio-publish-btn { padding: 15px 18px !important; font-size: 1rem !important; }

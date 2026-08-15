@@ -41,7 +41,145 @@
 </script>
 {% endblock %}
 
+{% block flash_messages %}
+  {% if messages %}
+    <div class="igualo-container" style="margin-top: 20px; position: relative; z-index: 100;">
+      {% for message in messages %}
+        {% if "publicado con éxito" in message.message %}
+          <!-- Custom success modal trigger -->
+          <div id="success-celebration-trigger" data-title="{{ listing.title|escapejs }}" style="display: none;"></div>
+        {% else %}
+          <div style="padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; background: {% if message.tags == 'error' %}#ef4444{% else %}#161b22{% endif %}; color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            {{ message }}
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem;">&times;</button>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
+<!-- CSS para la Celebración -->
+<style>
+.celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 14, 20, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.celebration-card {
+    background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(34, 197, 94, 0.05);
+    border-radius: 24px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.celebration-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.mascot-container {
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 24px auto;
+    position: relative;
+}
+
+.celebration-bird-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+}
+
+.celebration-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #22c55e;
+    margin: 0 0 10px 0;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+}
+
+.celebration-subtitle {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 8px 0;
+}
+
+.celebration-listing-name {
+    font-size: 0.9rem;
+    color: #8b949e;
+    margin: 0 0 30px 0;
+    font-style: italic;
+}
+
+.btn-celebration-close {
+    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    color: #000;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn-celebration-close:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(34, 197, 94, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-celebration-close:active {
+    transform: translateY(1px);
+}
+</style>
+
+<!-- Success Celebration Overlay -->
+<div id="celebration-overlay" class="celebration-overlay" style="display: none;">
+    <div class="celebration-card" id="celebration-card">
+        <div class="mascot-container">
+            <img src="{% static 'img/yuhuu_mascot_bird_transparent.png' %}" id="celebration-bird" class="celebration-bird-img" alt="Yuhuu Bird">
+        </div>
+        <h2 class="celebration-title">¡YUHUUU!</h2>
+        <p class="celebration-subtitle">¡Tu anuncio ya está activo en Igualo!</p>
+        <p class="celebration-listing-name" id="celebration-listing-name"></p>
+        
+        <button class="btn-celebration-close" onclick="closeCelebration()">
+            ¡A VENDER!
+        </button>
+    </div>
+</div>
+
 <main class="pro-detail-page pt-5">
     <div class="igualo-main-container">
         
@@ -202,5 +340,103 @@
             lucide.createIcons();
         });
     }
+</script>
+
+<!-- Libraries for celebration animations -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+    // Celebration animation logic using GSAP & Confetti
+    function triggerCelebration(listingTitle) {
+        const overlay = document.getElementById('celebration-overlay');
+        const card = document.getElementById('celebration-card');
+        const bird = document.getElementById('celebration-bird');
+        const titleEl = document.getElementById('celebration-listing-name');
+        
+        if (titleEl) {
+            titleEl.textContent = listingTitle;
+        }
+        
+        overlay.style.display = 'flex';
+        
+        // GSAP Overlay Fade In
+        gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" });
+        
+        // GSAP Card Bounce In
+        gsap.fromTo(card, 
+            { scale: 0.7, opacity: 0, y: 50 }, 
+            { scale: 1, opacity: 1, y: 0, duration: 0.6, delay: 0.1, ease: "back.out(1.7)" }
+        );
+        
+        // GSAP Bird Pop and Wiggle (like Duolingo)
+        gsap.fromTo(bird, 
+            { scale: 0, rotation: -20 }, 
+            { scale: 1, rotation: 0, duration: 0.8, delay: 0.3, ease: "elastic.out(1.2, 0.6)", onComplete: () => {
+                // Idle floating hover effect
+                gsap.to(bird, {
+                    y: -12,
+                    rotation: 4,
+                    duration: 1.6,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut"
+                });
+            }}
+        );
+        
+        // Confetti explosions
+        triggerConfettiBurst();
+    }
+
+    function triggerConfettiBurst() {
+        // Center main burst
+        confetti({
+            particleCount: 140,
+            spread: 80,
+            origin: { y: 0.65 }
+        });
+        
+        // Left corner burst
+        setTimeout(() => {
+            confetti({
+                particleCount: 70,
+                angle: 60,
+                spread: 60,
+                origin: { x: 0.1, y: 0.85 }
+            });
+        }, 200);
+        
+        // Right corner burst
+        setTimeout(() => {
+            confetti({
+                particleCount: 70,
+                angle: 120,
+                spread: 60,
+                origin: { x: 0.9, y: 0.85 }
+            });
+        }, 350);
+    }
+
+    function closeCelebration() {
+        const overlay = document.getElementById('celebration-overlay');
+        const card = document.getElementById('celebration-card');
+        
+        gsap.to(card, { scale: 0.8, opacity: 0, y: 30, duration: 0.3, ease: "power2.in" });
+        gsap.to(overlay, { opacity: 0, duration: 0.3, delay: 0.1, ease: "power2.in", onComplete: () => {
+            overlay.style.display = 'none';
+        }});
+    }
+
+    // Trigger celebration if success element exists
+    document.addEventListener("DOMContentLoaded", function() {
+        const trigger = document.getElementById('success-celebration-trigger');
+        if (trigger) {
+            const listingTitle = trigger.getAttribute('data-title') || 'Tu nuevo anuncio';
+            setTimeout(() => {
+                triggerCelebration(listingTitle);
+            }, 600);
+        }
+    });
 </script>
 {% endblock %}
