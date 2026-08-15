@@ -374,23 +374,23 @@
         overlay.style.display = 'flex';
         
         // GSAP Overlay Fade In (faster)
-        gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" });
+        gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" });
         
         // GSAP Card Bounce In (faster & snappier)
         gsap.fromTo(card, 
             { scale: 0.6, opacity: 0, y: 40 }, 
-            { scale: 1, opacity: 1, y: 0, duration: 0.45, delay: 0.05, ease: "back.out(1.5)" }
+            { scale: 1, opacity: 1, y: 0, duration: 0.35, delay: 0.05, ease: "back.out(1.5)" }
         );
         
-        // GSAP Bird Pop and Wiggle (faster & responsive)
+        // GSAP Bird Pop and Wiggle (super fast & lively)
         gsap.fromTo(bird, 
-            { scale: 0, rotation: -20 }, 
-            { scale: 1, rotation: 0, duration: 0.55, delay: 0.15, ease: "elastic.out(1.1, 0.55)", onComplete: () => {
-                // Idle floating hover effect
+            { scale: 0, rotation: -30 }, 
+            { scale: 1, rotation: 0, duration: 0.4, delay: 0.1, ease: "elastic.out(1.1, 0.5)", onComplete: () => {
+                // Energetic floating/hovering animation (faster)
                 gsap.to(bird, {
-                    y: -12,
-                    rotation: 4,
-                    duration: 1.6,
+                    y: -15,
+                    rotation: 5,
+                    duration: 0.7,
                     repeat: -1,
                     yoyo: true,
                     ease: "sine.inOut"
@@ -405,39 +405,41 @@
     function triggerConfettiBurst() {
         if (!customConfetti) return;
 
-        // Main burst behind the center card, flying outwards (immediate)
+        // Main burst behind the center card, flying outwards at high velocity
         customConfetti({
             particleCount: 160,
             spread: 95,
-            startVelocity: 45,
+            startVelocity: 65, // Much faster!
             origin: { x: 0.5, y: 0.5 }
         });
         
-        // Secondary outer burst to fill the space (faster)
+        // Secondary outer burst to fill the space
         setTimeout(() => {
             customConfetti({
                 particleCount: 80,
                 spread: 120,
-                startVelocity: 35,
+                startVelocity: 50, // Much faster!
                 origin: { x: 0.5, y: 0.5 }
             });
-        }, 150);
+        }, 120);
         
-        // Dynamic edge accents (faster)
+        // Dynamic edge accents
         setTimeout(() => {
             customConfetti({
                 particleCount: 50,
                 angle: 45,
                 spread: 60,
+                startVelocity: 45,
                 origin: { x: 0.2, y: 0.8 }
             });
             customConfetti({
                 particleCount: 50,
                 angle: 135,
                 spread: 60,
+                startVelocity: 45,
                 origin: { x: 0.8, y: 0.8 }
             });
-        }, 300);
+        }, 220);
     }
 
     function closeCelebration() {
