@@ -112,11 +112,23 @@
     transform-style: preserve-3d;
 }
 
-.celebration-bird-img {
+.celebration-part {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+}
+
+.celebration-body-img {
+    z-index: 3;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.35));
+}
+
+.celebration-foot-img {
+    z-index: 2;
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.25));
 }
 
 .celebration-title {
@@ -171,8 +183,10 @@
 <div id="celebration-overlay" class="celebration-overlay" style="display: none;">
     <canvas id="celebration-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"></canvas>
     <div class="celebration-card" id="celebration-card">
-        <div class="mascot-container">
-            <img src="{% static 'img/yuhuu_mascot_transparent.png' %}" id="celebration-bird" class="celebration-bird-img" alt="Yuhuu Mascot">
+        <div class="mascot-container" id="celebration-mascot">
+            <img src="{% static 'img/yuhuu_mascot_body.png' %}" id="celebration-body" class="celebration-part celebration-body-img" alt="Yuhuu Body">
+            <img src="{% static 'img/yuhuu_mascot_left_foot.png' %}" id="celebration-left-foot" class="celebration-part celebration-foot-img" alt="Yuhuu Left Foot">
+            <img src="{% static 'img/yuhuu_mascot_right_foot.png' %}" id="celebration-right-foot" class="celebration-part celebration-foot-img" alt="Yuhuu Right Foot">
         </div>
         <h2 class="celebration-title">¡YUHUUU!</h2>
         <p class="celebration-subtitle">¡Tu anuncio ya está activo en Igualo!</p>
@@ -358,7 +372,10 @@
     function triggerCelebration(listingTitle) {
         const overlay = document.getElementById('celebration-overlay');
         const card = document.getElementById('celebration-card');
-        const bird = document.getElementById('celebration-bird');
+        const mascot = document.getElementById('celebration-mascot');
+        const body = document.getElementById('celebration-body');
+        const leftFoot = document.getElementById('celebration-left-foot');
+        const rightFoot = document.getElementById('celebration-right-foot');
         const titleEl = document.getElementById('celebration-listing-name');
         const canvas = document.getElementById('celebration-canvas');
         
@@ -390,55 +407,78 @@
             { scale: 1, opacity: 1, y: 0, duration: 0.35, delay: 0.05, ease: "back.out(1.5)" }
         );
         
-        // Setup initial position (completely off-screen left, tilted forward for flight)
-        gsap.set(bird, { 
+        // Setup initial position of the mascot container (completely off-screen left)
+        gsap.set(mascot, { 
             x: -300, 
             y: 120, 
-            rotation: 25, 
+            rotation: 15, 
             scale: 0.85,
-            opacity: 0,
-            skewY: 0
+            opacity: 0
         });
 
-        // 1. Rapid flapping/wobble effect during flight to make it look like a flying creature
-        const flapTween = gsap.to(bird, {
-            skewY: 15,
-            rotation: 12,
-            duration: 0.08,
-            repeat: 18, // Repeat during the flight duration (1.5s)
-            yoyo: true,
-            ease: "sine.inOut"
-        });
+        // Set pivot joints for the feet so they rotate around the hips
+        gsap.set(leftFoot, { transformOrigin: "40% 73%" });
+        gsap.set(rightFoot, { transformOrigin: "57% 73%" });
 
-        // 2. Flight / Swoop Pathway Timeline (motion graphics flight curve)
+        // 1. Rapid feet walking/kicking animation loop during flight
+        const leftFootTween = gsap.fromTo(leftFoot, 
+            { rotation: -30, y: -4 },
+            { rotation: 30, y: 4, duration: 0.12, repeat: 12, yoyo: true, ease: "sine.inOut" }
+        );
+
+        const rightFootTween = gsap.fromTo(rightFoot, 
+            { rotation: 30, y: 4 },
+            { rotation: -30, y: -4, duration: 0.12, repeat: 12, yoyo: true, ease: "sine.inOut" }
+        );
+
+        // 2. Flight / Swoop Pathway Timeline for the mascot container
         const flightTimeline = gsap.timeline({
             onComplete: () => {
-                // Settle from flight pose to normal pose
-                gsap.to(bird, {
+                // Settle mascot container to hover pose
+                gsap.to(mascot, {
                     rotation: 0,
-                    skewY: 0,
                     scale: 1.0,
                     duration: 0.4,
                     ease: "power2.out"
                 });
                 
-                // Natural hovering/glide (gentle drift in a circular pattern)
+                // Slow down feet to a gentle dangling float
+                gsap.killTweensOf([leftFoot, rightFoot]);
+                gsap.to(leftFoot, {
+                    rotation: -10,
+                    y: -2,
+                    duration: 1.4,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut"
+                });
+                gsap.to(rightFoot, {
+                    rotation: 10,
+                    y: 2,
+                    duration: 1.4,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut",
+                    delay: 0.7
+                });
+
+                // Natural hovering/glide of mascot container (gentle circular drift)
                 const hoverTl = gsap.timeline({ repeat: -1 });
-                hoverTl.to(bird, {
+                hoverTl.to(mascot, {
                     x: 8,
                     y: -10,
                     rotation: 2,
                     duration: 1.6,
                     ease: "sine.inOut"
                 })
-                .to(bird, {
+                .to(mascot, {
                     x: -8,
                     y: 6,
                     rotation: -2,
                     duration: 1.8,
                     ease: "sine.inOut"
                 })
-                .to(bird, {
+                .to(mascot, {
                     x: 0,
                     y: 0,
                     rotation: 0,
@@ -449,26 +489,26 @@
         });
 
         // Fade in quickly at start of flight
-        flightTimeline.to(bird, { opacity: 1, duration: 0.25 }, 0);
+        flightTimeline.to(mascot, { opacity: 1, duration: 0.25 }, 0);
 
         // Flight coordinates (swoop down, climb up to hover position)
-        flightTimeline.to(bird, {
+        flightTimeline.to(mascot, {
             x: -160,
             y: -40,
-            rotation: -10,
+            rotation: -5,
             scale: 0.95,
             duration: 0.45,
             ease: "power1.out"
         }, 0)
-        .to(bird, {
+        .to(mascot, {
             x: -60,
             y: 40,
-            rotation: 15,
+            rotation: 10,
             scale: 1.05,
             duration: 0.5,
             ease: "power1.inOut"
         }, 0.45)
-        .to(bird, {
+        .to(mascot, {
             x: 0,
             y: 0,
             rotation: 0,
