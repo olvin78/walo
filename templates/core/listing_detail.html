@@ -220,6 +220,93 @@
 .btn-celebration-secondary:active {
     transform: translateY(1px);
 }
+
+.celebration-share-section {
+    margin-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 20px;
+    width: 100%;
+}
+
+.share-title {
+    font-size: 0.8rem;
+    color: #8b949e;
+    margin-bottom: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.share-icons-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.share-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    color: #c9d1d9;
+    text-decoration: none !important;
+    padding: 0;
+}
+
+.share-icon-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.share-icon-btn:hover {
+    transform: translateY(-3px) scale(1.08);
+}
+
+.share-icon-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.share-icon-btn.whatsapp:hover {
+    background: rgba(37, 211, 102, 0.15);
+    border-color: #25d366;
+    color: #25d366;
+    box-shadow: 0 0 12px rgba(37, 211, 102, 0.4);
+}
+
+.share-icon-btn.facebook:hover {
+    background: rgba(24, 119, 242, 0.15);
+    border-color: #1877f2;
+    color: #1877f2;
+    box-shadow: 0 0 12px rgba(24, 119, 242, 0.4);
+}
+
+.share-icon-btn.twitter:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.share-icon-btn.telegram:hover {
+    background: rgba(36, 161, 222, 0.15);
+    border-color: #24a1de;
+    color: #24a1de;
+    box-shadow: 0 0 12px rgba(36, 161, 222, 0.4);
+}
+
+.share-icon-btn.copy-link:hover {
+    background: rgba(234, 179, 8, 0.15);
+    border-color: #eab308;
+    color: #eab308;
+    box-shadow: 0 0 12px rgba(234, 179, 8, 0.4);
+}
 </style>
 
 <!-- Success Celebration Overlay -->
@@ -241,6 +328,27 @@
             <button class="btn-celebration-secondary" onclick="closeCelebration()">
                 Ver mi anuncio
             </button>
+        </div>
+
+        <div class="celebration-share-section">
+            <p class="share-title">¡Atrae compradores compartiendo tu anuncio!</p>
+            <div class="share-icons-row">
+                <a id="share-whatsapp" href="#" target="_blank" class="share-icon-btn whatsapp" title="Compartir en WhatsApp">
+                    <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.457L0 24zm6.208-3.816l.412.245c1.597.948 3.523 1.448 5.485 1.449 5.867 0 10.643-4.773 10.646-10.643.002-2.843-1.1-5.516-3.106-7.524C17.696 1.705 15.025.602 12.01.602 6.136.602 1.361 5.378 1.358 11.253c-.001 1.905.5 3.758 1.452 5.372l.271.458-1.055 3.854 3.951-1.036zm12.336-7.14c-.316-.157-1.872-.924-2.163-1.03-.292-.106-.503-.157-.717.157-.213.317-.828 1.03-1.014 1.242-.187.213-.374.24-.69.083-.316-.157-1.336-.493-2.545-1.572-.94-.838-1.573-1.874-1.758-2.188-.184-.316-.02-.487.137-.644.143-.142.316-.37.474-.555.158-.185.21-.317.316-.528.106-.213.053-.397-.027-.555-.08-.158-.717-1.73-.982-2.368-.258-.622-.52-.538-.717-.548-.184-.01-.397-.01-.61-.01-.213 0-.56.08-.854.4-.294.316-1.123 1.1-1.123 2.68 0 1.578 1.15 3.1 1.31 3.313.158.21 2.26 3.453 5.474 4.84.766.33 1.364.527 1.83.676.77.244 1.47.21 2.025.127.618-.093 1.872-.766 2.136-1.47.265-.702.265-1.3.187-1.425-.078-.127-.292-.207-.608-.363z"/></svg>
+                </a>
+                <a id="share-facebook" href="#" target="_blank" class="share-icon-btn facebook" title="Compartir en Facebook">
+                    <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <a id="share-twitter" href="#" target="_blank" class="share-icon-btn twitter" title="Compartir en X">
+                    <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </a>
+                <a id="share-telegram" href="#" target="_blank" class="share-icon-btn telegram" title="Compartir en Telegram">
+                    <svg viewBox="0 0 24 24"><path d="M23.91 2.4a1.11 1.11 0 0 0-1-.25L1.3 9.47a1.14 1.14 0 0 0-.17 2.06l5.7 2.56L18.45 6c.55-.42.92.1.37.52L9.2 14.86l-.37 6.08a1.13 1.13 0 0 0 2 .7l3.58-3.41L19 21.05a1.15 1.15 0 0 0 2-.63L24 3.26a1.15 1.15 0 0 0-.09-.86z"/></svg>
+                </a>
+                <button onclick="copyListingLink(this)" class="share-icon-btn copy-link" title="Copiar enlace del anuncio">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -589,6 +697,20 @@
             ease: "back.out(1.3)"
         }, 0);
         
+        // Configure social sharing links dynamically
+        const shareUrl = encodeURIComponent(window.location.href);
+        const shareText = encodeURIComponent(`¡Mira lo que acabo de publicar en Igualo: "${listingTitle}"!`);
+        
+        const wsBtn = document.getElementById('share-whatsapp');
+        const fbBtn = document.getElementById('share-facebook');
+        const twBtn = document.getElementById('share-twitter');
+        const tgBtn = document.getElementById('share-telegram');
+        
+        if (wsBtn) wsBtn.href = `https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`;
+        if (fbBtn) fbBtn.href = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+        if (twBtn) twBtn.href = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`;
+        if (tgBtn) tgBtn.href = `https://t.me/share/url?url=${shareUrl}&text=${shareText}`;
+
         // Confetti explosions from behind the card
         triggerConfettiBurst();
     }
@@ -643,6 +765,23 @@
         gsap.to(overlay, { opacity: 0, duration: 0.25, delay: 0.05, ease: "power2.in", onComplete: () => {
             overlay.style.display = 'none';
         }});
+    }
+
+    function copyListingLink(btn) {
+        if (!btn) return;
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            btn.style.borderColor = '#22c55e';
+            btn.style.background = 'rgba(34, 197, 94, 0.15)';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.borderColor = '';
+                btn.style.background = '';
+            }, 2000);
+        }).catch(err => {
+            print(err);
+        });
     }
 
     // Trigger celebration automatically for testing (force isTest to true)
