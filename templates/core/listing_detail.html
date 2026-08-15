@@ -373,19 +373,19 @@
         
         overlay.style.display = 'flex';
         
-        // GSAP Overlay Fade In
-        gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" });
+        // GSAP Overlay Fade In (faster)
+        gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" });
         
-        // GSAP Card Bounce In
+        // GSAP Card Bounce In (faster & snappier)
         gsap.fromTo(card, 
-            { scale: 0.7, opacity: 0, y: 50 }, 
-            { scale: 1, opacity: 1, y: 0, duration: 0.6, delay: 0.1, ease: "back.out(1.7)" }
+            { scale: 0.6, opacity: 0, y: 40 }, 
+            { scale: 1, opacity: 1, y: 0, duration: 0.45, delay: 0.05, ease: "back.out(1.5)" }
         );
         
-        // GSAP Bird Pop and Wiggle (like Duolingo)
+        // GSAP Bird Pop and Wiggle (faster & responsive)
         gsap.fromTo(bird, 
             { scale: 0, rotation: -20 }, 
-            { scale: 1, rotation: 0, duration: 0.8, delay: 0.3, ease: "elastic.out(1.2, 0.6)", onComplete: () => {
+            { scale: 1, rotation: 0, duration: 0.55, delay: 0.15, ease: "elastic.out(1.1, 0.55)", onComplete: () => {
                 // Idle floating hover effect
                 gsap.to(bird, {
                     y: -12,
@@ -405,15 +405,15 @@
     function triggerConfettiBurst() {
         if (!customConfetti) return;
 
-        // Main burst behind the center card, flying outwards
+        // Main burst behind the center card, flying outwards (immediate)
         customConfetti({
             particleCount: 160,
-            spread: 90,
+            spread: 95,
             startVelocity: 45,
-            origin: { x: 0.5, y: 0.5 } // Shoot from behind the card
+            origin: { x: 0.5, y: 0.5 }
         });
         
-        // Secondary outer burst to fill the space
+        // Secondary outer burst to fill the space (faster)
         setTimeout(() => {
             customConfetti({
                 particleCount: 80,
@@ -421,9 +421,9 @@
                 startVelocity: 35,
                 origin: { x: 0.5, y: 0.5 }
             });
-        }, 250);
+        }, 150);
         
-        // Dynamic edge accents
+        // Dynamic edge accents (faster)
         setTimeout(() => {
             customConfetti({
                 particleCount: 50,
@@ -437,15 +437,15 @@
                 spread: 60,
                 origin: { x: 0.8, y: 0.8 }
             });
-        }, 450);
+        }, 300);
     }
 
     function closeCelebration() {
         const overlay = document.getElementById('celebration-overlay');
         const card = document.getElementById('celebration-card');
         
-        gsap.to(card, { scale: 0.8, opacity: 0, y: 30, duration: 0.3, ease: "power2.in" });
-        gsap.to(overlay, { opacity: 0, duration: 0.3, delay: 0.1, ease: "power2.in", onComplete: () => {
+        gsap.to(card, { scale: 0.8, opacity: 0, y: 30, duration: 0.25, ease: "power2.in" });
+        gsap.to(overlay, { opacity: 0, duration: 0.25, delay: 0.05, ease: "power2.in", onComplete: () => {
             overlay.style.display = 'none';
         }});
     }
@@ -459,7 +459,7 @@
             const listingTitle = trigger ? trigger.getAttribute('data-title') : 'Anuncio de Prueba';
             setTimeout(() => {
                 triggerCelebration(listingTitle);
-            }, 600);
+            }, 250); // Shorter delay before starting the effect
         }
     });
 </script>
