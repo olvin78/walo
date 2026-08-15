@@ -540,13 +540,15 @@ function selectCategory(catId) {
     // Clonar icono y actualizar disparador
     const selectedCard = document.querySelector(`.category-custom-card[data-id="${catId}"]`);
     if (selectedCard) {
-        const iconEl = selectedCard.querySelector('i').cloneNode(true);
-        const nameText = selectedCard.querySelector('.category-name').textContent;
+        const iconBox = selectedCard.querySelector('.category-icon-box');
         const triggerText = document.getElementById('category-trigger-text');
-        if (triggerText) {
+        if (triggerText && iconBox && iconBox.firstElementChild) {
             triggerText.innerHTML = '';
-            iconEl.className = 'trigger-icon';
-            triggerText.appendChild(iconEl);
+            const iconClone = iconBox.firstElementChild.cloneNode(true);
+            iconClone.className = 'trigger-icon';
+            triggerText.appendChild(iconClone);
+            
+            const nameText = selectedCard.querySelector('.category-name').textContent;
             const textSpan = document.createElement('span');
             textSpan.textContent = ' ' + nameText;
             textSpan.className = 'trigger-text-value';
@@ -595,13 +597,18 @@ function selectSubcategory(subId) {
     // Clonar icono y actualizar disparador
     const selectedPill = document.querySelector(`.subcategory-pill[data-id="${subId}"]`);
     if (selectedPill) {
-        const iconEl = selectedPill.querySelector('i').cloneNode(true);
-        const nameText = selectedPill.querySelector('span').textContent;
         const triggerText = document.getElementById('subcategory-trigger-text');
         if (triggerText) {
             triggerText.innerHTML = '';
-            iconEl.className = 'trigger-icon';
-            triggerText.appendChild(iconEl);
+            
+            const firstChild = selectedPill.firstElementChild;
+            if (firstChild) {
+                const iconClone = firstChild.cloneNode(true);
+                iconClone.className = 'trigger-icon';
+                triggerText.appendChild(iconClone);
+            }
+            
+            const nameText = selectedPill.querySelector('span').textContent;
             const textSpan = document.createElement('span');
             textSpan.textContent = ' ' + nameText;
             textSpan.className = 'trigger-text-value';
@@ -711,13 +718,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedCard = document.querySelector(`.category-custom-card[data-id="${catId}"]`);
         if (selectedCard) {
             selectedCard.classList.add('is-selected');
-            const iconEl = selectedCard.querySelector('i').cloneNode(true);
-            const nameText = selectedCard.querySelector('.category-name').textContent;
+            const iconBox = selectedCard.querySelector('.category-icon-box');
             const triggerText = document.getElementById('category-trigger-text');
-            if (triggerText) {
+            if (triggerText && iconBox && iconBox.firstElementChild) {
                 triggerText.innerHTML = '';
-                iconEl.className = 'trigger-icon';
-                triggerText.appendChild(iconEl);
+                const iconClone = iconBox.firstElementChild.cloneNode(true);
+                iconClone.className = 'trigger-icon';
+                triggerText.appendChild(iconClone);
+                const nameText = selectedCard.querySelector('.category-name').textContent;
                 const textSpan = document.createElement('span');
                 textSpan.textContent = ' ' + nameText;
                 triggerText.appendChild(textSpan);
@@ -738,13 +746,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedPill = document.querySelector(`.subcategory-pill[data-id="${subId}"]`);
             if (selectedPill) {
                 selectedPill.classList.add('is-selected');
-                const iconEl = selectedPill.querySelector('i').cloneNode(true);
-                const nameText = selectedPill.querySelector('span').textContent;
                 const triggerText = document.getElementById('subcategory-trigger-text');
                 if (triggerText) {
                     triggerText.innerHTML = '';
-                    iconEl.className = 'trigger-icon';
-                    triggerText.appendChild(iconEl);
+                    const firstChild = selectedPill.firstElementChild;
+                    if (firstChild) {
+                        const iconClone = firstChild.cloneNode(true);
+                        iconClone.className = 'trigger-icon';
+                        triggerText.appendChild(iconClone);
+                    }
+                    const nameText = selectedPill.querySelector('span').textContent;
                     const textSpan = document.createElement('span');
                     textSpan.textContent = ' ' + nameText;
                     triggerText.appendChild(textSpan);
