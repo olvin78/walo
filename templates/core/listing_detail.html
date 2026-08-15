@@ -89,6 +89,7 @@
     text-align: center;
     position: relative;
     overflow: hidden;
+    z-index: 10;
 }
 
 .celebration-card::before {
@@ -166,6 +167,7 @@
 
 <!-- Success Celebration Overlay -->
 <div id="celebration-overlay" class="celebration-overlay" style="display: none;">
+    <canvas id="celebration-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"></canvas>
     <div class="celebration-card" id="celebration-card">
         <div class="mascot-container">
             <img src="{% static 'img/yuhuu_mascot_bird_transparent.png' %}" id="celebration-bird" class="celebration-bird-img" alt="Yuhuu Bird">
@@ -348,14 +350,25 @@
 
 <script>
     // Celebration animation logic using GSAP & Confetti
+    let customConfetti;
+
     function triggerCelebration(listingTitle) {
         const overlay = document.getElementById('celebration-overlay');
         const card = document.getElementById('celebration-card');
         const bird = document.getElementById('celebration-bird');
         const titleEl = document.getElementById('celebration-listing-name');
+        const canvas = document.getElementById('celebration-canvas');
         
         if (titleEl) {
             titleEl.textContent = listingTitle;
+        }
+        
+        // Initialize custom confetti on the background canvas if not done yet
+        if (!customConfetti && canvas) {
+            customConfetti = confetti.create(canvas, {
+                resize: true,
+                useWorker: true
+            });
         }
         
         overlay.style.display = 'flex';
@@ -385,37 +398,46 @@
             }}
         );
         
-        // Confetti explosions
+        // Confetti explosions from behind the card
         triggerConfettiBurst();
     }
 
     function triggerConfettiBurst() {
-        // Center main burst
-        confetti({
-            particleCount: 140,
-            spread: 80,
-            origin: { y: 0.65 }
+        if (!customConfetti) return;
+
+        // Main burst behind the center card, flying outwards
+        customConfetti({
+            particleCount: 160,
+            spread: 90,
+            startVelocity: 45,
+            origin: { x: 0.5, y: 0.5 } // Shoot from behind the card
         });
         
-        // Left corner burst
+        // Secondary outer burst to fill the space
         setTimeout(() => {
-            confetti({
-                particleCount: 70,
-                angle: 60,
-                spread: 60,
-                origin: { x: 0.1, y: 0.85 }
+            customConfetti({
+                particleCount: 80,
+                spread: 120,
+                startVelocity: 35,
+                origin: { x: 0.5, y: 0.5 }
             });
-        }, 200);
+        }, 250);
         
-        // Right corner burst
+        // Dynamic edge accents
         setTimeout(() => {
-            confetti({
-                particleCount: 70,
-                angle: 120,
+            customConfetti({
+                particleCount: 50,
+                angle: 45,
                 spread: 60,
-                origin: { x: 0.9, y: 0.85 }
+                origin: { x: 0.2, y: 0.8 }
             });
-        }, 350);
+            customConfetti({
+                particleCount: 50,
+                angle: 135,
+                spread: 60,
+                origin: { x: 0.8, y: 0.8 }
+            });
+        }, 450);
     }
 
     function closeCelebration() {
