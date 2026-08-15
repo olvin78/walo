@@ -207,7 +207,17 @@
                                 </div>
                             </div>
                             <div class="studio-input-block">
-                                <label class="studio-label">Ubicación</label>
+                                <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
+                                    Ubicación
+                                    <span class="info-tooltip-wrapper">
+                                        <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'location-tooltip')"></i>
+                                        <div id="location-tooltip" class="tooltip-box">
+                                            <div class="tooltip-arrow"></div>
+                                            <strong>Formato de Ubicación</strong>
+                                            <p>Por favor, escribe tu ubicación siguiendo el patrón "Ciudad, Departamento" o "Barrio, Ciudad" (por ejemplo: "Masaya, Masaya" o "Altamira, Managua"). Esto ayuda al sistema a posicionar correctamente tu anuncio para compradores cercanos.</p>
+                                        </div>
+                                    </span>
+                                </label>
                                 <input type="text" name="location" id="form-location" value="{% if form_data %}{{ form_data.location }}{% elif is_edit %}{{ listing.location }}{% else %}{{ user.profile.location }}{% endif %}" placeholder="Ciudad/Barrio" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 1.1rem; font-weight: 700; color: #fff; padding: 8px 0; outline: none;" oninput="updateStudioPreview()">
                             </div>
                         </div>
