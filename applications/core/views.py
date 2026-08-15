@@ -544,7 +544,7 @@ def create_listing(request):
             )
             
             # Guardar resto de imágenes en el modelo relacionado
-            for img in images:
+            for img in images[1:]:
                 ListingImage.objects.create(listing=listing, image=img)
 
             messages.success(request, "¡Tu anuncio ha sido publicado con éxito!")
@@ -1182,11 +1182,13 @@ def edit_listing(request, listing_id):
             # Gestionar nuevas imágenes si se suben
             new_images = request.FILES.getlist('images')
             if new_images:
+                start_idx = 0
                 # Si no hay imagen principal o se borró, la primera nueva es la principal
                 if not listing.image:
                     listing.image = new_images[0]
+                    start_idx = 1
                 
-                for img in new_images:
+                for img in new_images[start_idx:]:
                     ListingImage.objects.create(listing=listing, image=img)
             
             # Fallback: Si se borró la principal y no hay nuevas, intentar promover una secundaria
