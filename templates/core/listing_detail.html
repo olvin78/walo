@@ -390,50 +390,92 @@
             { scale: 1, opacity: 1, y: 0, duration: 0.35, delay: 0.05, ease: "back.out(1.5)" }
         );
         
-        // GSAP Bird Clean 3D slide-in entry (motion graphics feel)
-        gsap.fromTo(bird, 
-            { y: 80, opacity: 0, rotationY: 45, rotationX: 10 }, 
-            { y: 0, opacity: 1, rotationY: 0, rotationX: 0, duration: 0.7, ease: "power3.out", onComplete: () => {
-                // Professional volumetric 3D orbit and hover loop (no cartoon scaling/stretching)
-                const tl = gsap.timeline({ repeat: -1 });
-                tl.to(bird, {
-                    x: 12,
-                    y: -14,
-                    rotationZ: 1.5,
-                    rotationY: 10,
-                    rotationX: 5,
-                    duration: 2.2,
-                    ease: "sine.inOut"
-                })
-                .to(bird, {
-                    x: -10,
-                    y: 6,
-                    rotationZ: -1.5,
-                    rotationY: -8,
-                    rotationX: -4,
-                    duration: 2.4,
-                    ease: "sine.inOut"
-                })
-                .to(bird, {
+        // Setup initial position (completely off-screen left, tilted forward for flight)
+        gsap.set(bird, { 
+            x: -300, 
+            y: 120, 
+            rotation: 25, 
+            scale: 0.85,
+            opacity: 0,
+            skewY: 0
+        });
+
+        // 1. Rapid flapping/wobble effect during flight to make it look like a flying creature
+        const flapTween = gsap.to(bird, {
+            skewY: 15,
+            rotation: 12,
+            duration: 0.08,
+            repeat: 18, // Repeat during the flight duration (1.5s)
+            yoyo: true,
+            ease: "sine.inOut"
+        });
+
+        // 2. Flight / Swoop Pathway Timeline (motion graphics flight curve)
+        const flightTimeline = gsap.timeline({
+            onComplete: () => {
+                // Settle from flight pose to normal pose
+                gsap.to(bird, {
+                    rotation: 0,
+                    skewY: 0,
+                    scale: 1.0,
+                    duration: 0.4,
+                    ease: "power2.out"
+                });
+                
+                // Natural hovering/glide (gentle drift in a circular pattern)
+                const hoverTl = gsap.timeline({ repeat: -1 });
+                hoverTl.to(bird, {
                     x: 8,
-                    y: -16,
-                    rotationZ: 1,
-                    rotationY: 8,
-                    rotationX: 4,
-                    duration: 2.2,
+                    y: -10,
+                    rotation: 2,
+                    duration: 1.6,
+                    ease: "sine.inOut"
+                })
+                .to(bird, {
+                    x: -8,
+                    y: 6,
+                    rotation: -2,
+                    duration: 1.8,
                     ease: "sine.inOut"
                 })
                 .to(bird, {
                     x: 0,
                     y: 0,
-                    rotationZ: 0,
-                    rotationY: 0,
-                    rotationX: 0,
-                    duration: 2.0,
+                    rotation: 0,
+                    duration: 1.6,
                     ease: "sine.inOut"
                 });
-            }}
-        );
+            }
+        });
+
+        // Fade in quickly at start of flight
+        flightTimeline.to(bird, { opacity: 1, duration: 0.25 }, 0);
+
+        // Flight coordinates (swoop down, climb up to hover position)
+        flightTimeline.to(bird, {
+            x: -160,
+            y: -40,
+            rotation: -10,
+            scale: 0.95,
+            duration: 0.45,
+            ease: "power1.out"
+        }, 0)
+        .to(bird, {
+            x: -60,
+            y: 40,
+            rotation: 15,
+            scale: 1.05,
+            duration: 0.5,
+            ease: "power1.inOut"
+        }, 0.45)
+        .to(bird, {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            scale: 1.0,
+            duration: 0.55,
+            ease: "power2.out"
+        }, 0.95);
         
         // Confetti explosions from behind the card
         triggerConfettiBurst();
