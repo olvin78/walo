@@ -476,11 +476,10 @@
         }});
     }
 
-    // Trigger celebration if success element exists or if test query parameter is present
+    // Trigger celebration automatically for testing (force isTest to true)
     document.addEventListener("DOMContentLoaded", function() {
         const trigger = document.getElementById('success-celebration-trigger');
-        const urlParams = new URLSearchParams(window.location.search);
-        const isTest = urlParams.has('test') || urlParams.has('test_celebration');
+        const isTest = true; // FORCE FOR TESTING
         
         if (trigger || isTest) {
             const listingTitle = trigger ? trigger.getAttribute('data-title') : 'Anuncio de Prueba';
