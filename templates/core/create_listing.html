@@ -62,7 +62,17 @@
                 <!-- Columna 2: Formulario -->
                 <div class="studio-form-container">
                     <div class="form-section" style="margin-bottom: 40px;">
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; font-weight: 900;">01. Galería Multimedia</h4>
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; font-weight: 900; display: inline-flex; align-items: center; gap: 8px; position: relative;">
+                            01. Galería Multimedia
+                            <span class="info-tooltip-wrapper">
+                                <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'gallery-tooltip')"></i>
+                                <div id="gallery-tooltip" class="tooltip-box">
+                                    <div class="tooltip-arrow"></div>
+                                    <strong>Galería Multimedia</strong>
+                                    <p>Sube imágenes de buena calidad y bien iluminadas de tu producto. La primera foto será la principal y servirá como portada de tu anuncio.</p>
+                                </div>
+                            </span>
+                        </h4>
                         <div id="image-management-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
                             {% if is_edit %}
                                 {% if listing.image %}
@@ -94,12 +104,32 @@
                         <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 25px; font-weight: 900;">02. Ficha Técnica</h4>
                         <div style="display: flex; flex-direction: column; gap: 25px;">
                             <div class="studio-input-block">
-                                <label class="studio-label">Título</label>
+                                <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
+                                    Título
+                                    <span class="info-tooltip-wrapper">
+                                        <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'title-tooltip')"></i>
+                                        <div id="title-tooltip" class="tooltip-box">
+                                            <div class="tooltip-arrow"></div>
+                                            <strong>Título del Anuncio</strong>
+                                            <p>Escribe un nombre claro, directo y descriptivo para tu producto. Evita usar demasiadas mayúsculas o palabras que no describan el artículo real.</p>
+                                        </div>
+                                    </span>
+                                </label>
                                 <input type="text" name="title" id="form-title" required maxlength="200" placeholder="¿Qué vendes?" value="{% if form_data %}{{ form_data.title }}{% elif is_edit %}{{ listing.title }}{% endif %}" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 2rem; font-weight: 900; color: #fff; padding: 10px 0; outline: none;" oninput="updateStudioPreview()">
                             </div>
                             <div class="grid-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                                 <div class="studio-input-block">
-                                    <label class="studio-label">Precio (C$)</label>
+                                    <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
+                                        Precio (C$)
+                                        <span class="info-tooltip-wrapper">
+                                            <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'price-tooltip')"></i>
+                                            <div id="price-tooltip" class="tooltip-box">
+                                                <div class="tooltip-arrow"></div>
+                                                <strong>Precio del Artículo</strong>
+                                                <p>Introduce un precio justo para tu producto. Si prefieres estar abierto a recibir ofertas e intercambios, puedes activar la opción "Precio Negociable".</p>
+                                            </div>
+                                        </span>
+                                    </label>
                                     <div style="display: flex; align-items: flex-end; gap: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 5px;">
                                         <input type="number" name="price" id="form-price" step="0.01" placeholder="0.00" value="{% if form_data %}{% if form_data.is_negotiable %}{% else %}{{ form_data.price }}{% endif %}{% elif is_edit and not listing.is_negotiable %}{{ listing.price|stringformat:".2f" }}{% endif %}" style="width: 100%; background: transparent; border: none; font-size: 1.6rem; font-weight: 900; color: var(--primary); outline: none;" oninput="updateStudioPreview()">
                                     </div>
@@ -122,7 +152,17 @@
                                     </div>
                                 </div>
                                 <div class="studio-input-block">
-                                    <label class="studio-label">Clasificación</label>
+                                    <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
+                                        Clasificación
+                                        <span class="info-tooltip-wrapper">
+                                            <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'category-tooltip')"></i>
+                                            <div id="category-tooltip" class="tooltip-box">
+                                                <div class="tooltip-arrow"></div>
+                                                <strong>Categoría Principal</strong>
+                                                <p>Selecciona la clasificación general de tu producto. Esto ayuda a agrupar tu anuncio correctamente en las búsquedas y secciones principales.</p>
+                                            </div>
+                                        </span>
+                                    </label>
                                     <select name="category" id="form-category" required onchange="updateStudioPreview()" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
                                         <option value="" disabled selected>Elegir...</option>
                                         {% for cat in categories %}
@@ -140,7 +180,17 @@
                                 </div>
                             </div>
                             <div class="studio-input-block">
-                                <label class="studio-label">Subcategoría</label>
+                                <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
+                                    Subcategoría
+                                    <span class="info-tooltip-wrapper">
+                                        <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'subcategory-tooltip')"></i>
+                                        <div id="subcategory-tooltip" class="tooltip-box">
+                                            <div class="tooltip-arrow"></div>
+                                            <strong>Subcategoría Específica</strong>
+                                            <p>Este campo se habilita únicamente cuando seleccionas una clasificación primero. Permite detallar el tipo exacto de tu producto para una búsqueda más precisa.</p>
+                                        </div>
+                                    </span>
+                                </label>
                                 <select name="subcategory" id="form-subcategory" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
                                     <option value="" disabled selected>Elegir categoría...</option>
                                     {% for sub in subcategories %}
