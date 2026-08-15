@@ -104,8 +104,8 @@
 }
 
 .mascot-container {
-    width: 160px;
-    height: 160px;
+    width: 190px;
+    height: 190px;
     margin: 0 auto 24px auto;
     position: relative;
     perspective: 800px;
@@ -354,6 +354,49 @@
     // Celebration animation logic using GSAP & Confetti
     let customConfetti;
     let ribbonShape;
+    let fairyDustInterval;
+
+    function spawnSparkle() {
+        const container = document.getElementById('celebration-mascot');
+        if (!container) return;
+        
+        const sparkle = document.createElement('div');
+        sparkle.className = 'fairy-dust-sparkle';
+        
+        // Random sparkle character
+        const types = ['✦', '★', '•', '✧'];
+        sparkle.textContent = types[Math.floor(Math.random() * types.length)];
+        
+        // Random position below the flying coin
+        const startX = 40 + Math.random() * 110; // bounds within 190px container
+        const startY = 135 + Math.random() * 30; // just below the main coin body
+        
+        sparkle.style.position = 'absolute';
+        sparkle.style.left = `${startX}px`;
+        sparkle.style.top = `${startY}px`;
+        sparkle.style.color = Math.random() > 0.4 ? '#4ade80' : '#fef08a'; // Green or Gold
+        sparkle.style.fontSize = `${10 + Math.random() * 12}px`;
+        sparkle.style.textShadow = '0 0 8px rgba(74, 222, 128, 0.8)';
+        sparkle.style.pointerEvents = 'none';
+        sparkle.style.zIndex = '1';
+        sparkle.style.opacity = '1';
+        
+        container.appendChild(sparkle);
+        
+        // GSAP animate falling and fading out (fairy dust effect)
+        gsap.to(sparkle, {
+            y: 45 + Math.random() * 45,
+            x: (Math.random() - 0.5) * 30,
+            opacity: 0,
+            scale: 0.3,
+            rotation: (Math.random() - 0.5) * 120,
+            duration: 1.1 + Math.random() * 0.5,
+            ease: "power1.out",
+            onComplete: () => {
+                sparkle.remove();
+            }
+        });
+    }
 
     function triggerCelebration(listingTitle) {
         const overlay = document.getElementById('celebration-overlay');
@@ -453,6 +496,10 @@
                         ease: "sine.inOut"
                     });
                 }
+
+                // Start generating fairy dust sparkles
+                if (fairyDustInterval) clearInterval(fairyDustInterval);
+                fairyDustInterval = setInterval(spawnSparkle, 100);
             }
         });
 
@@ -507,6 +554,15 @@
     function closeCelebration() {
         const overlay = document.getElementById('celebration-overlay');
         const card = document.getElementById('celebration-card');
+        
+        // Stop spawning fairy dust
+        if (fairyDustInterval) {
+            clearInterval(fairyDustInterval);
+            fairyDustInterval = null;
+        }
+        
+        // Remove any remaining sparkles
+        document.querySelectorAll('.fairy-dust-sparkle').forEach(el => el.remove());
         
         gsap.to(card, { scale: 0.8, opacity: 0, y: 30, duration: 0.25, ease: "power2.in" });
         gsap.to(overlay, { opacity: 0, duration: 0.25, delay: 0.05, ease: "power2.in", onComplete: () => {
