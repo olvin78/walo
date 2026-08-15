@@ -163,8 +163,18 @@
                         </div>
                     </div>
 
-                    <div class="form-section" style="margin-bottom: 40px;">
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 20px; font-weight: 900;">03. Pagos</h4>
+                     <div class="form-section" style="margin-bottom: 40px;">
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 20px; font-weight: 900; display: inline-flex; align-items: center; gap: 8px; position: relative;">
+                            03. Pagos
+                            <span class="info-tooltip-wrapper">
+                                <i data-lucide="help-circle" class="tooltip-icon" onclick="toggleTooltip(event, 'payment-tooltip')"></i>
+                                <div id="payment-tooltip" class="tooltip-box">
+                                    <div class="tooltip-arrow"></div>
+                                    <strong>Métodos de Pago</strong>
+                                    <p>Selecciona las formas en las que estás dispuesto a recibir el dinero por tu venta (Efectivo, Transferencia Bancaria o Apps de Pago Móvil). Esto ayuda a los compradores a saber cómo concretar el trato contigo.</p>
+                                </div>
+                            </span>
+                        </h4>
                         <div class="payment-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                             <label class="payment-option"><input type="checkbox" name="payment_methods" value="Efectivo" {% if form_data %}{% if "Efectivo" in form_data.payment_methods %}checked{% endif %}{% elif is_edit %}{% if "Efectivo" in listing.payment_methods %}checked{% endif %}{% else %}checked{% endif %}><div class="payment-card"><span>💵</span><p>Cash</p></div></label>
                             <label class="payment-option"><input type="checkbox" name="payment_methods" value="Transferencia" {% if form_data %}{% if "Transferencia" in form_data.payment_methods %}checked{% endif %}{% elif is_edit and "Transferencia" in listing.payment_methods %}checked{% endif %}><div class="payment-card"><span>🏦</span><p>Banco</p></div></label>
@@ -781,6 +791,28 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCustomSubcategories();
     }
 });
+
+function toggleTooltip(event, id) {
+    event.stopPropagation();
+    const tooltip = document.getElementById(id);
+    if (!tooltip) return;
+    
+    const isActive = tooltip.classList.contains('is-active');
+    
+    document.querySelectorAll('.tooltip-box').forEach(box => {
+        box.classList.remove('is-active');
+    });
+    
+    if (!isActive) {
+        tooltip.classList.add('is-active');
+    }
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.tooltip-box').forEach(box => {
+        box.classList.remove('is-active');
+    });
+});
 </script>
 
 <!-- Modal para Selección de Categorías -->
@@ -1294,6 +1326,103 @@ input:checked + .slider:before { transform: translateX(26px); }
     .category-custom-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 10px;
+    }
+}
+
+/* Custom Tooltip Styling */
+.info-tooltip-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tooltip-icon {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.tooltip-icon:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.tooltip-box {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: #161b22;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    width: 260px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s;
+}
+
+.tooltip-box.is-active {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-box p {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.tooltip-box strong {
+    color: #fff;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Tooltip Arrow */
+.tooltip-arrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #161b22;
+}
+
+/* Responsive adjustments for Tooltips */
+@media (max-width: 480px) {
+    .tooltip-box {
+        left: auto;
+        right: -80px;
+        transform: translateY(5px);
+        width: 220px;
+    }
+    
+    .tooltip-box.is-active {
+        transform: translateY(0);
+    }
+    
+    .tooltip-arrow {
+        left: auto;
+        right: 83px;
+        transform: none;
     }
 }
 </style>
