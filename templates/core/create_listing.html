@@ -130,16 +130,12 @@
                                         {% endfor %}
                                     </select>
                                     
-                                    <!-- Grid de categorías con iconos sutiles y modernos -->
-                                    <div class="category-custom-grid">
-                                        {% for cat in categories %}
-                                            <div class="category-custom-card" data-id="{{ cat.id }}" onclick="selectCategory('{{ cat.id }}')">
-                                                <div class="category-icon-box">
-                                                    <i data-category-icon="{{ cat.icon }}"></i>
-                                                </div>
-                                                <span class="category-name">{{ cat.name }}</span>
-                                            </div>
-                                        {% endfor %}
+                                    <!-- Botón disparador del selector de categorías -->
+                                    <div id="category-trigger" class="custom-select-trigger" onclick="openCategoryModal()">
+                                        <span class="trigger-placeholder" id="category-trigger-text">
+                                            <i data-lucide="tag" class="trigger-icon"></i> Elegir clasificación...
+                                        </span>
+                                        <i data-lucide="chevron-down" class="trigger-chevron"></i>
                                     </div>
                                 </div>
                             </div>
@@ -152,9 +148,12 @@
                                     {% endfor %}
                                 </select>
                                 
-                                <!-- Pills de subcategorías custom -->
-                                <div id="subcategory-custom-container" class="subcategory-custom-flex">
-                                    <!-- Se rellena dinámicamente desde JS -->
+                                <!-- Botón disparador del selector de subcategorías -->
+                                <div id="subcategory-trigger" class="custom-select-trigger is-disabled" onclick="openSubcategoryModal()">
+                                    <span class="trigger-placeholder" id="subcategory-trigger-text">
+                                        <i data-lucide="layers" class="trigger-icon"></i> Elegir subcategoría...
+                                    </span>
+                                    <i data-lucide="chevron-down" class="trigger-chevron"></i>
                                 </div>
                             </div>
                             <div class="studio-input-block">
@@ -483,6 +482,45 @@ function updatePublishScore() {
     }
 }
 
+function openCategoryModal() {
+    const modal = document.getElementById('category-custom-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('is-active'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeCategoryModal() {
+    const modal = document.getElementById('category-custom-modal');
+    if (modal) {
+        modal.classList.remove('is-active');
+        setTimeout(() => modal.style.display = 'none', 300);
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function openSubcategoryModal() {
+    const catSelect = document.getElementById('form-category');
+    if (!catSelect || !catSelect.value) return;
+    
+    const modal = document.getElementById('subcategory-custom-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('is-active'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeSubcategoryModal() {
+    const modal = document.getElementById('subcategory-custom-modal');
+    if (modal) {
+        modal.classList.remove('is-active');
+        setTimeout(() => modal.style.display = 'none', 300);
+        document.body.style.overflow = 'auto';
+    }
+}
+
 function selectCategory(catId) {
     const catSelect = document.getElementById('form-category');
     if (catSelect) {
@@ -490,6 +528,7 @@ function selectCategory(catId) {
         catSelect.dispatchEvent(new Event('change'));
     }
     
+    // Marcar visualmente en el modal
     document.querySelectorAll('.category-custom-card').forEach(card => {
         if (card.getAttribute('data-id') === catId.toString()) {
             card.classList.add('is-selected');
@@ -497,6 +536,44 @@ function selectCategory(catId) {
             card.classList.remove('is-selected');
         }
     });
+
+    // Clonar icono y actualizar disparador
+    const selectedCard = document.querySelector(`.category-custom-card[data-id="${catId}"]`);
+    if (selectedCard) {
+        const iconEl = selectedCard.querySelector('i').cloneNode(true);
+        const nameText = selectedCard.querySelector('.category-name').textContent;
+        const triggerText = document.getElementById('category-trigger-text');
+        if (triggerText) {
+            triggerText.innerHTML = '';
+            iconEl.className = 'trigger-icon';
+            triggerText.appendChild(iconEl);
+            const textSpan = document.createElement('span');
+            textSpan.textContent = ' ' + nameText;
+            textSpan.className = 'trigger-text-value';
+            triggerText.appendChild(textSpan);
+            triggerText.classList.add('has-value');
+        }
+    }
+    
+    // Habilitar subcategorías
+    const subTrigger = document.getElementById('subcategory-trigger');
+    if (subTrigger) {
+        subTrigger.classList.remove('is-disabled');
+    }
+    
+    // Limpiar subcategoría previa
+    const subSelect = document.getElementById('form-subcategory');
+    if (subSelect) {
+        subSelect.value = '';
+        subSelect.dispatchEvent(new Event('change'));
+        const subTriggerText = document.getElementById('subcategory-trigger-text');
+        if (subTriggerText) {
+            subTriggerText.innerHTML = '<i data-lucide="layers" class="trigger-icon"></i> Elegir subcategoría...';
+            subTriggerText.classList.remove('has-value');
+        }
+    }
+    
+    closeCategoryModal();
 }
 
 function selectSubcategory(subId) {
@@ -506,6 +583,7 @@ function selectSubcategory(subId) {
         subSelect.dispatchEvent(new Event('change'));
     }
     
+    // Marcar visualmente la píldora activa
     document.querySelectorAll('.subcategory-pill').forEach(pill => {
         if (pill.getAttribute('data-id') === subId.toString()) {
             pill.classList.add('is-selected');
@@ -513,6 +591,26 @@ function selectSubcategory(subId) {
             pill.classList.remove('is-selected');
         }
     });
+
+    // Clonar icono y actualizar disparador
+    const selectedPill = document.querySelector(`.subcategory-pill[data-id="${subId}"]`);
+    if (selectedPill) {
+        const iconEl = selectedPill.querySelector('i').cloneNode(true);
+        const nameText = selectedPill.querySelector('span').textContent;
+        const triggerText = document.getElementById('subcategory-trigger-text');
+        if (triggerText) {
+            triggerText.innerHTML = '';
+            iconEl.className = 'trigger-icon';
+            triggerText.appendChild(iconEl);
+            const textSpan = document.createElement('span');
+            textSpan.textContent = ' ' + nameText;
+            textSpan.className = 'trigger-text-value';
+            triggerText.appendChild(textSpan);
+            triggerText.classList.add('has-value');
+        }
+    }
+    
+    closeSubcategoryModal();
 }
 
 function renderCustomSubcategories() {
@@ -606,15 +704,96 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Capturar subcategorías y filtrar inicialmente
     filterSubcategories();
 
-    // 3. Inicializar selección visual de categorías si ya hay una seleccionada (en edit/errors)
+    // 3. Inicializar selección visual de categorías/subcategorías si ya hay una seleccionada
     const catSelect = document.getElementById('form-category');
     if (catSelect && catSelect.value) {
-        selectCategory(catSelect.value);
+        const catId = catSelect.value;
+        const selectedCard = document.querySelector(`.category-custom-card[data-id="${catId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('is-selected');
+            const iconEl = selectedCard.querySelector('i').cloneNode(true);
+            const nameText = selectedCard.querySelector('.category-name').textContent;
+            const triggerText = document.getElementById('category-trigger-text');
+            if (triggerText) {
+                triggerText.innerHTML = '';
+                iconEl.className = 'trigger-icon';
+                triggerText.appendChild(iconEl);
+                const textSpan = document.createElement('span');
+                textSpan.textContent = ' ' + nameText;
+                triggerText.appendChild(textSpan);
+                triggerText.classList.add('has-value');
+            }
+        }
+        
+        const subTrigger = document.getElementById('subcategory-trigger');
+        if (subTrigger) {
+            subTrigger.classList.remove('is-disabled');
+        }
+        
+        renderCustomSubcategories();
+        
+        const subSelect = document.getElementById('form-subcategory');
+        if (subSelect && subSelect.value) {
+            const subId = subSelect.value;
+            const selectedPill = document.querySelector(`.subcategory-pill[data-id="${subId}"]`);
+            if (selectedPill) {
+                selectedPill.classList.add('is-selected');
+                const iconEl = selectedPill.querySelector('i').cloneNode(true);
+                const nameText = selectedPill.querySelector('span').textContent;
+                const triggerText = document.getElementById('subcategory-trigger-text');
+                if (triggerText) {
+                    triggerText.innerHTML = '';
+                    iconEl.className = 'trigger-icon';
+                    triggerText.appendChild(iconEl);
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = ' ' + nameText;
+                    triggerText.appendChild(textSpan);
+                    triggerText.classList.add('has-value');
+                }
+            }
+        }
     } else {
         renderCustomSubcategories();
     }
 });
 </script>
+
+<!-- Modal para Selección de Categorías -->
+<div id="category-custom-modal" class="custom-select-modal-overlay" onclick="closeCategoryModal()">
+    <div class="custom-select-modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Seleccionar Clasificación</h3>
+            <button type="button" class="modal-close-btn" onclick="closeCategoryModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll">
+            <div class="category-custom-grid">
+                {% for cat in categories %}
+                    <div class="category-custom-card" data-id="{{ cat.id }}" onclick="selectCategory('{{ cat.id }}')">
+                        <div class="category-icon-box">
+                            <i data-category-icon="{{ cat.icon }}"></i>
+                        </div>
+                        <span class="category-name">{{ cat.name }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Selección de Subcategorías -->
+<div id="subcategory-custom-modal" class="custom-select-modal-overlay" onclick="closeSubcategoryModal()">
+    <div class="custom-select-modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Seleccionar Subcategoría</h3>
+            <button type="button" class="modal-close-btn" onclick="closeSubcategoryModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll">
+            <div id="subcategory-custom-container" class="subcategory-custom-flex">
+                <!-- Se rellena dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
 .studio-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 5px; display: block; }
@@ -782,7 +961,150 @@ input:checked + .slider:before { transform: translateX(26px); }
     .studio-publish-btn { padding: 15px 18px !important; font-size: 1rem !important; }
 }
 
-/* Custom Category Selector Grid */
+/* Custom Select Trigger Button */
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 8px;
+}
+
+.custom-select-trigger:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.custom-select-trigger.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.trigger-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.trigger-placeholder.has-value {
+    color: #fff;
+}
+
+.trigger-placeholder .trigger-text-value {
+    color: #fff;
+    font-weight: 800;
+}
+
+.trigger-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--primary);
+}
+
+.trigger-chevron {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    transition: transform 0.25s ease;
+}
+
+/* Modal Overlay (Background blur) */
+.custom-select-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.custom-select-modal-overlay.is-active {
+    display: flex;
+    opacity: 1;
+}
+
+/* Modal Content Box - Centered on Desktop, Bottom Sheet on Mobile */
+.custom-select-modal-content {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+    max-width: 500px;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.custom-select-modal-overlay.is-active .custom-select-modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 14px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: #fff;
+}
+
+.modal-body-scroll {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 4px;
+}
+
+.modal-body-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.modal-body-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+/* Custom Category Selector Grid inside Modal */
 .category-custom-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -845,7 +1167,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     color: #fff !important;
 }
 
-/* Custom Subcategory Selector Pills */
+/* Custom Subcategory Selector Pills inside Modal */
 .subcategory-custom-flex {
     display: flex;
     flex-wrap: wrap;
@@ -889,7 +1211,26 @@ input:checked + .slider:before { transform: translateX(26px); }
     align-self: center;
 }
 
-@media (max-width: 480px) {
+/* Mobile Bottom Sheet Design */
+@media (max-width: 768px) {
+    .custom-select-modal-overlay {
+        align-items: flex-end;
+    }
+    
+    .custom-select-modal-content {
+        max-width: 100%;
+        border-radius: 28px 28px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        border-bottom: none;
+        max-height: 75vh;
+        padding: 24px 20px 40px;
+    }
+    
+    .custom-select-modal-overlay.is-active .custom-select-modal-content {
+        transform: translateY(0);
+    }
+    
     .category-custom-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
