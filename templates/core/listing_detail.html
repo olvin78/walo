@@ -46,8 +46,11 @@
     <div class="igualo-container" style="margin-top: 20px; position: relative; z-index: 100;">
       {% for message in messages %}
         {% if "publicado con éxito" in message.message %}
-          <!-- Custom success modal trigger -->
-          <div id="success-celebration-trigger" data-title="{{ listing.title|escapejs }}" style="display: none;"></div>
+          <div id="success-celebration-trigger" 
+               data-title="{{ listing.title|escapejs }}" 
+               data-price="{% if listing.price %}{{ listing.price }}{% else %}N/A{% endif %}"
+               data-location="{{ listing.location|escapejs }}"
+               style="display: none;"></div>
         {% else %}
           <div style="padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; background: {% if message.tags == 'error' %}#ef4444{% else %}#161b22{% endif %}; color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
             {{ message }}
@@ -567,7 +570,7 @@
         });
     }
 
-    function triggerCelebration(listingTitle) {
+    function triggerCelebration(listingTitle, listingPrice = 'N/A', listingLocation = '') {
         const overlay = document.getElementById('celebration-overlay');
         const card = document.getElementById('celebration-card');
         const mascot = document.getElementById('celebration-mascot');
@@ -699,7 +702,22 @@
         
         // Configure social sharing links dynamically
         const shareUrl = encodeURIComponent(window.location.href);
-        const shareText = encodeURIComponent(`¡Mira lo que acabo de publicar en Igualo: "${listingTitle}"!`);
+        
+        let priceStr = listingPrice;
+        if (priceStr !== 'N/A' && !priceStr.includes('C$') && !priceStr.includes('$')) {
+            priceStr = 'C$ ' + priceStr;
+        }
+        
+        let details = `🛍️ ¡Mira lo que acabo de publicar en Igualo!\n\n✨ *${listingTitle}*`;
+        if (listingPrice && listingPrice !== 'N/A') {
+            details += `\n💵 Precio: ${priceStr}`;
+        }
+        if (listingLocation) {
+            details += `\n📍 Ubicación: ${listingLocation}`;
+        }
+        details += `\n\n👉 Entra al enlace para ver más fotos y contactarme:`;
+        
+        const shareText = encodeURIComponent(details);
         
         const wsBtn = document.getElementById('share-whatsapp');
         const fbBtn = document.getElementById('share-facebook');
@@ -810,8 +828,10 @@
         
         if (trigger || isTest) {
             const listingTitle = trigger ? trigger.getAttribute('data-title') : 'Anuncio de Prueba';
+            const listingPrice = trigger ? trigger.getAttribute('data-price') : '1200';
+            const listingLocation = trigger ? trigger.getAttribute('data-location') : 'Managua, Nicaragua';
             setTimeout(() => {
-                triggerCelebration(listingTitle);
+                triggerCelebration(listingTitle, listingPrice, listingLocation);
             }, 250); // Shorter delay before starting the effect
         }
     });
