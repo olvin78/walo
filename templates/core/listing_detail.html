@@ -817,14 +817,14 @@
     }
 
     // Trigger celebration automatically for testing (force isTest to true)
+    // Trigger celebration automatically when the success trigger is present in the DOM
     document.addEventListener("DOMContentLoaded", function() {
         const trigger = document.getElementById('success-celebration-trigger');
-        const isTest = true; // FORCE FOR TESTING
         
-        if (trigger || isTest) {
-            const listingTitle = trigger ? trigger.getAttribute('data-title') : 'Anuncio de Prueba';
-            const listingPrice = trigger ? trigger.getAttribute('data-price') : '1200';
-            const listingLocation = trigger ? trigger.getAttribute('data-location') : 'Managua, Nicaragua';
+        if (trigger) {
+            const listingTitle = trigger.getAttribute('data-title') || 'Anuncio';
+            const listingPrice = trigger.getAttribute('data-price') || 'N/A';
+            const listingLocation = trigger.getAttribute('data-location') || '';
             setTimeout(() => {
                 triggerCelebration(listingTitle, listingPrice, listingLocation);
             }, 250); // Shorter delay before starting the effect
