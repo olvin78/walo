@@ -703,19 +703,11 @@
         // Configure social sharing links dynamically
         const shareUrl = encodeURIComponent(window.location.href);
         
-        let priceStr = listingPrice;
-        if (priceStr !== 'N/A' && !priceStr.includes('C$') && !priceStr.includes('$')) {
-            priceStr = 'C$ ' + priceStr;
-        }
-        
         let details = `🛍️ ¡Mira lo que acabo de publicar en Igualo!\n\n✨ *${listingTitle}*`;
-        if (listingPrice && listingPrice !== 'N/A') {
-            details += `\n💵 Precio: ${priceStr}`;
-        }
         if (listingLocation) {
             details += `\n📍 Ubicación: ${listingLocation}`;
         }
-        details += `\n\n👉 Entra al enlace para ver más fotos y contactarme:`;
+        details += `\n\n👉 Entra al enlace para ver las fotos, el precio y contactarme:\n`;
         
         const shareText = encodeURIComponent(details);
         
@@ -724,7 +716,7 @@
         const twBtn = document.getElementById('share-twitter');
         const tgBtn = document.getElementById('share-telegram');
         
-        if (wsBtn) wsBtn.href = `https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`;
+        if (wsBtn) wsBtn.href = `https://api.whatsapp.com/send?text=${shareText}${shareUrl}`;
         if (fbBtn) fbBtn.href = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
         if (twBtn) twBtn.href = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`;
         if (tgBtn) tgBtn.href = `https://t.me/share/url?url=${shareUrl}&text=${shareText}`;
