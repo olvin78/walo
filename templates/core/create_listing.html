@@ -585,30 +585,30 @@ function selectSubcategory(subId) {
         subSelect.dispatchEvent(new Event('change'));
     }
     
-    // Marcar visualmente la píldora activa
-    document.querySelectorAll('.subcategory-pill').forEach(pill => {
-        if (pill.getAttribute('data-id') === subId.toString()) {
-            pill.classList.add('is-selected');
+    // Marcar visualmente el item activo en la lista
+    document.querySelectorAll('.subcategory-item').forEach(item => {
+        if (item.getAttribute('data-id') === subId.toString()) {
+            item.classList.add('is-selected');
         } else {
-            pill.classList.remove('is-selected');
+            item.classList.remove('is-selected');
         }
     });
 
     // Clonar icono y actualizar disparador
-    const selectedPill = document.querySelector(`.subcategory-pill[data-id="${subId}"]`);
-    if (selectedPill) {
+    const selectedItem = document.querySelector(`.subcategory-item[data-id="${subId}"]`);
+    if (selectedItem) {
         const triggerText = document.getElementById('subcategory-trigger-text');
         if (triggerText) {
             triggerText.innerHTML = '';
             
-            const firstChild = selectedPill.firstElementChild;
-            if (firstChild) {
-                const iconClone = firstChild.cloneNode(true);
+            const iconBox = selectedItem.querySelector('.subcategory-item-icon');
+            if (iconBox && iconBox.firstElementChild) {
+                const iconClone = iconBox.firstElementChild.cloneNode(true);
                 iconClone.className = 'trigger-icon';
                 triggerText.appendChild(iconClone);
             }
             
-            const nameText = selectedPill.querySelector('span').textContent;
+            const nameText = selectedItem.querySelector('.subcategory-item-name').textContent;
             const textSpan = document.createElement('span');
             textSpan.textContent = ' ' + nameText;
             textSpan.className = 'trigger-text-value';
@@ -651,10 +651,16 @@ function renderCustomSubcategories() {
             name = match[2];
         }
 
-        const pill = document.createElement('div');
-        pill.className = 'subcategory-pill';
-        pill.setAttribute('data-id', data.value);
-        pill.onclick = () => selectSubcategory(data.value);
+        const item = document.createElement('div');
+        item.className = 'subcategory-item';
+        item.setAttribute('data-id', data.value);
+        item.onclick = () => selectSubcategory(data.value);
+
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'subcategory-item-left';
+
+        const iconBox = document.createElement('div');
+        iconBox.className = 'subcategory-item-icon';
 
         const iconMap = {
             '🚗': 'car', '📱': 'smartphone', '🔌': 'zap', '🏠': 'home', '💻': 'laptop',
@@ -667,21 +673,29 @@ function renderCustomSubcategories() {
         
         const iconEl = document.createElement('i');
         iconEl.setAttribute('data-lucide', iconName);
-        iconEl.style.width = '14px';
-        iconEl.style.height = '14px';
+        iconEl.style.width = '16px';
+        iconEl.style.height = '16px';
+        iconBox.appendChild(iconEl);
 
         const nameSpan = document.createElement('span');
+        nameSpan.className = 'subcategory-item-name';
         nameSpan.textContent = name;
 
-        pill.appendChild(iconEl);
-        pill.appendChild(nameSpan);
+        leftDiv.appendChild(iconBox);
+        leftDiv.appendChild(nameSpan);
+
+        const checkCircle = document.createElement('div');
+        checkCircle.className = 'subcategory-item-check';
+
+        item.appendChild(leftDiv);
+        item.appendChild(checkCircle);
 
         const subSelect = document.getElementById('form-subcategory');
         if (subSelect && subSelect.value === data.value.toString()) {
-            pill.classList.add('is-selected');
+            item.classList.add('is-selected');
         }
 
-        container.appendChild(pill);
+        container.appendChild(item);
     });
 
     if (window.lucide) {
@@ -743,19 +757,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const subSelect = document.getElementById('form-subcategory');
         if (subSelect && subSelect.value) {
             const subId = subSelect.value;
-            const selectedPill = document.querySelector(`.subcategory-pill[data-id="${subId}"]`);
-            if (selectedPill) {
-                selectedPill.classList.add('is-selected');
+            const selectedItem = document.querySelector(`.subcategory-item[data-id="${subId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('is-selected');
                 const triggerText = document.getElementById('subcategory-trigger-text');
                 if (triggerText) {
                     triggerText.innerHTML = '';
-                    const firstChild = selectedPill.firstElementChild;
-                    if (firstChild) {
-                        const iconClone = firstChild.cloneNode(true);
+                    const iconBox = selectedItem.querySelector('.subcategory-item-icon');
+                    if (iconBox && iconBox.firstElementChild) {
+                        const iconClone = iconBox.firstElementChild.cloneNode(true);
                         iconClone.className = 'trigger-icon';
                         triggerText.appendChild(iconClone);
                     }
-                    const nameText = selectedPill.querySelector('span').textContent;
+                    const nameText = selectedItem.querySelector('.subcategory-item-name').textContent;
                     const textSpan = document.createElement('span');
                     textSpan.textContent = ' ' + nameText;
                     triggerText.appendChild(textSpan);
@@ -1178,41 +1192,87 @@ input:checked + .slider:before { transform: translateX(26px); }
     color: #fff !important;
 }
 
-/* Custom Subcategory Selector Pills inside Modal */
+/* Custom Subcategory Selector Items inside Modal */
 .subcategory-custom-flex {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     margin-top: 10px;
-    min-height: 38px;
 }
 
-.subcategory-pill {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 999px;
-    padding: 8px 16px;
-    font-size: 0.75rem;
+.subcategory-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subcategory-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.subcategory-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.subcategory-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.subcategory-item-name {
+    font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    transition: color 0.2s;
 }
 
-.subcategory-pill:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+.subcategory-item-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.subcategory-item.is-selected {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: var(--primary);
+}
+
+.subcategory-item.is-selected .subcategory-item-icon {
+    color: var(--primary);
+}
+
+.subcategory-item.is-selected .subcategory-item-name {
     color: #fff;
 }
 
-.subcategory-pill.is-selected {
-    background: rgba(34, 197, 94, 0.1) !important;
-    border-color: var(--primary) !important;
-    color: #fff !important;
-    box-shadow: 0 2px 10px rgba(34, 197, 94, 0.1);
+.subcategory-item.is-selected .subcategory-item-check {
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.subcategory-item.is-selected .subcategory-item-check::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #0d1117;
 }
 
 .subcategory-placeholder-text {
