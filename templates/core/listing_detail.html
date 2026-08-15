@@ -8,6 +8,9 @@
 {% block canonical %}https://www.igualo.com{{ listing.get_absolute_url }}{% endblock %}
 {% block og_url %}https://www.igualo.com{{ listing.get_absolute_url }}{% endblock %}
 {% block og_image %}{% if listing.image %}https://www.igualo.com{{ listing.image.url }}{% else %}https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endif %}{% endblock %}
+{% block twitter_title %}{{ listing.title }} en {{ listing.location }} | IGUALO{% endblock %}
+{% block twitter_description %}Disponible ahora: {{ listing.title }} en {{ listing.location }}. Mirá fotos y contactá al vendedor en IGUALO Nicaragua.{% endblock %}
+{% block twitter_image %}{% if listing.image %}https://www.igualo.com{{ listing.image.url }}{% else %}https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endif %}{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/pages/detail.css' %}">
