@@ -856,7 +856,7 @@ index, follow
         </div>
         <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
           {% for listing in personalized_recommendations|slice:":4" %}
-          <a href="{{ listing.get_absolute_url }}" class="product-card" style="border-radius: 18px;">
+          <a href="{{ listing.get_absolute_url }}" class="product-card{% if listing.is_promoted %} promoted-card{% endif %}" style="border-radius: 18px;">
             <div class="product-img-wrapper">
               {% if listing.is_promoted %}
               <div class="featured-badge-pro" title="Anuncio Priorizado">
@@ -882,7 +882,7 @@ index, follow
 
       <div class="products-grid">
         {% for listing in listings %}
-        <a href="{{ listing.get_absolute_url }}" class="product-card">
+        <a href="{{ listing.get_absolute_url }}" class="product-card{% if listing.is_promoted %} promoted-card{% endif %}">
           <div class="product-img-wrapper">
             {% if listing.is_promoted %}
             <div class="featured-badge-pro" title="Anuncio Priorizado">
@@ -935,7 +935,7 @@ index, follow
         </div>
         <div class="products-grid">
             {% for listing in recommended_listings %}
-                <a href="{{ listing.get_absolute_url }}" class="product-card">
+                <a href="{{ listing.get_absolute_url }}" class="product-card{% if listing.is_promoted %} promoted-card{% endif %}">
                   <div class="product-img-wrapper">
                     {% if listing.is_promoted %}
                     <div class="featured-badge-pro" title="Anuncio Priorizado">

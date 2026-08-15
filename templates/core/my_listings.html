@@ -17,7 +17,7 @@
 
     <div class="products-grid">
         {% for listing in listings %}
-        <div class="product-card" style="position: relative;">
+        <div class="product-card{% if listing.is_promoted %} promoted-card{% endif %}" style="position: relative;">
             <a href="{{ listing.get_absolute_url }}" style="text-decoration: none; color: inherit; display: block;">
                 <div class="product-img-wrapper">
                     {% if listing.is_promoted %}

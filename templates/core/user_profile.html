@@ -93,7 +93,7 @@
             <h2 class="fluid-section-title">Publicaciones recientes</h2>
             <div class="products-grid">
                 {% for list in listings %}
-                <a href="{{ list.get_absolute_url }}" class="product-card" style="position: relative; display: block;">
+                <a href="{{ list.get_absolute_url }}" class="product-card{% if list.is_promoted %} promoted-card{% endif %}" style="position: relative; display: block;">
                     <div class="product-img-wrapper">
                         {% if list.is_promoted %}
                         <div class="featured-badge-pro" title="Anuncio Priorizado">

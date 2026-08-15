@@ -45,7 +45,7 @@
   <section class="section-products">
     <div class="products-grid">
       {% for listing in listings %}
-      <a href="{{ listing.get_absolute_url }}" class="product-card">
+      <a href="{{ listing.get_absolute_url }}" class="product-card{% if listing.is_promoted %} promoted-card{% endif %}">
         <div class="product-img-wrapper">
           {% if listing.is_promoted %}
           <div class="featured-badge-pro" title="Anuncio Priorizado">

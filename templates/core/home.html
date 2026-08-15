@@ -269,7 +269,7 @@
             <h3 style="color: var(--primary); margin-bottom: 30px; font-weight: 800; font-size: 1.8rem;">🔍 {{ search_results|length }} resultados para "{{ query }}"</h3>
             <div class="feed-grid-pro">
                 {% for list in search_results %}
-                <div class="item-card-pro">
+                <div class="item-card-pro{% if list.is_promoted %} promoted-card{% endif %}">
                     <a href="{{ list.get_absolute_url }}" class="card-link">
                         <div class="product-img-wrapper">
                             {% if list.is_promoted %}
@@ -398,7 +398,7 @@
             </div>
             <div class="feed-grid-pro">
                 {% for list in latest_listings %}
-                <div class="item-card-pro">
+                <div class="item-card-pro{% if list.is_promoted %} promoted-card{% endif %}">
                     <a href="{{ list.get_absolute_url }}" class="card-link">
                         <div class="product-img-wrapper">
                             {% if list.is_promoted %}
@@ -813,6 +813,8 @@
         height: 100%; /* Permitir que todas las cards de una fila tengan igual altura si se desea, o quitar para altura variable */
     }
     .item-card-pro:hover { transform: translateY(-10px); border-color: var(--primary); }
+    .item-card-pro.promoted-card { border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 0 12px rgba(255, 215, 0, 0.08), 0 0 25px rgba(255, 215, 0, 0.04); }
+    .item-card-pro.promoted-card:hover { border-color: rgba(255, 215, 0, 0.4); box-shadow: 0 0 18px rgba(255, 215, 0, 0.12), 0 0 35px rgba(255, 215, 0, 0.06); transform: translateY(-10px); }
     .product-img-wrapper { 
         position: relative; 
         width: 100%;

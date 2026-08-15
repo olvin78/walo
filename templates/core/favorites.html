@@ -12,7 +12,7 @@
 
   <div class="products-grid" style="margin-top: 40px;">
     {% for listing in listings %}
-    <a href="{{ listing.get_absolute_url }}" class="product-card">
+    <a href="{{ listing.get_absolute_url }}" class="product-card{% if listing.is_promoted %} promoted-card{% endif %}">
       <div class="product-img-wrapper">
         {% if listing.is_promoted %}
         <div class="featured-badge-pro" title="Anuncio Priorizado">
