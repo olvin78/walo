@@ -351,6 +351,7 @@
 <script>
     // Celebration animation logic using GSAP & Confetti
     let customConfetti;
+    let ribbonShape;
 
     function triggerCelebration(listingTitle) {
         const overlay = document.getElementById('celebration-overlay');
@@ -368,6 +369,11 @@
             customConfetti = confetti.create(canvas, {
                 resize: true,
                 useWorker: true
+            });
+            
+            // Create a custom wavy ribbon (serpentina) shape
+            ribbonShape = confetti.shapeFromPath({
+                path: 'M 0 0 C 8 4, 8 12, 0 16 C -8 20, -8 28, 0 32 L 3 32 C -5 28, -5 20, 3 16 C 11 12, 11 4, 3 0 Z'
             });
         }
         
@@ -405,20 +411,26 @@
     function triggerConfettiBurst() {
         if (!customConfetti) return;
 
+        const shapesList = ['square', 'circle', ribbonShape];
+
         // Main burst behind the center card, flying outwards at high velocity
         customConfetti({
-            particleCount: 160,
+            particleCount: 170,
             spread: 95,
             startVelocity: 65, // Much faster!
+            shapes: shapesList,
+            scalar: 1.3, // Make particles (especially ribbons) stand out beautifully
             origin: { x: 0.5, y: 0.5 }
         });
         
         // Secondary outer burst to fill the space
         setTimeout(() => {
             customConfetti({
-                particleCount: 80,
+                particleCount: 90,
                 spread: 120,
-                startVelocity: 50, // Much faster!
+                startVelocity: 50,
+                shapes: shapesList,
+                scalar: 1.2,
                 origin: { x: 0.5, y: 0.5 }
             });
         }, 120);
@@ -430,6 +442,8 @@
                 angle: 45,
                 spread: 60,
                 startVelocity: 45,
+                shapes: shapesList,
+                scalar: 1.1,
                 origin: { x: 0.2, y: 0.8 }
             });
             customConfetti({
@@ -437,6 +451,8 @@
                 angle: 135,
                 spread: 60,
                 startVelocity: 45,
+                shapes: shapesList,
+                scalar: 1.1,
                 origin: { x: 0.8, y: 0.8 }
             });
         }, 220);
