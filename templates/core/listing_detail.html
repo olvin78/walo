@@ -450,11 +450,14 @@
         }});
     }
 
-    // Trigger celebration if success element exists
+    // Trigger celebration if success element exists or if test query parameter is present
     document.addEventListener("DOMContentLoaded", function() {
         const trigger = document.getElementById('success-celebration-trigger');
-        if (trigger) {
-            const listingTitle = trigger.getAttribute('data-title') || 'Tu nuevo anuncio';
+        const urlParams = new URLSearchParams(window.location.search);
+        const isTest = urlParams.has('test') || urlParams.has('test_celebration');
+        
+        if (trigger || isTest) {
+            const listingTitle = trigger ? trigger.getAttribute('data-title') : 'Anuncio de Prueba';
             setTimeout(() => {
                 triggerCelebration(listingTitle);
             }, 600);
