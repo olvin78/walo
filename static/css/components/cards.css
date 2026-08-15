@@ -82,13 +82,15 @@
 }
 
 /* Promoted Card – Subtle Gold Glow Border */
-.product-card.promoted-card {
-    border: 1px solid rgba(255, 215, 0, 0.25);
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.08), 0 0 25px rgba(255, 215, 0, 0.04);
+.product-card.promoted-card,
+.item-card-pro.promoted-card {
+    border: 1px solid rgba(255, 215, 0, 0.25) !important;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.08), 0 0 25px rgba(255, 215, 0, 0.04) !important;
     position: relative;
 }
 
-.product-card.promoted-card::after {
+.product-card.promoted-card::after,
+.item-card-pro.promoted-card::after {
     content: '';
     position: absolute;
     inset: -1px;
@@ -102,7 +104,8 @@
     z-index: 1;
 }
 
-.product-card.promoted-card:hover {
-    border-color: rgba(255, 215, 0, 0.4);
-    box-shadow: 0 0 18px rgba(255, 215, 0, 0.12), 0 0 35px rgba(255, 215, 0, 0.06);
+.product-card.promoted-card:hover,
+.item-card-pro.promoted-card:hover {
+    border-color: rgba(255, 215, 0, 0.4) !important;
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.12), 0 0 35px rgba(255, 215, 0, 0.06) !important;
 }
