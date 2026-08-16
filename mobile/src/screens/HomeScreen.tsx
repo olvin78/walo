@@ -13,7 +13,7 @@ import {
   useWindowDimensions
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { MessageCircle, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing } from '../theme/colors';
 import { SearchBar } from '../components/SearchBar';
@@ -150,12 +150,12 @@ export const HomeScreen = () => {
           
           <View style={styles.headerRightActions}>
             <TouchableOpacity style={styles.iconCircle} onPress={() => router.push('/messages')}>
-              <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.text} />
+              <MessageCircle size={22} color={colors.text} strokeWidth={2.2} />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.iconCircle} onPress={() => router.push('/notifications')}>
-              <Ionicons name="notifications-outline" size={22} color={colors.text} />
+              <Bell size={22} color={colors.text} strokeWidth={2.2} />
               {unreadCount > 0 && (
                 <View style={styles.notificationDot}>
                   <Text style={styles.notificationCountText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>

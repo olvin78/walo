@@ -3,6 +3,7 @@ import {
   getAccessToken,
   getMe,
   login as apiLogin,
+  loginWithGoogle as apiLoginWithGoogle,
   logout as apiLogout,
   register as apiRegister,
   type Me,
@@ -15,6 +16,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   reloadUser: () => Promise<Me | null>;
   login: (loginValue: string, password: string) => Promise<Me>;
+  loginWithGoogle: (idToken: string) => Promise<Me>;
   register: (payload: RegisterPayload) => Promise<Me>;
   logout: () => Promise<void>;
 };
@@ -47,6 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return response.user;
   }, []);
 
+  const handleLoginWithGoogle = useCallback(async (idToken: string) => {
+    const response = await apiLoginWithGoogle(idToken);
+    setUser(response.user);
+    return response.user;
+  }, []);
+
   const handleRegister = useCallback(async (payload: RegisterPayload) => {
     const response = await apiRegister(payload);
     setUser(response.user);
@@ -65,10 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       reloadUser,
       login: handleLogin,
+      loginWithGoogle: handleLoginWithGoogle,
       register: handleRegister,
       logout: handleLogout,
     }),
-    [handleLogin, handleLogout, handleRegister, isLoading, reloadUser, user],
+    [handleLogin, handleLoginWithGoogle, handleLogout, handleRegister, isLoading, reloadUser, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

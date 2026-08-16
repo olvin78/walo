@@ -12,7 +12,7 @@ import {
   TextInput
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Share2, BadgeCheck, Star, MessageSquare } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { useRouter } from 'expo-router';
 import { ProductCard } from '../components/ProductCard';
@@ -127,10 +127,11 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
           onPress={() => setSelectedRating(star)}
           activeOpacity={0.8}
         >
-          <Ionicons
-            name={star <= rating ? 'star' : 'star-outline'}
+          <Star
             size={interactive ? 30 : 15}
             color="#F59E0B"
+            strokeWidth={2}
+            fill={star <= rating ? "#F59E0B" : "none"}
           />
         </TouchableOpacity>
       ))}
@@ -154,10 +155,10 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
           
           <SafeAreaView style={styles.topActions}>
             <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color={colors.white} />
+              <ArrowLeft size={24} color={colors.white} strokeWidth={2.4} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.shareBtn}>
-              <Ionicons name="share-social-outline" size={24} color={colors.white} />
+              <Share2 size={24} color={colors.white} strokeWidth={2.2} />
             </TouchableOpacity>
           </SafeAreaView>
 
@@ -171,7 +172,7 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
             />
             {profile.profile.is_verified && (
               <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                <BadgeCheck size={18} color={colors.primary} strokeWidth={2.2} />
               </View>
             )}
           </View>
@@ -195,7 +196,7 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
             <View style={styles.vSeparator} />
             <View style={styles.statItem}>
               <View style={styles.ratingRow}>
-                <Ionicons name="star" size={16} color="#F59E0B" />
+                <Star size={16} color="#F59E0B" strokeWidth={2.2} fill="#F59E0B" />
                 <Text style={styles.statValue}> {profile.stats.average_rating}</Text>
               </View>
               <Text style={styles.statLabel}>{profile.stats.reviews_count} opiniones</Text>
@@ -279,7 +280,7 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
                 ))
               ) : (
                 <View style={styles.emptyOpiniones}>
-                  <Ionicons name="chatbox-ellipses-outline" size={60} color="#E5E7EB" />
+                  <MessageSquare size={60} color="#E5E7EB" strokeWidth={1.6} />
                   <Text style={styles.emptyText}>Aún no hay opiniones de otros usuarios.</Text>
                 </View>
               )}

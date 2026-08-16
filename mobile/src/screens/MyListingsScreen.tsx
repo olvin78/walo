@@ -11,7 +11,7 @@ import {
   StatusBar
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Pencil, Eye, Trash2, Lock, ArrowLeft, Package } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { useRouter } from 'expo-router';
 import { deleteListing, getMeListings, type ListingSummary } from '../services/api';
@@ -104,11 +104,11 @@ export const MyListingsScreen = () => {
         
         <View style={styles.actionsRow}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/listing/${item.id}/edit`)}>
-            <Ionicons name="pencil-outline" size={16} color={colors.text} />
+            <Pencil size={16} color={colors.text} strokeWidth={2} />
             <Text style={styles.actionBtnText}>Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/listing/${item.id}`)}>
-            <Ionicons name="eye-outline" size={16} color={colors.text} />
+            <Eye size={16} color={colors.text} strokeWidth={2} />
             <Text style={styles.actionBtnText}>Ver</Text>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -117,7 +117,7 @@ export const MyListingsScreen = () => {
             activeOpacity={0.6}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
-            <Ionicons name="trash" size={18} color="#fff" />
+            <Trash2 size={18} color="#fff" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -136,7 +136,7 @@ export const MyListingsScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
-          <Ionicons name="lock-closed-outline" size={64} color="#E5E7EB" />
+          <Lock size={64} color="#E5E7EB" strokeWidth={1.6} />
           <Text style={styles.emptyText}>Inicia sesión para ver tus publicaciones.</Text>
         </View>
       </SafeAreaView>
@@ -149,7 +149,7 @@ export const MyListingsScreen = () => {
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <ArrowLeft size={24} color={colors.text} strokeWidth={2.4} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mis publicaciones</Text>
         <View style={{ width: 44 }} />
@@ -168,7 +168,7 @@ export const MyListingsScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="cube-outline" size={64} color={colors.textLight} />
+              <Package size={64} color={colors.textLight} strokeWidth={1.6} />
             </View>
             <Text style={styles.emptyText}>No tienes publicaciones aún</Text>
           </View>

@@ -13,7 +13,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { X, Type, Smile, Music4, Palette, ChevronRight, Clock, Calendar, Hash, BarChart3, ChevronDown, Search, PauseCircle, PlayCircle } from 'lucide-react-native';
 import { 
   GestureDetector,
   Gesture,
@@ -210,12 +210,12 @@ export const StoryEditorScreen = ({ imageUri, onClose, onPublish }: any) => {
       <View style={styles.bgOverlay} />
 
       <View style={styles.topHeader}>
-        <TouchableOpacity onPress={onClose} style={styles.iconBtn}><Ionicons name="close" size={30} color="#fff" /></TouchableOpacity>
+        <TouchableOpacity onPress={onClose} style={styles.iconBtn}><X size={30} color="#fff" strokeWidth={2.4} /></TouchableOpacity>
         <View style={styles.topRightActions}>
-          <TouchableOpacity onPress={() => setActivePanel('text')} style={styles.iconBtn}><Ionicons name="text" size={26} color="#fff" /></TouchableOpacity>
-          <TouchableOpacity onPress={() => setActivePanel('stickers')} style={styles.iconBtn}><Ionicons name="happy-outline" size={26} color="#fff" /></TouchableOpacity>
-          <TouchableOpacity onPress={() => setActivePanel('music')} style={styles.iconBtn}><Ionicons name="musical-notes" size={26} color="#fff" /></TouchableOpacity>
-          <TouchableOpacity onPress={() => setActivePanel('filters')} style={styles.iconBtn}><Ionicons name="color-filter-outline" size={26} color="#fff" /></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePanel('text')} style={styles.iconBtn}><Type size={26} color="#fff" strokeWidth={2.2} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePanel('stickers')} style={styles.iconBtn}><Smile size={26} color="#fff" strokeWidth={2.2} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePanel('music')} style={styles.iconBtn}><Music4 size={26} color="#fff" strokeWidth={2.2} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePanel('filters')} style={styles.iconBtn}><Palette size={26} color="#fff" strokeWidth={2.2} /></TouchableOpacity>
         </View>
       </View>
 
@@ -229,7 +229,7 @@ export const StoryEditorScreen = ({ imageUri, onClose, onPublish }: any) => {
 
         {selectedMusic ? (
           <View style={styles.selectedMusicChip}>
-            <Ionicons name="musical-notes" size={16} color="#fff" />
+            <Music4 size={16} color="#fff" strokeWidth={2.2} />
             <View style={styles.selectedMusicTextBox}>
               <Text style={styles.selectedMusicName} numberOfLines={1}>{selectedMusic.name}</Text>
               <Text style={styles.selectedMusicArtist} numberOfLines={1}>{selectedMusic.artist}</Text>
@@ -269,7 +269,7 @@ export const StoryEditorScreen = ({ imageUri, onClose, onPublish }: any) => {
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.publishBtn} onPress={() => { player.pause(); onPublish({ imageUri, stickers, selectedMusic }); }}>
-           <Text style={styles.publishBtnTxt}>Publicar Historia</Text><Ionicons name="chevron-forward" size={20} color="#000" />
+           <Text style={styles.publishBtnTxt}>Publicar Historia</Text><ChevronRight size={20} color="#000" strokeWidth={2.4} />
         </TouchableOpacity>
       </View>
 
@@ -300,10 +300,10 @@ export const StoryEditorScreen = ({ imageUri, onClose, onPublish }: any) => {
           <View style={styles.panelInner}>
             <Text style={styles.panelTitle}>Stickers</Text>
             <View style={styles.stickerGrid}>
-              <TouchableOpacity onPress={() => addSticker('clock', currentTime)} style={styles.gridItem}><Ionicons name="time-outline" size={32} color="#fff" /><Text style={styles.gridTxt}>Hora</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => addSticker('clock', currentDate)} style={styles.gridItem}><Ionicons name="calendar-outline" size={32} color="#fff" /><Text style={styles.gridTxt}>Fecha</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => addSticker('hashtag', '#HOLA')} style={styles.gridItem}><Ionicons name="at-outline" size={32} color="#fff" /><Text style={styles.gridTxt}>Hashtag</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => addSticker('poll', '¿Te gusta?')} style={styles.gridItem}><Ionicons name="stats-chart-outline" size={32} color="#fff" /><Text style={styles.gridTxt}>Encuesta</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => addSticker('clock', currentTime)} style={styles.gridItem}><Clock size={32} color="#fff" strokeWidth={2} /><Text style={styles.gridTxt}>Hora</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => addSticker('clock', currentDate)} style={styles.gridItem}><Calendar size={32} color="#fff" strokeWidth={2} /><Text style={styles.gridTxt}>Fecha</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => addSticker('hashtag', '#HOLA')} style={styles.gridItem}><Hash size={32} color="#fff" strokeWidth={2} /><Text style={styles.gridTxt}>Hashtag</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => addSticker('poll', '¿Te gusta?')} style={styles.gridItem}><BarChart3 size={32} color="#fff" strokeWidth={2} /><Text style={styles.gridTxt}>Encuesta</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -312,8 +312,8 @@ export const StoryEditorScreen = ({ imageUri, onClose, onPublish }: any) => {
       {activePanel === 'music' && (
         <View style={styles.fullPanel}>
           <View style={styles.fullPanelHeader}>
-            <TouchableOpacity onPress={() => { setPreviewUrl(null); player.pause(); setActivePanel('none'); }}><Ionicons name="chevron-down" size={30} color="#fff" /></TouchableOpacity>
-            <View style={styles.searchBox}><Ionicons name="search" size={20} color="rgba(255,255,255,0.5)" /><TextInput style={styles.searchPrompt} placeholder="Música..." placeholderTextColor="rgba(255,255,255,0.5)" value={musicSearch} onChangeText={setMusicSearch} onSubmitEditing={() => searchMusic(musicSearch)} /></View>
+            <TouchableOpacity onPress={() => { setPreviewUrl(null); player.pause(); setActivePanel('none'); }}><ChevronDown size={30} color="#fff" strokeWidth={2.4} /></TouchableOpacity>
+            <View style={styles.searchBox}><Search size={20} color="rgba(255,255,255,0.5)" strokeWidth={2} /><TextInput style={styles.searchPrompt} placeholder="Música..." placeholderTextColor="rgba(255,255,255,0.5)" value={musicSearch} onChangeText={setMusicSearch} onSubmitEditing={() => searchMusic(musicSearch)} /></View>
           </View>
           <ScrollView style={{ flex: 1, padding: 20 }}>
             {isLoadingMusic ? <ActivityIndicator size="large" color="#fff" /> : musicResults.map(s => (
@@ -333,7 +333,7 @@ export const StoryEditorScreen = ({ imageUri, onClose, onPublish }: any) => {
                     setPreviewUrl(s.url);
                   }}
                 >
-                  <Ionicons name={previewUrl === s.url ? "pause-circle" : "play-circle"} size={38} color={previewUrl === s.url ? "#22c55e" : "#fff"} />
+                  {previewUrl === s.url ? <PauseCircle size={38} color="#22c55e" strokeWidth={2} /> : <PlayCircle size={38} color="#fff" strokeWidth={2} />}
                 </TouchableOpacity>
               </View>
             ))}

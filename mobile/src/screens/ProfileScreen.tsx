@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { LogIn, UserPlus, MapPin, CheckCircle2, AlertCircle, ChevronRight, LogOut, X, XCircle, Camera, User, List, MessageCircle, Bell, Pencil, KeyRound, Send, Bug } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../services/auth';
@@ -34,13 +34,26 @@ export const ProfileScreen = () => {
   const [bugScreenshot, setBugScreenshot] = useState<string | null>(null);
   const [isSubmittingBug, setIsSubmittingBug] = useState(false);
 
+  // Captcha State
+  const [captchaQuestion, setCaptchaQuestion] = useState({ num1: 0, num2: 0 });
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+
+  const openBugModal = () => {
+    setCaptchaQuestion({
+      num1: Math.floor(Math.random() * 10) + 1,
+      num2: Math.floor(Math.random() * 10) + 1,
+    });
+    setCaptchaAnswer('');
+    setShowBugModal(true);
+  };
+
   const menuItems = [
-    { icon: 'person-outline', label: 'Mi Perfil' },
-    { icon: 'list-outline', label: 'Mis publicaciones' },
-    { icon: 'chatbubbles-outline', label: 'Mensajes' },
-    { icon: 'notifications-outline', label: 'Notificaciones', count: unreadCount },
-    { icon: 'pencil-outline', label: 'Editar mi perfil' },
-    { icon: 'key-outline', label: 'Cambiar contraseña' },
+    { icon: User, label: 'Mi Perfil' },
+    { icon: List, label: 'Mis publicaciones' },
+    { icon: MessageCircle, label: 'Mensajes' },
+    { icon: Bell, label: 'Notificaciones', count: unreadCount },
+    { icon: Pencil, label: 'Editar mi perfil' },
+    { icon: KeyRound, label: 'Cambiar contraseña' },
   ];
 
   const handleMenuPress = (label: string) => {
@@ -73,6 +86,17 @@ export const ProfileScreen = () => {
   const handleSendBug = async () => {
     if (!bugDescription.trim()) {
       Alert.alert('Faltan datos', 'Cuéntanos qué está pasando.');
+      return;
+    }
+
+    const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
+    if (parseInt(captchaAnswer, 10) !== expectedAnswer) {
+      Alert.alert('Error', 'La respuesta del captcha es incorrecta. Intentá de nuevo.');
+      setCaptchaQuestion({
+        num1: Math.floor(Math.random() * 10) + 1,
+        num2: Math.floor(Math.random() * 10) + 1,
+      });
+      setCaptchaAnswer('');
       return;
     }
 
@@ -154,7 +178,7 @@ export const ProfileScreen = () => {
               activeOpacity={0.85}
             >
               <View style={styles.loginBtnContent}>
-                <Ionicons name="log-in-outline" size={20} color={colors.white} />
+                <LogIn size={20} color={colors.white} strokeWidth={2.2} />
                 <Text style={styles.loginBtnText}>Iniciar sesión</Text>
               </View>
             </TouchableOpacity>
@@ -165,7 +189,7 @@ export const ProfileScreen = () => {
               activeOpacity={0.85}
             >
               <View style={styles.loginBtnContent}>
-                <Ionicons name="person-add-outline" size={18} color={colors.primary} />
+                <UserPlus size={18} color={colors.primary} strokeWidth={2.2} />
                 <Text style={styles.registerBtnText}>Crear cuenta</Text>
               </View>
             </TouchableOpacity>
@@ -193,7 +217,7 @@ export const ProfileScreen = () => {
               <Text style={styles.userEmail}>{user.email}</Text>
               {profile?.location && (
                 <View style={styles.locationRow}>
-                  <Ionicons name="location-outline" size={12} color={colors.textLight} />
+                  <MapPin size={12} color={colors.textLight} strokeWidth={2.2} />
                   <Text style={styles.locationText}>{profile.location}</Text>
                 </View>
               )}
@@ -203,11 +227,9 @@ export const ProfileScreen = () => {
                 styles.verifiedBadge, 
                 !profile?.is_verified && { backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.1)' }
               ]}>
-                <Ionicons 
-                  name={profile?.is_verified ? "checkmark-circle" : "alert-circle"} 
-                  size={12} 
-                  color={profile?.is_verified ? colors.primary : colors.error} 
-                />
+                {profile?.is_verified 
+                  ? <CheckCircle2 size={12} color={colors.primary} strokeWidth={2.4} />
+                  : <AlertCircle size={12} color={colors.error} strokeWidth={2.4} />}
                 <Text style={[
                   styles.verifiedText, 
                   !profile?.is_verified && { color: colors.error }
@@ -238,7 +260,7 @@ export const ProfileScreen = () => {
           {menuItems.map((item, index) => (
             <TouchableOpacity key={index} style={styles.menuItem} onPress={() => handleMenuPress(item.label)}>
               <View style={styles.menuIconCircle}>
-                <Ionicons name={item.icon as any} size={20} color={colors.text} />
+                <item.icon size={20} color={colors.text} strokeWidth={2} />
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
               {'count' in item && (item.count as number) > 0 && (
@@ -246,31 +268,31 @@ export const ProfileScreen = () => {
                   <Text style={styles.menuBadgeText}>{item.count}</Text>
                 </View>
               )}
-              <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+              <ChevronRight size={16} color="#D1D5DB" strokeWidth={2.2} />
             </TouchableOpacity>
           ))}
 
           <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={logout}> 
             <View style={styles.menuIconCircle}>
-              <Ionicons name="log-out-outline" size={20} color={colors.error} />
+              <LogOut size={20} color={colors.error} strokeWidth={2.2} />
             </View>
             <Text style={[styles.menuLabel, { color: colors.error }]}>Cerrar sesión</Text>
-            <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+            <ChevronRight size={16} color="#D1D5DB" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
           style={styles.reportBtn} 
           activeOpacity={0.7}
-          onPress={() => setShowBugModal(true)}
+          onPress={openBugModal}
         >
           <View style={styles.reportBtnContent}>
             <View style={styles.reportIconCircle}>
-              <Ionicons name="alert-circle" size={18} color="#D97706" />
+              <Bug size={18} color="#D97706" strokeWidth={2} />
             </View>
             <Text style={styles.reportBtnText}>Reportar una incidencia técnica</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color="#D97706" />
+          <ChevronRight size={16} color="#D97706" strokeWidth={2.2} />
         </TouchableOpacity>
         
         <View style={{ height: spacing.xl * 3 }} />
@@ -282,7 +304,7 @@ export const ProfileScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>¡Ayúdanos a mejorar! 🛠️</Text>
               <TouchableOpacity onPress={() => setShowBugModal(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <X size={24} color={colors.text} strokeWidth={2.2} />
               </TouchableOpacity>
             </View>
             
@@ -304,16 +326,29 @@ export const ProfileScreen = () => {
                 <View style={styles.screenshotPreview}>
                   <Image source={{ uri: bugScreenshot }} style={styles.screenshotImg} />
                   <TouchableOpacity style={styles.removeScreenshot} onPress={() => setBugScreenshot(null)}>
-                    <Ionicons name="close-circle" size={20} color={colors.error} />
+                    <XCircle size={20} color={colors.error} strokeWidth={2.2} />
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.screenshotPlaceholder}>
-                  <Ionicons name="camera" size={24} color={colors.textLight} />
+                  <Camera size={24} color={colors.textLight} strokeWidth={2} />
                   <Text style={styles.screenshotText}>SELECCIONAR IMAGEN...</Text>
                 </View>
               )}
             </TouchableOpacity>
+
+            <Text style={styles.modalLabel}>CAPTCHA DE VERIFICACIÓN:</Text>
+            <View style={styles.captchaRow}>
+              <Text style={styles.captchaQuestion}>{captchaQuestion.num1} + {captchaQuestion.num2} =</Text>
+              <TextInput 
+                style={styles.captchaInput}
+                keyboardType="numeric"
+                placeholder="Tu respuesta"
+                placeholderTextColor={colors.textLight}
+                value={captchaAnswer}
+                onChangeText={setCaptchaAnswer}
+              />
+            </View>
 
             <TouchableOpacity 
               style={[styles.sendBugBtn, isSubmittingBug && { opacity: 0.7 }]} 
@@ -390,6 +425,9 @@ const styles = StyleSheet.create({
   screenshotPreview: { width: '100%', height: '100%', position: 'relative' },
   screenshotImg: { width: '100%', height: '100%' },
   removeScreenshot: { position: 'absolute', top: 5, right: 5 },
+  captchaRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 15, padding: 15, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 25 },
+  captchaQuestion: { fontSize: 18, fontWeight: '900', color: colors.text, marginRight: 15 },
+  captchaInput: { flex: 1, fontSize: 16, color: colors.text, borderBottomWidth: 1, borderBottomColor: '#D1D5DB', paddingBottom: 5 },
   sendBugBtn: { height: 56, backgroundColor: colors.primary, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   sendBugText: { color: colors.white, fontWeight: '900', fontSize: 16 },
 });

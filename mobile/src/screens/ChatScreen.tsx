@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCheck, ChevronLeft, Send } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing } from '../theme/colors';
 import { getConversation, sendMessage, type ChatMessage, type Conversation } from '../services/api';
@@ -74,7 +74,7 @@ export const ChatScreen = ({ conversationId }: ChatScreenProps) => {
           <Text style={[styles.messageText, isMine ? styles.myText : styles.otherText]}>{item.text}</Text>
           <View style={styles.messageFooter}>
             <Text style={[styles.timeText, isMine ? styles.myTime : styles.otherTime]}>{formatTime(item.created_at)}</Text>
-            {isMine ? <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.8)" /> : null}
+            {isMine ? <CheckCheck size={14} color="rgba(255,255,255,0.8)" strokeWidth={2.4} /> : null}
           </View>
         </View>
       </View>
@@ -106,7 +106,7 @@ export const ChatScreen = ({ conversationId }: ChatScreenProps) => {
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={colors.white} />
+          <ChevronLeft size={28} color={colors.white} strokeWidth={2.4} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerAvatarBtn}
@@ -147,7 +147,7 @@ export const ChatScreen = ({ conversationId }: ChatScreenProps) => {
               multiline
             />
             <TouchableOpacity style={[styles.sendBtn, (!messageText.trim() || isSending) && styles.sendBtnDisabled]} onPress={handleSend} disabled={!messageText.trim() || isSending}>
-              {isSending ? <ActivityIndicator color={colors.white} /> : <Ionicons name="send" size={20} color={colors.white} />}
+              {isSending ? <ActivityIndicator color={colors.white} /> : <Send size={20} color={colors.white} strokeWidth={2.2} />}
             </TouchableOpacity>
           </View>
         </View>

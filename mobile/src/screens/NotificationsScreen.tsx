@@ -13,7 +13,7 @@ import {
   RefreshControl
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Mail, Tag, Heart, Bell, BadgeCheck, ArrowRight, BellOff, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing } from '../theme/colors';
 import { getNotifications, markNotificationRead, markAllNotificationsRead, updateProfile, type Notification } from '../services/api';
@@ -109,10 +109,10 @@ export const NotificationsScreen = () => {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'message': return 'mail-outline';
-      case 'offer': return 'pricetag-outline';
-      case 'favorite': return 'heart-outline';
-      default: return 'notifications-outline';
+      case 'message': return Mail;
+      case 'offer': return Tag;
+      case 'favorite': return Heart;
+      default: return Bell;
     }
   };
 
@@ -122,11 +122,10 @@ export const NotificationsScreen = () => {
       onPress={() => handleNotificationPress(item)}
     >
       <View style={[styles.iconContainer, { backgroundColor: item.is_read ? '#F3F4F6' : 'rgba(16, 185, 129, 0.1)' }]}>
-        <Ionicons 
-          name={getIcon(item.notification_type)} 
-          size={24} 
-          color={item.is_read ? colors.textLight : colors.primary} 
-        />
+        {(() => {
+          const Icon = getIcon(item.notification_type);
+          return <Icon size={24} color={item.is_read ? colors.textLight : colors.primary} strokeWidth={2} />;
+        })()}
       </View>
       <View style={styles.textContainer}>
         <View style={styles.topRow}>
@@ -144,7 +143,7 @@ export const NotificationsScreen = () => {
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <ArrowLeft size={24} color={colors.text} strokeWidth={2.4} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notificaciones</Text>
         <TouchableOpacity onPress={handleReadAll}>
@@ -196,14 +195,14 @@ export const NotificationsScreen = () => {
                   <View style={styles.verificationOverlay} />
                   <View style={styles.verificationContent}>
                     <View style={styles.verificationBadge}>
-                      <Ionicons name="shield-checkmark" size={13} color={colors.primary} />
+                      <BadgeCheck size={13} color={colors.primary} strokeWidth={2.4} />
                       <Text style={styles.verificationBadgeText}>Perfil veridico</Text>
                     </View>
                     <Text style={styles.verificationTitle}>Recuerda verificar tu cuenta</Text>
                     <Text style={styles.verificationText}>Anade una foto real y completa tu verificacion para transmitir mas confianza cuando compres o vendas.</Text>
                     <View style={styles.verificationAction}>
                       <Text style={styles.verificationActionText}>Verificar ahora</Text>
-                      <Ionicons name="arrow-forward" size={15} color={colors.white} />
+                      <ArrowRight size={15} color={colors.white} strokeWidth={2.4} />
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -212,7 +211,7 @@ export const NotificationsScreen = () => {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="notifications-off-outline" size={60} color="#E5E7EB" />
+              <BellOff size={60} color="#E5E7EB" strokeWidth={1.6} />
               <Text style={styles.emptyTitle}>No tienes notificaciones</Text>
               <Text style={styles.emptySubtext}>Te avisaremos cuando pase algo interesante.</Text>
             </View>

@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View, Platform, StyleSheet, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Home, Search, Plus, Heart, User, Store } from 'lucide-react-native';
 import { colors } from '../../src/theme/colors';
 
 export default function TabLayout() {
@@ -31,7 +31,9 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>
-              <Ionicons name={focused ? "home" : "home-outline"} size={22} color={color} />
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <Home size={focused ? 23 : 21} color={color} strokeWidth={focused ? 2.4 : 2} />
+              </View>
               <Text style={[styles.tabLabel, { color }]}>Inicio</Text>
             </View>
           ),
@@ -42,7 +44,9 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>
-              <Ionicons name={focused ? "search" : "search-outline"} size={22} color={color} />
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <Search size={focused ? 23 : 21} color={color} strokeWidth={focused ? 2.4 : 2} />
+              </View>
               <Text style={[styles.tabLabel, { color }]}>Buscar</Text>
             </View>
           ),
@@ -54,7 +58,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.publishContainer}>
               <View style={styles.publishButton}>
-                <Ionicons name="add" size={30} color={colors.white} />
+                <Plus size={30} color={colors.white} strokeWidth={2.6} />
               </View>
               <Text style={[styles.tabLabel, { color: focused ? colors.primary : colors.textLight, marginTop: 4 }]}>
                 Publicar
@@ -68,8 +72,10 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>
-              <Ionicons name={focused ? "heart" : "heart-outline"} size={22} color={color} />
-              <Text style={[styles.tabLabel, { color }]}>Favoritos</Text>
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <Heart size={focused ? 23 : 21} color={focused ? colors.favorite : color} strokeWidth={focused ? 2.4 : 2} fill={focused ? colors.favorite : 'none'} />
+              </View>
+              <Text style={[styles.tabLabel, { color: focused ? colors.favorite : color }]}>Favoritos</Text>
             </View>
           ),
         }}
@@ -79,7 +85,9 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>
-              <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <User size={focused ? 23 : 21} color={color} strokeWidth={focused ? 2.4 : 2} />
+              </View>
               <Text style={[styles.tabLabel, { color }]}>Perfil</Text>
             </View>
           ),
@@ -88,6 +96,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabItem}>
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <Store size={focused ? 23 : 21} color={color} strokeWidth={focused ? 2.4 : 2} />
+              </View>
+              <Text style={[styles.tabLabel, { color }]}>Explorar</Text>
+            </View>
+          ),
           href: null,
         }}
       />
@@ -101,6 +117,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: '100%',
     width: 60,
+  },
+  iconWrap: {
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.10)',
   },
   tabLabel: {
     fontSize: 10,

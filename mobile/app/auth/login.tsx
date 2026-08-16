@@ -14,17 +14,22 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { useEffect } from 'react';
+
+WebBrowser.maybeCompleteAuthSession();
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { User, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing } from '../../src/theme/colors';
 import { useAuth } from '../../src/services/auth';
 import { ApiError } from '../../src/services/api';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,8 +59,44 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('Proximamente', 'El acceso con Google estara disponible pronto en la app.');
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: 'REPLACED_GOOGLE_OAUTH_CLIENT_ID',
+    androidClientId: 'REPLACED_GOOGLE_OAUTH_CLIENT_ID',
+    iosClientId: 'REPLACED_GOOGLE_OAUTH_CLIENT_ID',
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success' && response.authentication?.idToken) {
+      handleServerGoogleLogin(response.authentication.idToken);
+    }
+  }, [response]);
+
+  const handleServerGoogleLogin = async (idToken: string) => {
+    setErrorMessage('');
+    setIsSubmitting(true);
+    try {
+      await loginWithGoogle(idToken);
+      router.replace('/(tabs)/profile');
+    } catch (error) {
+      console.error('[Igualo Google Login] Failed', error);
+      setErrorMessage('No se pudo iniciar sesión con Google');
+      Alert.alert('Error', 'No se pudo iniciar sesión con Google');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      if (!request) {
+        Alert.alert('Cargando', 'El servicio de Google se está inicializando, espera un segundo.');
+        return;
+      }
+      await promptAsync();
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert('Error de Google', error?.message || 'Asegúrate de configurar los Client IDs de Android/iOS en login.tsx');
+    }
   };
 
   const isWide = width >= 600;
@@ -97,7 +138,7 @@ export default function LoginScreen() {
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="person-outline" size={18} color={colors.primary} />
+                    <User size={18} color={colors.primary} strokeWidth={2} />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -115,7 +156,7 @@ export default function LoginScreen() {
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="lock-closed-outline" size={18} color={colors.primary} />
+                    <Lock size={18} color={colors.primary} strokeWidth={2} />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -129,11 +170,9 @@ export default function LoginScreen() {
                     style={styles.eyeBtn}
                     onPress={() => setShowPassword(!showPassword)}
                   >
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color="#9CA3AF"
-                    />
+                    {showPassword 
+                      ? <EyeOff size={20} color="#9CA3AF" strokeWidth={2} />
+                      : <Eye size={20} color="#9CA3AF" strokeWidth={2} />}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -141,7 +180,7 @@ export default function LoginScreen() {
               {/* Error Message */}
               {errorMessage ? (
                 <View style={styles.errorBox}>
-                  <Ionicons name="alert-circle" size={16} color={colors.error} />
+                  <AlertCircle size={16} color={colors.error} strokeWidth={2.2} />
                   <Text style={styles.errorText}>{errorMessage}</Text>
                 </View>
               ) : null}
@@ -158,19 +197,22 @@ export default function LoginScreen() {
                 ) : (
                   <View style={styles.buttonContent}>
                     <Text style={styles.buttonText}>Entrar</Text>
-                    <Ionicons name="arrow-forward" size={18} color={colors.white} />
+                    <ArrowRight size={18} color={colors.white} strokeWidth={2.2} />
                   </View>
                 )}
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.googleButton}
+                style={[styles.googleButton, !request && styles.buttonDisabled]}
                 onPress={handleGoogleLogin}
+                disabled={!request || isSubmitting}
                 activeOpacity={0.85}
               >
-                <View style={styles.googleIconBox}>
-                  <Ionicons name="logo-google" size={18} color="#EA4335" />
-                </View>
+                <Image 
+                  source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png' }}
+                  style={{ width: 24, height: 24 }}
+                  contentFit="contain"
+                />
                 <Text style={styles.googleButtonText}>Iniciar sesion con Google</Text>
               </TouchableOpacity>
 

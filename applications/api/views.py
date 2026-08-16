@@ -15,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+import requests
 
 from applications.api.filters import normalize_listing_ordering, search_listing_queryset
 from applications.api.permissions import IsOwnerOrAdminOrReadOnly
@@ -71,6 +72,7 @@ def filter_listing_queryset(queryset, params):
 def filter_listing_queryset_with_metadata(queryset, params):
     query = params.get("q") or params.get("search")
     category_value = params.get("category")
+    subcategory_value = params.get("subcategory")
     location = params.get("location")
     ordering = normalize_listing_ordering(params.get("ordering") or params.get("sort"))
     min_price = params.get("min_price")
@@ -81,6 +83,12 @@ def filter_listing_queryset_with_metadata(queryset, params):
             queryset = queryset.filter(category_id=category_value)
         else:
             queryset = queryset.filter(Q(category__slug=category_value) | Q(category__name__iexact=category_value))
+
+    if subcategory_value:
+        if str(subcategory_value).isdigit():
+            queryset = queryset.filter(subcategory_id=subcategory_value)
+        else:
+            queryset = queryset.filter(Q(subcategory__slug=subcategory_value) | Q(subcategory__name__iexact=subcategory_value))
 
     if location and location != 'Todo Nicaragua':
         queryset = queryset.filter(location__icontains=location)
@@ -620,6 +628,62 @@ class RegisterAPIView(APIView):
 class LoginAPIView(TokenObtainPairView):
     permission_classes = [AllowAny]
     serializer_class = MobileTokenObtainPairSerializer
+
+
+class GoogleLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        id_token = request.data.get("id_token")
+        if not id_token:
+            return Response({"error": "id_token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate the token with Google
+        response = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}")
+        if response.status_code != 200:
+            return Response({"error": "Invalid Google token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_info = response.json()
+        email = user_info.get("email")
+        if not email:
+            return Response({"error": "Email not provided by Google"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get or create the user
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            username = email.split('@')[0]
+            # Ensure unique username
+            base_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            user = User.objects.create(
+                username=username,
+                email=email,
+                first_name=user_info.get("given_name", ""),
+                last_name=user_info.get("family_name", "")
+            )
+            # Create a profile with the Google picture
+            profile, _ = Profile.objects.get_or_create(user=user)
+            picture = user_info.get("picture")
+            if picture and not profile.avatar:
+                # We could download and save the picture, but for now we'll just let them upload one later
+                # Or if you have a field for avatar URL, set it here.
+                pass
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": MeSerializer(user, context={"request": request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class RefreshAPIView(TokenRefreshView):

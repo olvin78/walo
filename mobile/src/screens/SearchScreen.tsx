@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { 
   ActivityIndicator,
+  Alert,
   View, 
   Text, 
   StyleSheet, 
@@ -13,23 +14,25 @@ import {
   StatusBar,
   RefreshControl
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { XCircle, ArrowUpDown, MapPin } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { POPULAR_SEARCHES } from '../data/mockData';
 import { SearchBar } from '../components/SearchBar';
 import { CategoryPill } from '../components/CategoryPill';
 import { ProductCard } from '../components/ProductCard';
-import { getCategories, searchListings, type Category, type ListingSummary } from '../../lib/igualo-api';
+import { getCategories, searchListings, type Category, type ListingSummary, type Subcategory } from '../../lib/igualo-api';
 import { FilterModal, type FilterValues } from '../components/FilterModal';
+import * as Location from 'expo-location';
 
 const MAX_WIDTH = 1200;
 
 export const SearchScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{ q?: string; category?: string; openFilter?: string }>();
+  const params = useLocalSearchParams<{ q?: string; category?: string; subcategory?: string; openFilter?: string }>();
   const [query, setQuery] = useState(typeof params.q === 'string' ? params.q : '');
   const [activeCategory, setActiveCategory] = useState(typeof params.category === 'string' ? params.category : '');
+  const [activeSubcategory, setActiveSubcategory] = useState(typeof params.subcategory === 'string' ? params.subcategory : '');
   const [categories, setCategories] = useState<Category[]>([]);
   const [listings, setListings] = useState<ListingSummary[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
@@ -48,6 +51,8 @@ export const SearchScreen = () => {
     sortBy: 'newest',
     radius: 20
   });
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyActive, setNearbyActive] = useState(false);
   const { width } = useWindowDimensions();
 
   // Responsive logic
@@ -69,6 +74,14 @@ export const SearchScreen = () => {
     return item?.category || 'Otros';
   };
 
+  const activeCategoryObj = useMemo(() => {
+    return categories.find((c) => c.slug === activeCategory) || null;
+  }, [categories, activeCategory]);
+
+  const activeCategorySubs = useMemo(() => {
+    return activeCategoryObj?.subcategories || [];
+  }, [activeCategoryObj]);
+
   const listingsByCategory = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listings.forEach(item => {
@@ -84,7 +97,8 @@ export const SearchScreen = () => {
   useEffect(() => {
     setQuery(typeof params.q === 'string' ? params.q : '');
     setActiveCategory(typeof params.category === 'string' ? params.category : '');
-  }, [params.category, params.q]);
+    setActiveSubcategory(typeof params.subcategory === 'string' ? params.subcategory : '');
+  }, [params.category, params.q, params.subcategory]);
 
   useEffect(() => {
     if (params.openFilter === 'true') {
@@ -122,10 +136,14 @@ export const SearchScreen = () => {
         isInitial ? { 
           q: query.trim(), 
           category: activeCategory || undefined,
+          subcategory: activeSubcategory || undefined,
           min_price: filters.minPrice || undefined,
           max_price: filters.maxPrice || undefined,
           location: filters.location === 'Todo Nicaragua' ? undefined : filters.location,
-          sort: filters.sortBy
+          sort: filters.sortBy,
+          radius: (nearbyActive && userCoords) ? String(filters.radius || 20) : undefined,
+          user_lat: (nearbyActive && userCoords) ? String(userCoords.lat) : undefined,
+          user_lng: (nearbyActive && userCoords) ? String(userCoords.lng) : undefined,
         } : undefined,
         isInitial ? undefined : nextUrl || undefined
       );
@@ -158,17 +176,25 @@ export const SearchScreen = () => {
       fetchResults(true);
     }, 400);
     return () => clearTimeout(timeout);
-  }, [activeCategory, query, filters]);
+  }, [activeCategory, activeSubcategory, query, filters]);
 
   const applyCategory = (category: Category) => {
     const nextCategory = activeCategory === category.slug ? '' : category.slug;
     setActiveCategory(nextCategory);
-    router.setParams({ category: nextCategory || undefined, q: query || undefined });
+    setActiveSubcategory('');
+    router.setParams({ category: nextCategory || undefined, subcategory: undefined, q: query || undefined });
+  };
+
+  const applySubcategory = (sub: Subcategory) => {
+    const nextSub = activeSubcategory === sub.slug ? '' : sub.slug;
+    setActiveSubcategory(nextSub);
+    router.setParams({ subcategory: nextSub || undefined, q: query || undefined, category: activeCategory || undefined });
   };
 
   const clearFilters = () => {
     setQuery('');
     setActiveCategory('');
+    setActiveSubcategory('');
     setFilters({
       minPrice: '',
       maxPrice: '',
@@ -176,7 +202,29 @@ export const SearchScreen = () => {
       sortBy: 'newest',
       radius: 20
     });
-    router.setParams({ q: undefined, category: undefined });
+    router.setParams({ q: undefined, category: undefined, subcategory: undefined });
+  };
+
+  const useMyLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'Habilita la ubicación para buscar cerca de ti.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({});
+      setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      setNearbyActive(true);
+      setFilters((prev) => ({ ...prev, radius: 20 }));
+      Alert.alert('Cerca de ti', 'Buscando en un radio de 20 km a la redonda.');
+    } catch {
+      Alert.alert('Error', 'No se pudo obtener tu ubicación.');
+    }
+  };
+
+  const clearNearby = () => {
+    setNearbyActive(false);
+    setUserCoords(null);
   };
 
   const handleCategoriesWheel = (event: any) => {
@@ -253,16 +301,46 @@ export const SearchScreen = () => {
         </View>
         {(query || activeCategory) ? (
           <TouchableOpacity style={styles.clearFiltersBtn} onPress={clearFilters}>
-            <Ionicons name="close-circle-outline" size={16} color={colors.primary} />
+            <XCircle size={16} color={colors.primary} strokeWidth={2.2} />
             <Text style={styles.clearFiltersText}>Limpiar filtros</Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
+      {activeCategoryObj && activeCategorySubs.length > 0 ? (
+        <View style={styles.subcategoriesSection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.subcategoriesContent}
+          >
+            <TouchableOpacity
+              style={[styles.subcategoryChip, !activeSubcategory && styles.subcategoryChipActive]}
+              onPress={() => {
+                setActiveSubcategory('');
+                router.setParams({ subcategory: undefined, q: query || undefined, category: activeCategory || undefined });
+              }}
+            >
+              <Text style={[styles.subcategoryChipText, !activeSubcategory && styles.subcategoryChipTextActive]}>Ver Todo</Text>
+            </TouchableOpacity>
+            {activeCategorySubs.map((sub) => (
+              <TouchableOpacity
+                key={sub.id}
+                style={[styles.subcategoryChip, activeSubcategory === sub.slug && styles.subcategoryChipActive]}
+                onPress={() => applySubcategory(sub)}
+              >
+                {sub.icon ? <Text style={styles.subcategoryChipEmoji}>{sub.icon}</Text> : null}
+                <Text style={[styles.subcategoryChipText, activeSubcategory === sub.slug && styles.subcategoryChipTextActive]}>{sub.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsCount}>{listings.length} resultados encontrados</Text>
         <TouchableOpacity style={styles.sortBtn}>
-          <Ionicons name="swap-vertical-outline" size={16} color={colors.primary} />
+          <ArrowUpDown size={16} color={colors.primary} strokeWidth={2.2} />
           <Text style={styles.sortText}>Relevancia</Text>
         </TouchableOpacity>
       </View>
@@ -289,6 +367,17 @@ export const SearchScreen = () => {
             onClear={clearFilters}
             onFilterPress={() => setIsFilterVisible(true)}
           />
+          <View style={styles.nearbyRow}>
+            <TouchableOpacity
+              style={[styles.nearbyBtn, nearbyActive && styles.nearbyBtnActive]}
+              onPress={nearbyActive ? clearNearby : useMyLocation}
+            >
+              <MapPin size={14} color={nearbyActive ? colors.white : colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.nearbyText, nearbyActive && styles.nearbyTextActive]}>
+                {nearbyActive ? 'Cerca de ti (20 km) · Quitar' : 'Cerca de mí'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView 
@@ -532,5 +621,70 @@ const styles = StyleSheet.create({
     color: colors.text,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.xs,
+  },
+  subcategoriesSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  subcategoriesContent: {
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  subcategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  subcategoryChipActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: colors.primary,
+  },
+  subcategoryChipText: {
+    fontSize: 13,
+    color: colors.textLight,
+    fontWeight: '700',
+  },
+  subcategoryChipTextActive: {
+    color: colors.primary,
+    fontWeight: '800',
+  },
+  subcategoryChipEmoji: {
+    marginRight: 6,
+    fontSize: 14,
+  },
+  nearbyRow: {
+    paddingHorizontal: spacing.md,
+    marginTop: 8,
+  },
+  nearbyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  nearbyBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  nearbyText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '800',
+    marginLeft: 6,
+  },
+  nearbyTextActive: {
+    color: colors.white,
   },
 });

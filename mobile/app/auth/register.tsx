@@ -17,7 +17,7 @@ import {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, User, Mail, Lock, ShieldCheck, CheckCircle, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing } from '../../src/theme/colors';
 import { useAuth } from '../../src/services/auth';
 
@@ -85,7 +85,7 @@ export default function RegisterScreen() {
                 onPress={() => router.back()}
                 activeOpacity={0.8}
               >
-                <Ionicons name="arrow-back" size={22} color={colors.text} />
+                <ArrowLeft size={22} color={colors.text} strokeWidth={2.4} />
               </TouchableOpacity>
             </View>
 
@@ -99,7 +99,7 @@ export default function RegisterScreen() {
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="person-outline" size={18} color={colors.primary} />
+                    <User size={18} color={colors.primary} strokeWidth={2} />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -117,7 +117,7 @@ export default function RegisterScreen() {
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="mail-outline" size={18} color={colors.primary} />
+                    <Mail size={18} color={colors.primary} strokeWidth={2} />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -136,7 +136,7 @@ export default function RegisterScreen() {
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="lock-closed-outline" size={18} color={colors.primary} />
+                    <Lock size={18} color={colors.primary} strokeWidth={2} />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -150,11 +150,9 @@ export default function RegisterScreen() {
                     style={styles.eyeBtn}
                     onPress={() => setShowPassword(!showPassword)}
                   >
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color="#9CA3AF"
-                    />
+                    {showPassword 
+                      ? <EyeOff size={20} color="#9CA3AF" strokeWidth={2} />
+                      : <Eye size={20} color="#9CA3AF" strokeWidth={2} />}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -163,7 +161,7 @@ export default function RegisterScreen() {
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
+                    <ShieldCheck size={18} color={colors.primary} strokeWidth={2} />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -188,7 +186,7 @@ export default function RegisterScreen() {
                 ) : (
                   <View style={styles.buttonContent}>
                     <Text style={styles.buttonText}>Crear mi cuenta</Text>
-                    <Ionicons name="checkmark-circle" size={20} color={colors.white} />
+                    <CheckCircle size={20} color={colors.white} strokeWidth={2.4} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -199,7 +197,7 @@ export default function RegisterScreen() {
                 activeOpacity={0.85}
               >
                 <View style={styles.googleIconBox}>
-                  <Ionicons name="logo-google" size={18} color="#EA4335" />
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: '#EA4335' }}>G</Text>
                 </View>
                 <Text style={styles.googleButtonText}>Crear cuenta con Google</Text>
               </TouchableOpacity>

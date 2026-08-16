@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Modal } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { X, User, Lock, ShieldCheck, Camera, Pencil, Locate, ChevronRight, Mail, ShieldCheck as ShieldIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { colors, spacing, borderRadius } from '../theme/colors';
@@ -403,7 +403,7 @@ export const EditProfileScreen = () => {
       
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <X size={28} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Configuración</Text>
         <TouchableOpacity 
@@ -425,7 +425,7 @@ export const EditProfileScreen = () => {
           style={[styles.tabItem, activeSection === 'public' && styles.activeTabItem]} 
           onPress={() => setActiveSection('public')}
         >
-          <Ionicons name="person-outline" size={18} color={activeSection === 'public' ? colors.primary : '#9CA3AF'} />
+          <User size={18} color={activeSection === 'public' ? colors.primary : '#9CA3AF'} strokeWidth={2} />
           <Text style={[styles.tabLabel, activeSection === 'public' && styles.activeTabLabel]}>Perfil Público</Text>
         </TouchableOpacity>
         
@@ -433,7 +433,7 @@ export const EditProfileScreen = () => {
           style={[styles.tabItem, activeSection === 'security' && styles.activeTabItem]} 
           onPress={() => setActiveSection('security')}
         >
-          <Ionicons name="lock-closed-outline" size={18} color={activeSection === 'security' ? colors.primary : '#9CA3AF'} />
+          <Lock size={18} color={activeSection === 'security' ? colors.primary : '#9CA3AF'} strokeWidth={2} />
           <Text style={[styles.tabLabel, activeSection === 'security' && styles.activeTabLabel]}>Seguridad</Text>
         </TouchableOpacity>
 
@@ -441,7 +441,7 @@ export const EditProfileScreen = () => {
           style={[styles.tabItem, activeSection === 'verification' && styles.activeTabItem]} 
           onPress={() => setActiveSection('verification')}
         >
-          <Ionicons name="shield-checkmark-outline" size={18} color={activeSection === 'verification' ? colors.primary : '#9CA3AF'} />
+          <ShieldCheck size={18} color={activeSection === 'verification' ? colors.primary : '#9CA3AF'} strokeWidth={2} />
           <Text style={[styles.tabLabel, activeSection === 'verification' && styles.activeTabLabel]}>Verificación</Text>
         </TouchableOpacity>
       </View>
@@ -465,7 +465,7 @@ export const EditProfileScreen = () => {
                     style={styles.coverImage} 
                   />
                   <TouchableOpacity style={styles.changeCoverBtn} onPress={() => handlePickImage('cover')}>
-                    <Ionicons name="camera" size={20} color={colors.white} />
+                    <Camera size={20} color={colors.white} strokeWidth={2} />
                     <Text style={styles.changeCoverText}>Cambiar Portada</Text>
                   </TouchableOpacity>
                 </View>
@@ -478,7 +478,7 @@ export const EditProfileScreen = () => {
                       style={styles.avatar} 
                     />
                     <View style={styles.avatarEditBtn}>
-                      <Ionicons name="pencil" size={14} color={colors.white} />
+                      <Pencil size={14} color={colors.white} strokeWidth={2.2} />
                     </View>
                   </TouchableOpacity>
                   <View style={styles.avatarInfo}>
@@ -547,7 +547,7 @@ export const EditProfileScreen = () => {
                       <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
                       <>
-                        <Ionicons name="locate-outline" size={18} color={colors.primary} />
+                        <Locate size={18} color={colors.primary} strokeWidth={2} />
                         <Text style={styles.currentLocationBtnText}>Seleccionar ubicación actual</Text>
                       </>
                     )}
@@ -611,26 +611,26 @@ export const EditProfileScreen = () => {
               <View style={styles.settingsGroup}>
                 <TouchableOpacity style={styles.settingsRow} onPress={() => setPasswordModalVisible(true)}>
                   <View style={[styles.iconCircle, { backgroundColor: 'rgba(52, 199, 89, 0.1)' }]}>
-                    <Ionicons name="lock-closed-outline" size={20} color="#34C759" />
+                    <Lock size={20} color="#34C759" strokeWidth={2} />
                   </View>
                   <View style={styles.settingsTextWrapper}>
                     <Text style={styles.settingsLabel}>Cambiar contraseña</Text>
                     <Text style={styles.settingsSubLabel}>Actualiza tu clave de acceso</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+                  <ChevronRight size={18} color="#D1D5DB" strokeWidth={2.2} />
                 </TouchableOpacity>
 
                 <View style={styles.settingsSeparator} />
 
                 <TouchableOpacity style={styles.settingsRow} onPress={() => setEmailModalVisible(true)}>
                   <View style={[styles.iconCircle, { backgroundColor: 'rgba(0, 122, 255, 0.1)' }]}>
-                    <Ionicons name="mail-outline" size={20} color="#007AFF" />
+                    <Mail size={20} color="#007AFF" strokeWidth={2} />
                   </View>
                   <View style={styles.settingsTextWrapper}>
                     <Text style={styles.settingsLabel}>Cambiar correo electrónico</Text>
                     <Text style={styles.settingsSubLabel}>{user?.email || 'configurar correo'}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+                  <ChevronRight size={18} color="#D1D5DB" strokeWidth={2.2} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -639,7 +639,7 @@ export const EditProfileScreen = () => {
           {activeSection === 'verification' && (
             <View style={styles.comingSoonContainer}>
               <View style={styles.soonIconWrapper}>
-                <Ionicons name="shield-checkmark" size={60} color={colors.primary} />
+                <ShieldIcon size={60} color={colors.primary} strokeWidth={1.6} />
               </View>
               <Text style={styles.comingSoonTitle}>Verificación de Perfil</Text>
               <Text style={styles.comingSoonText}>
@@ -684,7 +684,7 @@ export const EditProfileScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Cambiar Contraseña</Text>
               <TouchableOpacity onPress={() => setPasswordModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <X size={24} color={colors.text} strokeWidth={2.4} />
               </TouchableOpacity>
             </View>
             
@@ -748,7 +748,7 @@ export const EditProfileScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Actualizar Correo</Text>
               <TouchableOpacity onPress={() => setEmailModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <X size={24} color={colors.text} strokeWidth={2.4} />
               </TouchableOpacity>
             </View>
             

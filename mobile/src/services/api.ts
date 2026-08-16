@@ -1,5 +1,14 @@
 import { Platform } from 'react-native';
 
+export type Subcategory = {
+  id: number;
+  name: string;
+  slug: string;
+  icon?: string;
+  description?: string | null;
+  total_active_listings?: number;
+};
+
 export type Category = {
   id: number;
   name: string;
@@ -7,6 +16,7 @@ export type Category = {
   icon?: string;
   image?: string | null;
   total_active_listings?: number;
+  subcategories?: Subcategory[];
 };
 
 export type ListingSummary = {
@@ -16,8 +26,10 @@ export type ListingSummary = {
   price: number | string;
   currency?: string;
   category?: Category | null;
+  subcategory?: Subcategory | null;
   location?: string | null;
   is_promoted?: boolean;
+  is_negotiable?: boolean;
   city?: string | null;
   department?: string | null;
   main_image?: string | null;
@@ -47,6 +59,7 @@ export type ListingDetail = ListingSummary & {
   description?: string | null;
   images?: ListingImage[];
   is_active?: boolean;
+  is_negotiable?: boolean;
   payment_methods?: string | null;
   latitude?: string | number | null;
   longitude?: string | number | null;
@@ -127,6 +140,7 @@ export type ListingPayload = {
   subcategory?: number | null;
   location: string;
   is_active?: boolean;
+  is_negotiable?: boolean;
   payment_methods?: string;
   latitude?: string | number | null;
   longitude?: string | number | null;
@@ -369,6 +383,16 @@ export async function login(loginValue: string, password: string) {
   const response = await apiRequest<AuthResponse>('/auth/login/', {
     method: 'POST',
     body: JSON.stringify({ login: loginValue, password }),
+  }, false);
+  setTokens(response.access, response.refresh);
+  return response;
+}
+
+export async function loginWithGoogle(idToken: string) {
+  console.info('[Igualo API] Google Login request');
+  const response = await apiRequest<AuthResponse>('/auth/google/', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
   }, false);
   setTokens(response.access, response.refresh);
   return response;

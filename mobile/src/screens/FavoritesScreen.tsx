@@ -13,7 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Heart, Star, MapPin, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { colors, spacing } from '../theme/colors';
@@ -111,12 +111,12 @@ export const FavoritesScreen = () => {
         <Image source={{ uri: item.main_image || '' }} style={styles.image} contentFit="cover" transition={400} />
         <BlurView intensity={30} tint="light" style={styles.favBox}>
           <TouchableOpacity onPress={() => removeFavorite(item.id)}>
-            <Ionicons name="heart" size={16} color={colors.error} />
+            <Heart size={16} color={colors.error} strokeWidth={2.4} fill={colors.error} />
           </TouchableOpacity>
         </BlurView>
         {item.is_promoted && (
           <View style={styles.promoBadge}>
-            <Ionicons name="star" size={8} color={colors.white} />
+            <Star size={8} color={colors.white} fill={colors.white} />
             <Text style={styles.promoText}>TOP</Text>
           </View>
         )}
@@ -125,7 +125,7 @@ export const FavoritesScreen = () => {
         <Text style={styles.priceText}>{formatPrice(item.price)}</Text>
         <Text style={styles.titleText} numberOfLines={1}>{item.title}</Text>
         <View style={styles.locBox}>
-          <Ionicons name="location-outline" size={10} color={colors.textLight} />
+          <MapPin size={10} color={colors.textLight} strokeWidth={2.2} />
           <Text style={styles.locText}>{item.city || item.location}</Text>
         </View>
       </View>
@@ -176,7 +176,7 @@ export const FavoritesScreen = () => {
               <View style={styles.emptyGlow} />
               <View style={[styles.emptyCopyBox, isMobile && styles.emptyCopyBoxMobile]}>
                 <View style={styles.emptyMiniBadge}>
-                  <Ionicons name="heart" size={12} color={colors.favorite} />
+                  <Heart size={12} color={colors.favorite} strokeWidth={2.4} fill={colors.favorite} />
                   <Text style={styles.emptyMiniBadgeText}>Guardados para ti</Text>
                 </View>
                 <Text style={[styles.emptyTitle, isMobile && styles.emptyTitleMobile]}>Todavia no has guardado nada</Text>
@@ -187,7 +187,7 @@ export const FavoritesScreen = () => {
               style={styles.exploreBtn}
               onPress={() => router.push('/(tabs)/search')}
             >
-              <Ionicons name="search" size={16} color={colors.white} />
+              <Search size={16} color={colors.white} strokeWidth={2.4} />
               <Text style={styles.exploreBtnText}>Descubrir productos</Text>
             </TouchableOpacity>
           </View>

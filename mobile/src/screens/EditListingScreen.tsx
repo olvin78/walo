@@ -14,7 +14,7 @@ import {
   KeyboardAvoidingView
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { X, Plus, XCircle, ChevronDown, MapPin, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -23,6 +23,7 @@ import {
   updateListing, 
   getCategories, 
   type Category, 
+  type Subcategory,
   type ListingDetail 
 } from '../services/api';
 import { useAuth } from '../services/auth';
@@ -42,7 +43,9 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
   
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [isNegotiable, setIsNegotiable] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
+  const [subcategory, setSubcategory] = useState<Subcategory | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [location, setLocation] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
@@ -67,9 +70,14 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
       setLocation(listingData.location || '');
       setDescription(listingData.description || '');
       setIsActive(listingData.is_active !== false);
+      setIsNegotiable(listingData.is_negotiable === true);
       
       if (listingData.category) {
         setCategory(listingData.category);
+      }
+
+      if (listingData.subcategory) {
+        setSubcategory(listingData.subcategory);
       }
       
       if (listingData.payment_methods) {
@@ -156,6 +164,8 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
         title: title.trim(),
         price: price.trim(),
         category: category.id,
+        subcategory: subcategory?.id ?? null,
+        is_negotiable: isNegotiable,
         location: location.trim(),
         description: description.trim(),
         payment_methods: paymentMethods.join(', '),
@@ -210,7 +220,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
       
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <X size={28} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Editar Anuncio</Text>
         <View style={{ width: 44 }} />
@@ -253,7 +263,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
             <Text style={styles.stepTitle}>01. GALERÍA MULTIMEDIA</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
               <TouchableOpacity style={styles.addImageBtn} onPress={pickImage}>
-                <Ionicons name="add" size={32} color={colors.textLight} />
+                <Plus size={32} color={colors.textLight} strokeWidth={2.4} />
                 <Text style={styles.addImageText}>Añadir</Text>
               </TouchableOpacity>
               
@@ -261,7 +271,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
                 <View key={`existing-${img.id}`} style={styles.imageWrapper}>
                   <Image source={{ uri: img.url }} style={styles.previewImage} />
                   <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removeExistingImage(img.id)}>
-                    <Ionicons name="close-circle" size={20} color={colors.error} />
+                    <XCircle size={20} color={colors.error} strokeWidth={2.2} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -270,7 +280,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
                 <View key={`new-${index}`} style={styles.imageWrapper}>
                   <Image source={{ uri }} style={styles.previewImage} />
                   <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removeNewImage(uri)}>
-                    <Ionicons name="close-circle" size={20} color={colors.error} />
+                    <XCircle size={20} color={colors.error} strokeWidth={2.2} />
                   </TouchableOpacity>
                   <View style={styles.newImageBadge}>
                     <Text style={styles.newImageText}>NUEVA</Text>
@@ -309,27 +319,62 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
                 <Text style={styles.label}>Clasificación</Text>
                 <TouchableOpacity style={styles.selector}>
                   <Text style={styles.selectorText}>{category?.name || 'Elegir...'}</Text>
-                  <Ionicons name="chevron-down" size={16} color={colors.textLight} />
+                  <ChevronDown size={16} color={colors.textLight} strokeWidth={2.4} />
                 </TouchableOpacity>
               </View>
             </View>
+
+            <TouchableOpacity
+              style={styles.negotiableToggle}
+              onPress={() => setIsNegotiable(!isNegotiable)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.negotiableCheck, isNegotiable && styles.negotiableCheckActive]}>
+                {isNegotiable ? <Text style={styles.negotiableCheckMark}>✓</Text> : null}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.negotiableTitle}>Precio Negociable</Text>
+                <Text style={styles.negotiableDesc}>Muestra "🤝 Precio Negociable" en vez de un precio fijo</Text>
+              </View>
+            </TouchableOpacity>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
               {categories.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={[styles.categoryChip, category?.id === item.id && styles.categoryChipActive]}
-                  onPress={() => setCategory(item)}
+                  onPress={() => {
+                    setCategory(item);
+                    setSubcategory(null);
+                  }}
                 >
                   <Text style={[styles.categoryChipText, category?.id === item.id && styles.categoryChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
+            {category?.subcategories && category.subcategories.length > 0 ? (
+              <View style={styles.subcategoryBlock}>
+                <Text style={styles.label}>Subcategoría</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subcategoryScrollContent}>
+                  {category.subcategories.map((sub) => (
+                    <TouchableOpacity
+                      key={sub.id}
+                      style={[styles.subcategoryChip, subcategory?.id === sub.id && styles.subcategoryChipActive]}
+                      onPress={() => setSubcategory(subcategory?.id === sub.id ? null : sub)}
+                    >
+                      {sub.icon ? <Text style={styles.subcategoryChipEmoji}>{sub.icon}</Text> : null}
+                      <Text style={[styles.subcategoryChipText, subcategory?.id === sub.id && styles.subcategoryChipTextActive]}>{sub.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+
             <View style={styles.inputBlock}>
               <Text style={styles.label}>Ubicación</Text>
               <View style={styles.inputWithIcon}>
-                <Ionicons name="location-outline" size={18} color={colors.textLight} />
+                <MapPin size={18} color={colors.textLight} strokeWidth={2} />
                 <TextInput 
                   style={styles.input}
                   placeholder="Ciudad/Barrio"
@@ -351,7 +396,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
                 <Text style={styles.statusTitle}>{isActive ? 'Anuncio Activo' : 'Anuncio Pausado'}</Text>
                 <Text style={styles.statusDesc}>{isActive ? 'Todos pueden ver tu publicación' : 'Nadie podrá ver este anuncio'}</Text>
               </View>
-              <Ionicons name={isActive ? "eye-outline" : "eye-off-outline"} size={24} color={isActive ? colors.primary : colors.textLight} />
+              {isActive ? <Eye size={24} color={colors.primary} strokeWidth={2.2} /> : <EyeOff size={24} color={colors.textLight} strokeWidth={2.2} />}
             </TouchableOpacity>
           </View>
 
@@ -431,6 +476,19 @@ const styles = StyleSheet.create({
   categoryChipActive: { borderColor: colors.primary, backgroundColor: 'rgba(16, 185, 129, 0.08)' },
   categoryChipText: { color: colors.textLight, fontWeight: '800', fontSize: 11 },
   categoryChipTextActive: { color: colors.primary },
+  subcategoryBlock: { marginBottom: 25 },
+  subcategoryScrollContent: { paddingVertical: 4 },
+  subcategoryChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', marginRight: 8 },
+  subcategoryChipActive: { borderColor: colors.primary, backgroundColor: 'rgba(16, 185, 129, 0.08)' },
+  subcategoryChipText: { color: colors.textLight, fontWeight: '800', fontSize: 11 },
+  subcategoryChipTextActive: { color: colors.primary },
+  subcategoryChipEmoji: { marginRight: 6, fontSize: 14 },
+  negotiableToggle: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 25 },
+  negotiableCheck: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: '#D1D5DB', marginRight: 12, justifyContent: 'center', alignItems: 'center' },
+  negotiableCheckActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+  negotiableCheckMark: { color: colors.white, fontWeight: '900', fontSize: 14 },
+  negotiableTitle: { color: colors.text, fontSize: 15, fontWeight: '800' },
+  negotiableDesc: { color: colors.textLight, fontSize: 12, marginTop: 2 },
   inputWithIcon: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderBottomColor: '#F3F4F6', paddingVertical: 8 },
   input: { flex: 1, marginLeft: 10, fontSize: 16, fontWeight: '700', color: colors.text },
   statusToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, borderRadius: 15, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#D1FAE5' },

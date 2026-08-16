@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Search, XCircle, SlidersHorizontal } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 
 interface SearchBarProps {
@@ -30,7 +30,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       onPress={onPress}
       style={styles.container}
     >
-      <Ionicons name="search-outline" size={20} color={colors.textLight} style={styles.icon} />
+      <Search size={20} color={colors.textLight} strokeWidth={2} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -43,7 +43,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       />
       {value ? (
         <TouchableOpacity style={styles.clearBtn} onPress={onClear}>
-          <Ionicons name="close-circle" size={18} color={colors.textLight} />
+          <XCircle size={18} color={colors.textLight} />
         </TouchableOpacity>
       ) : null}
       <View style={styles.divider} />
@@ -54,7 +54,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onFilterPress?.();
         }}
       >
-        <Ionicons name="options-outline" size={20} color={colors.primary} />
+        <SlidersHorizontal size={20} color={colors.primary} strokeWidth={2.2} />
       </TouchableOpacity>
     </TouchableOpacity>
   );

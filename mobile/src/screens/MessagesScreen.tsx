@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { BadgeCheck, Trash2, Lock, ArrowLeft, Plus, Volume2, VolumeX, MoreHorizontal, X, MessageSquare, Send, Image as ImageIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAudioPlayer } from 'expo-audio';
@@ -265,7 +265,7 @@ export const MessagesScreen = () => {
           <View style={styles.headerRow}>
             <View style={styles.nameWrapper}>
               <Text style={styles.userName}>{otherUser?.display_name || 'Usuario'}</Text>
-              {otherUser?.is_verified ? <Ionicons name="checkmark-circle" size={14} color="#3b82f6" style={{ marginLeft: 4 }} /> : null}
+              {otherUser?.is_verified ? <BadgeCheck size={14} color="#3b82f6" strokeWidth={2.4} style={{ marginLeft: 4 }} /> : null}
             </View>
             <Text style={styles.time}>{formatTime(lastMessage?.created_at || item.updated_at)}</Text>
           </View>
@@ -282,7 +282,7 @@ export const MessagesScreen = () => {
         overshootRight={false}
         renderRightActions={() => (
           <TouchableOpacity style={styles.deleteConversationAction} onPress={handleDeleteItem}>
-            <Ionicons name="trash-outline" size={20} color={colors.white} />
+            <Trash2 size={20} color={colors.white} strokeWidth={2.2} />
             <Text style={styles.deleteConversationText}>Eliminar</Text>
           </TouchableOpacity>
         )}
@@ -300,7 +300,7 @@ export const MessagesScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerState}>
-          <Ionicons name="lock-closed-outline" size={64} color="#D1D5DB" />
+          <Lock size={64} color="#D1D5DB" strokeWidth={1.6} />
           <Text style={styles.emptyTitle}>Inicia sesión</Text>
           <Text style={styles.emptyText}>Necesitas una cuenta para ver tus chats.</Text>
           <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/auth/login')}>
@@ -316,7 +316,7 @@ export const MessagesScreen = () => {
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <ArrowLeft size={24} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mensajes</Text>
         <View style={{ width: 32 }} />
@@ -336,7 +336,7 @@ export const MessagesScreen = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContent}>
           <TouchableOpacity style={styles.storyItem} onPress={handleCreateStory} disabled={isCreatingStory}>
             <View style={[styles.storyCircle, styles.myStoryCircle]}>
-              {isCreatingStory ? <ActivityIndicator color={colors.primary} /> : <Ionicons name="add" size={26} color={colors.primary} />}
+              {isCreatingStory ? <ActivityIndicator color={colors.primary} /> : <Plus size={26} color={colors.primary} strokeWidth={2.4} />}
             </View>
             <Text style={styles.storyName} numberOfLines={1}>Tu historia</Text>
           </TouchableOpacity>
@@ -422,20 +422,20 @@ export const MessagesScreen = () => {
                 <Image source={{ uri: selectedStory.user_avatar || fallbackAvatar }} style={styles.storyViewerAvatar} />
                 <Text style={styles.storyViewerName}>{selectedStory.user_display_name}</Text>
                 <TouchableOpacity style={styles.storyViewerIcon} onPress={() => setIsStoryMuted((value) => !value)}>
-                  <Ionicons name={isStoryMuted ? 'volume-mute' : 'volume-high'} size={24} color={colors.white} />
+                  {isStoryMuted ? <VolumeX size={24} color={colors.white} strokeWidth={2.2} /> : <Volume2 size={24} color={colors.white} strokeWidth={2.2} />}
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.storyViewerIcon} onPress={() => setShowStoryMenu((value) => !value)}>
-                  <Ionicons name="ellipsis-horizontal" size={26} color={colors.white} />
+                  <MoreHorizontal size={26} color={colors.white} strokeWidth={2.2} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.storyViewerClose} onPress={() => setSelectedStoryGroup(null)}>
-                  <Ionicons name="close" size={28} color={colors.white} />
+                  <X size={28} color={colors.white} strokeWidth={2.4} />
                 </TouchableOpacity>
               </View>
               {showStoryMenu ? (
                 <View style={styles.storyMenu}>
                   {selectedStory.is_own ? (
                     <TouchableOpacity style={styles.storyMenuItem} onPress={handleDeleteCurrentStory}>
-                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                      <Trash2 size={18} color="#ef4444" strokeWidth={2.2} />
                       <Text style={styles.storyMenuDeleteText}>Eliminar esta historia</Text>
                     </TouchableOpacity>
                   ) : (
@@ -460,7 +460,7 @@ export const MessagesScreen = () => {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={(
           <View style={styles.centerState}>
-            <Ionicons name="chatbubbles-outline" size={64} color="#D1D5DB" />
+            <MessageSquare size={64} color="#D1D5DB" strokeWidth={1.6} />
             <Text style={styles.emptyTitle}>Aún no tienes chats</Text>
             <Text style={styles.emptyText}>Escribe a un vendedor desde el detalle de un anuncio. Solo apareceran aqui las conversaciones donde hayas enviado al menos un mensaje.</Text>
           </View>

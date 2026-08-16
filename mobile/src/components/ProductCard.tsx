@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Heart, MapPin } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { Product } from '../data/mockData';
 import { useRouter } from 'expo-router';
@@ -90,20 +90,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
             <Text style={styles.newBadgeText}>Nuevo</Text>
           </View>
         )}
+        {isListingSummary(product) && product.is_promoted && (
+          <View style={styles.promotedBadge}>
+            <Text style={styles.promotedBadgeText}>★ Priorizado</Text>
+          </View>
+        )}
         <TouchableOpacity 
           style={styles.favoriteBtn} 
           onPress={handleFavoritePress}
         >
-          <Ionicons 
-            name={isLiked ? "heart" : "heart-outline"} 
+          <Heart 
             size={20} 
             color={isLiked ? "#FF2D55" : colors.text} 
+            strokeWidth={2.2} 
+            fill={isLiked ? "#FF2D55" : "none"} 
           />
         </TouchableOpacity>
       </View>
       
       <View style={styles.content}>
         <Text style={styles.price}>{formatPrice(product.price, listing?.currency)}</Text>
+        {isListingSummary(product) && product.is_negotiable ? (
+          <Text style={styles.negotiableText}>🤝 Precio Negociable</Text>
+        ) : null}
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
@@ -112,7 +121,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
         
         <View style={styles.footer}>
           <View style={styles.locationWrapper}>
-            <Ionicons name="location-sharp" size={12} color={colors.primary} />
+            <MapPin size={12} color={colors.primary} strokeWidth={2.4} />
             <Text style={styles.location} numberOfLines={1}>{location}</Text>
           </View>
           <View style={styles.categoryBadge}>
@@ -160,6 +169,27 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 10,
     fontWeight: '800',
+  },
+  promotedBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  promotedBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  negotiableText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 4,
   },
   favoriteBtn: {
     position: 'absolute',

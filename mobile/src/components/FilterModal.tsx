@@ -10,7 +10,7 @@ import {
   Platform,
   TouchableWithoutFeedback
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { X } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 import { colors, spacing, borderRadius } from '../theme/colors';
 
@@ -37,12 +37,23 @@ const SORT_OPTIONS = [
 
 const LOCATION_OPTIONS = [
   'Todo Nicaragua',
+  'Boaco',
+  'Carazo',
+  'Chinandega',
+  'Chontales',
+  'Estelí',
+  'Granada',
+  'Jinotega',
+  'León',
+  'Madriz',
   'Managua',
   'Masaya',
-  'Granada',
-  'León',
-  'Estelí',
   'Matagalpa',
+  'Nueva Segovia',
+  'Rivas',
+  'Río San Juan',
+  'RACCN',
+  'RACCS',
 ];
 
 export const FilterModal = ({ visible, onClose, onApply, initialFilters }: FilterModalProps) => {
@@ -81,7 +92,7 @@ export const FilterModal = ({ visible, onClose, onApply, initialFilters }: Filte
           <View style={styles.header}>
             <Text style={styles.title}>Filtros</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={24} color={colors.text} />
+              <X size={24} color={colors.text} strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
 

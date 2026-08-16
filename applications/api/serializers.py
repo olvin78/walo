@@ -3,11 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from django.contrib.auth import authenticate, get_user_model
+from django.db.models import Count, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, ListingReport, MarketingConsent, Message, Notification, Profile, ProfileReview, Story
+from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, ListingReport, MarketingConsent, Message, Notification, Profile, ProfileReview, Story, Subcategory
 
 
 User = get_user_model()
@@ -46,10 +47,27 @@ class CategoryNestedSerializer(serializers.ModelSerializer):
         return absolute_media_url(self.context.get("request"), obj.image)
 
 
+class SubcategorySerializer(serializers.ModelSerializer):
+    icon = serializers.CharField(read_only=True)
+    total_active_listings = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Subcategory
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "icon",
+            "description",
+            "total_active_listings",
+        )
+
+
 class CategorySerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     parent = serializers.SerializerMethodField()
     total_active_listings = serializers.IntegerField(read_only=True)
+    subcategories = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -61,6 +79,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "image",
             "parent",
             "total_active_listings",
+            "subcategories",
         )
 
     def get_image(self, obj):
@@ -68,6 +87,12 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_parent(self, obj):
         return None
+
+    def get_subcategories(self, obj):
+        subcategories = obj.subcategories.annotate(
+            total_active_listings=Count("listings", filter=Q(listings__is_active=True), distinct=True)
+        ).order_by("order", "name")
+        return SubcategorySerializer(subcategories, many=True, context=self.context).data
 
 
 class PublicSellerSerializer(serializers.ModelSerializer):
@@ -139,8 +164,15 @@ class ListingImageSerializer(serializers.ModelSerializer):
         return self.context.get("image_order_map", {}).get(obj.id)
 
 
+class SubcategoryNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subcategory
+        fields = ("id", "name", "slug", "icon")
+
+
 class ListingSummarySerializer(serializers.ModelSerializer):
     category = CategoryNestedSerializer(read_only=True)
+    subcategory = SubcategoryNestedSerializer(read_only=True)
     seller = PublicSellerSerializer(source="user", read_only=True)
     main_image = serializers.SerializerMethodField()
     is_promoted = serializers.SerializerMethodField()
@@ -160,8 +192,10 @@ class ListingSummarySerializer(serializers.ModelSerializer):
             "price",
             "currency",
             "category",
+            "subcategory",
             "location",
             "is_promoted",
+            "is_negotiable",
             "city",
             "department",
             "main_image",
@@ -220,6 +254,7 @@ class ListingDetailSerializer(ListingSummarySerializer):
     images = serializers.SerializerMethodField()
     description = serializers.CharField()
     is_active = serializers.BooleanField(read_only=True)
+    is_negotiable = serializers.BooleanField(read_only=True)
     payment_methods = serializers.CharField(read_only=True)
     latitude = serializers.DecimalField(max_digits=9, decimal_places=6, read_only=True, allow_null=True)
     longitude = serializers.DecimalField(max_digits=9, decimal_places=6, read_only=True, allow_null=True)
@@ -229,6 +264,7 @@ class ListingDetailSerializer(ListingSummarySerializer):
             "description",
             "images",
             "is_active",
+            "is_negotiable",
             "payment_methods",
             "latitude",
             "longitude",
@@ -269,6 +305,7 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             "subcategory",
             "location",
             "is_active",
+            "is_negotiable",
             "payment_methods",
             "latitude",
             "longitude",

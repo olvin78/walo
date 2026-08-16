@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Circle, PROVIDER_DEFAULT } from 'react-native-maps';
-import { Ionicons } from '@expo/vector-icons';
+import { MapPin, Locate } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 
 type ManualMapProps = {
@@ -116,7 +116,7 @@ const ManualMap = ({ latitude, longitude, setLatitude, setLongitude, setLocation
               {isGeocoding ? (
                 <ActivityIndicator size="small" color={colors.white} />
               ) : (
-                <Ionicons name="location" size={18} color={colors.white} />
+                <MapPin size={18} color={colors.white} strokeWidth={2.2} fill={colors.white} />
               )}
             </View>
             <View style={styles.markerArrow} />
@@ -125,7 +125,7 @@ const ManualMap = ({ latitude, longitude, setLatitude, setLongitude, setLocation
       </MapView>
 
       <TouchableOpacity style={styles.centerBtn} onPress={handleCenter}>
-        <Ionicons name="locate" size={24} color={colors.primary} />
+        <Locate size={24} color={colors.primary} strokeWidth={2.2} />
       </TouchableOpacity>
     </View>
   );
