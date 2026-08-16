@@ -22,12 +22,23 @@ from .models import Listing, Category, Subcategory, Review, Profile, Conversatio
 from .decorators import cache_public_page
 
 CITY_LANDINGS = {
-    "managua": "Managua",
-    "leon": "León",
-    "granada": "Granada",
-    "masaya": "Masaya",
+    "boaco": "Boaco",
+    "carazo": "Carazo",
+    "chinandega": "Chinandega",
+    "chontales": "Chontales",
     "esteli": "Estelí",
+    "granada": "Granada",
+    "jinotega": "Jinotega",
+    "leon": "León",
+    "madriz": "Madriz",
+    "managua": "Managua",
+    "masaya": "Masaya",
     "matagalpa": "Matagalpa",
+    "nueva-segovia": "Nueva Segovia",
+    "rivas": "Rivas",
+    "rio-san-juan": "Río San Juan",
+    "raccn": "Costa Caribe Norte",
+    "raccs": "Costa Caribe Sur",
 }
 
 

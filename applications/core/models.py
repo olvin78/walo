@@ -90,6 +90,7 @@ class Listing(models.Model):
     payment_methods = models.CharField(max_length=200, default='Efectivo')
     is_active = models.BooleanField(default=True, verbose_name="activo", help_text="¿Está el anuncio visible al público?")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado el")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     favorites = models.ManyToManyField(User, related_name='favorite_listings', blank=True)
     is_featured_paid = models.BooleanField(default=False, verbose_name="destacado", help_text="¿Anuncio destacado/priorizado?")

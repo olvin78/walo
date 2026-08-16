@@ -41,7 +41,7 @@ class ListingSitemap(Sitemap):
         return Listing.objects.filter(is_active=True).order_by("-created_at")
 
     def lastmod(self, obj):
-        return obj.created_at
+        return obj.updated_at or obj.created_at
 
 
 class CitySitemap(Sitemap):

@@ -7,9 +7,9 @@
 {% block og_description %}Anuncios de {{ category.name }} en Nicaragua. Publica y encuentra ofertas cerca de ti.{% endblock %}
 {% block twitter_title %}{{ category.name }} | Igualo Nicaragua{% endblock %}
 {% block twitter_description %}Compra y vende {{ category.name }} en Nicaragua. Marketplace local Igualo.{% endblock %}
-{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}
-{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
-{% block og_image %}{% if category.image %}{{ request.scheme }}://{{ request.get_host }}{{ category.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/hero_bg.png' %}{% endif %}{% endblock %}
+{% block canonical %}{{ site_url }}{% url 'category_detail' category.slug %}{% endblock %}
+{% block og_url %}{{ site_url }}{% url 'category_detail' category.slug %}{% endblock %}
+{% block og_image %}{% if category.image %}{{ site_url }}{{ category.image.url }}{% else %}{{ site_url }}{% static 'img/hero_bg.png' %}{% endif %}{% endblock %}
 
 {% block extra_head %}
 <script type="application/ld+json">
@@ -21,13 +21,13 @@
         "@type": "ListItem",
         "position": 1,
         "name": "Inicio",
-        "item": "{{ request.scheme }}://{{ request.get_host }}/"
+        "item": "{{ site_url }}/"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "{{ category.name }}",
-        "item": "{{ request.build_absolute_uri }}"
+        "item": "{{ site_url }}{% url 'category_detail' category.slug %}"
       }
     ]
   }
@@ -42,7 +42,8 @@
       {
         "@type": "ListItem",
         "position": {{ forloop.counter }},
-        "url": "{{ request.scheme }}://{{ request.get_host }}{{ listing.get_absolute_url }}"
+        "name": "{{ listing.title|escapejs }}",
+        "url": "{{ site_url }}{{ listing.get_absolute_url }}"
       }{% if not forloop.last %},{% endif %}
       {% endfor %}
     ]
@@ -75,7 +76,7 @@
           </div>
           {% endif %}
           {% if listing.image %}
-          <img src="{{ listing.image.url }}" alt="{{ listing.title }} en {{ listing.location }}" class="product-img" loading="lazy">
+          <img src="{{ listing.get_thumb }}" alt="{{ listing.title }} en {{ listing.location }}" class="product-img" loading="lazy">
           {% else %}
           <img src="{% static 'img/hero_bg.png' %}" alt="Anuncio sin imagen" class="product-img" loading="lazy">
           {% endif %}
