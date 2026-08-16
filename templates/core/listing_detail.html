@@ -39,7 +39,7 @@
   }{% if reviews %},
   "aggregateRating": {
     "@type": "AggregateRating",
-    "ratingValue": "{{ listing.reviews.aggregate.rating__avg|floatformat:1 }}",
+    "ratingValue": "{{ review_avg|default:listing.reviews.count|floatformat:1 }}",
     "reviewCount": "{{ listing.reviews.count }}"
   }{% endif %},
   "offers": {

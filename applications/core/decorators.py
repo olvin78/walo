@@ -31,7 +31,8 @@ def cache_public_page(timeout=None, vary_on_query=False):
 
             response = view_func(request, *args, **kwargs)
             try:
-                cache.set(key, response.content, ttl)
+                if response.status_code == 200:
+                    cache.set(key, response.content, ttl)
             except Exception:
                 pass
             return response

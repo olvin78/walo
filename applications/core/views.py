@@ -574,6 +574,10 @@ def listing_detail_slug(request, listing_id, slug):
 
     reviews = listing.reviews.all().order_by('-created_at')
 
+    # Promedio de reseñas para el JSON-LD (schema.org AggregateRating)
+    reviews_avg = listing.reviews.aggregate(models.Avg("rating"))["rating__avg"]
+    review_avg = round(reviews_avg, 1) if reviews_avg is not None else None
+
     # Fecha de validez del precio para el JSON-LD (90 días desde hoy)
     price_valid_until = (timezone.now() + datetime.timedelta(days=90)).strftime("%Y-%m-%d")
 
@@ -581,6 +585,7 @@ def listing_detail_slug(request, listing_id, slug):
         "listing": listing,
         "is_favorite": is_favorite,
         "reviews": reviews,
+        "review_avg": review_avg,
         "price_valid_until": price_valid_until,
     }
     return render(request, "core/listing_detail.html", context)
