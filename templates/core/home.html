@@ -1603,11 +1603,22 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const iconMap = {
-            '🚗': 'car', '📱': 'smartphone', '⚽': 'trophy', '🔌': 'zap', '🏠': 'home',
-            '👔': 'shirt', '🏢': 'building', '🌿': 'leaf', '🐾': 'dog', '👕': 'shirt',
-            '👗': 'sparkles', '👧': 'smile', '🧒': 'smile', '📦': 'package', '💻': 'laptop',
-            '🎮': 'gamepad-2', '🔧': 'wrench', '📚': 'book', '🚲': 'bike', '💄': 'sparkles',
-            '👶': 'baby', '⌚': 'watch', '🛋️': 'sofa', '📷': 'camera'
+            // General
+            '🚗': 'car', '🚙': 'car-front', '🏍️': 'bike', '🔧': 'wrench', '⚙️': 'settings', '🚐': 'bus',
+            '📱': 'smartphone', '💻': 'laptop', '🎮': 'gamepad-2', '📺': 'tv', '🎧': 'headphones', '📷': 'camera', '🔌': 'zap', '🖲️': 'mouse',
+            '🏠': 'home', '🛋️': 'sofa', '🖼️': 'image', '🧺': 'washing-machine', '🪴': 'flower-2', '🔨': 'hammer', '💡': 'lightbulb', '🏢': 'building',
+            
+            // Moda (Hombre/Mujer)
+            '👗': 'sparkles', '👔': 'shirt', '🧥': 'shirt', '👚': 'shirt', '👕': 'shirt',
+            '👖': 'scissors', '👠': 'footprints', '👞': 'footprints', '👟': 'footprints', '👜': 'shopping-bag', '💍': 'gem', '🕶️': 'glasses',
+            '👙': 'waves', '🕴️': 'user',
+            
+            // Deporte y Ocio
+            '⚽': 'trophy', '🚲': 'bike', '🏋️': 'dumbbell', '🏃‍♂️': 'activity', '🏃‍♀️': 'activity', '🧗': 'mountain', '🏄': 'waves', '🧘': 'heart', '🏕️': 'tent',
+            
+            // Niños y Otros
+            '👶': 'baby', '👦': 'smile', '👧': 'smile', '🧸': 'smile', '🚼': 'baby', '🛏️': 'bed', '🍼': 'coffee',
+            '📦': 'package', '🏺': 'archive', '🎨': 'palette', '🎸': 'music', '📚': 'book', '🐾': 'dog', '🛠️': 'hammer', '🌿': 'leaf', '⌚': 'watch'
         };
 
         document.querySelectorAll('[data-category-icon]').forEach(el => {
