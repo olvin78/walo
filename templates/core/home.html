@@ -341,7 +341,44 @@
         }
     </script>
 
-    <!-- 3. BENTO GRID (PRODUCTO & BENEFICIOS) -->
+    <!-- 3. EL MARKETPLACE (FEED) -->
+    <section class="section-feed">
+        <div class="igualo-container">
+            <div class="feed-header">
+                <h2>Recién llegados a Igualo</h2>
+                <a href="{% url 'explore' %}" class="link-pro">Ver todo el mercado →</a>
+            </div>
+            <div class="feed-grid-pro">
+                {% for list in latest_listings %}
+                <div class="item-card-pro{% if list.is_promoted %} promoted-card{% endif %}">
+                    <a href="{{ list.get_absolute_url }}" class="card-link">
+                        <div class="product-img-wrapper">
+                            {% if list.is_promoted %}
+                            <div class="featured-badge-pro" title="Anuncio Priorizado">
+                                <span class="star-icon">★</span>
+                            </div>
+                            {% endif %}
+                            <img src="{% if list.image %}{{ list.get_thumb }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
+                                 alt="{{ list.title }} en {{ list.location }}" 
+                                 loading="lazy" 
+                                 decoding="async"
+                                 width="400" height="400">
+                            <div class="card-badge-loc">{{ list.location }}</div>
+                        </div>
+                        <div class="card-body-pro">
+                            <div class="card-price">{{ list.display_price }}</div>
+                            <h3 class="card-title-pro">{{ list.title }}</h3>
+                        </div>
+                    </a>
+                </div>
+                {% empty %}
+                <p class="text-center" style="grid-column: 1/-1; padding: 40px; color: var(--text-muted);">Aún no hay anuncios. ¡Sé el primero en publicar!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. BENTO GRID (PRODUCTO & BENEFICIOS) -->
     <section class="section-bento">
         <div class="igualo-container">
             <div class="bento-grid-pro">
@@ -393,43 +430,6 @@
                         <a href="{% url 'signup' %}" class="comm-cta">Únete gratis <i data-lucide="arrow-right"></i></a>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 4. EL MARKETPLACE (FEED) -->
-    <section class="section-feed">
-        <div class="igualo-container">
-            <div class="feed-header">
-                <h2>Recién llegados a Igualo</h2>
-                <a href="{% url 'explore' %}" class="link-pro">Ver todo el mercado →</a>
-            </div>
-            <div class="feed-grid-pro">
-                {% for list in latest_listings %}
-                <div class="item-card-pro{% if list.is_promoted %} promoted-card{% endif %}">
-                    <a href="{{ list.get_absolute_url }}" class="card-link">
-                        <div class="product-img-wrapper">
-                            {% if list.is_promoted %}
-                            <div class="featured-badge-pro" title="Anuncio Priorizado">
-                                <span class="star-icon">★</span>
-                            </div>
-                            {% endif %}
-                            <img src="{% if list.image %}{{ list.get_thumb }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
-                                 alt="{{ list.title }} en {{ list.location }}" 
-                                 loading="lazy" 
-                                 decoding="async"
-                                 width="400" height="400">
-                            <div class="card-badge-loc">{{ list.location }}</div>
-                        </div>
-                        <div class="card-body-pro">
-                            <div class="card-price">{{ list.display_price }}</div>
-                            <h3 class="card-title-pro">{{ list.title }}</h3>
-                        </div>
-                    </a>
-                </div>
-                {% empty %}
-                <p class="text-center" style="grid-column: 1/-1; padding: 40px; color: var(--text-muted);">Aún no hay anuncios. ¡Sé el primero en publicar!</p>
-                {% endfor %}
             </div>
         </div>
     </section>
