@@ -137,7 +137,7 @@ index, follow
         {% for cat in all_categories %}
         <a href="{% url 'explore' %}?category={{ cat.slug }}"
           class="story-btn {% if current_category.id == cat.id or parent_category.id == cat.id %}active{% endif %}">
-          <div class="story-circle-pro">{{ cat.icon }}</div>
+          <div class="story-circle-pro"><i data-category-icon="{{ cat.icon }}"></i></div>
           <p>{{ cat.name }} </p>
         </a>
         {% endfor %}
@@ -1011,7 +1011,7 @@ index, follow
         <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
             {% for cat in suggested_categories %}
                 <a href="{% url 'explore' %}?category={{ cat.slug }}" class="sub-pill">
-                    {{ cat.icon }} {{ cat.name }}
+                    <i data-category-icon="{{ cat.icon }}"></i> {{ cat.name }}
                 </a>
             {% endfor %}
         </div>
@@ -1080,5 +1080,27 @@ index, follow
 <!-- La geolocalización ahora solo se activa si el usuario pulsa el botón manualmente -->
 <script>
   console.log("Modo de búsqueda: Global (Nicaragua completa)");
+
+  document.addEventListener("DOMContentLoaded", function() {
+      const iconMap = {
+          '🚗': 'car', '📱': 'smartphone', '⚽': 'trophy', '🔌': 'zap', '🏠': 'home',
+          '👔': 'shirt', '🏢': 'building', '🌿': 'leaf', '🐾': 'dog', '👕': 'shirt',
+          '👗': 'sparkles', '👧': 'smile', '🧒': 'smile', '📦': 'package', '💻': 'laptop',
+          '🎮': 'gamepad-2', '🔧': 'wrench', '📚': 'book', '🚲': 'bike', '💄': 'sparkles',
+          '👶': 'baby', '⌚': 'watch', '🛋️': 'sofa', '📷': 'camera'
+      };
+
+      document.querySelectorAll('[data-category-icon]').forEach(el => {
+          const emoji = el.getAttribute('data-category-icon');
+          const iconName = iconMap[emoji] || 'tag';
+          el.setAttribute('data-lucide', iconName);
+          el.style.width = '24px';
+          el.style.height = '24px';
+      });
+
+      if (window.lucide) {
+          window.lucide.createIcons();
+      }
+  });
 </script>
 {% endblock %}

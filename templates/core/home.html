@@ -255,7 +255,7 @@
                 </a>
                 {% for cat in categories %}
                 <a href="{% url 'explore' %}?category={{ cat.slug }}" class="story-btn">
-                    <div class="story-circle-pro"><span>{{ cat.icon }}</span></div>
+                    <div class="story-circle-pro"><i data-category-icon="{{ cat.icon }}"></i></div>
                     <p>{{ cat.name }}</p>
                 </a>
                 {% endfor %}
@@ -1599,5 +1599,29 @@
         .faq-answer { padding: 0 20px 20px; font-size: 0.95rem; }
     }
 </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const iconMap = {
+            '🚗': 'car', '📱': 'smartphone', '⚽': 'trophy', '🔌': 'zap', '🏠': 'home',
+            '👔': 'shirt', '🏢': 'building', '🌿': 'leaf', '🐾': 'dog', '👕': 'shirt',
+            '👗': 'sparkles', '👧': 'smile', '🧒': 'smile', '📦': 'package', '💻': 'laptop',
+            '🎮': 'gamepad-2', '🔧': 'wrench', '📚': 'book', '🚲': 'bike', '💄': 'sparkles',
+            '👶': 'baby', '⌚': 'watch', '🛋️': 'sofa', '📷': 'camera'
+        };
+
+        document.querySelectorAll('[data-category-icon]').forEach(el => {
+            const emoji = el.getAttribute('data-category-icon');
+            const iconName = iconMap[emoji] || 'tag';
+            el.setAttribute('data-lucide', iconName);
+            el.style.width = '24px';
+            el.style.height = '24px';
+        });
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+</script>
 
 {% endblock %}

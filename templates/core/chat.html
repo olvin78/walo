@@ -519,7 +519,11 @@
                                         <div class="bubble-meta">
                                             {{ m.created_at|date:"H:i" }}
                                             {% if m.sender_id == request.user.pk %}
-                                                <i data-lucide="check-check" style="width: 12px; margin-left: 2px;"></i>
+                                                {% if m.is_read %}
+                                                    <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: #22c55e;"></i>
+                                                {% else %}
+                                                    <i data-lucide="check" style="width: 12px; margin-left: 2px; color: rgba(255,255,255,0.5);"></i>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -531,7 +535,11 @@
                                                 <div class="bubble-meta">
                                                     {{ m.created_at|date:"H:i" }}
                                                     {% if m.sender_id == request.user.pk %}
-                                                        <i data-lucide="check-check" style="width: 12px; margin-left: 2px;"></i>
+                                                        {% if m.is_read %}
+                                                            <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: #22c55e;"></i>
+                                                        {% else %}
+                                                            <i data-lucide="check" style="width: 12px; margin-left: 2px; color: rgba(255,255,255,0.5);"></i>
+                                                        {% endif %}
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -589,6 +597,10 @@
 </div>
 
 <script>
+    // Variables globales para polling
+    window.CONVERSATION_ID = {{ conversation.id }};
+    window.CURRENT_USER_ID = {{ request.user.id }};
+
     // Inicializar Iconos
     lucide.createIcons();
 
@@ -745,6 +757,77 @@
             }
         });
     }
+
+    // --- Polling estilo WhatsApp (recibir mensajes nuevos + ticks de leído) ---
+    let lastMessageId = 0;
+    const messageElements = thread.querySelectorAll('[id^="msg-"]');
+    if (messageElements.length > 0) {
+        lastMessageId = Math.max(...Array.from(messageElements).map(el => parseInt(el.id.replace('msg-', '')) || 0));
+    }
+
+    function pollChat() {
+        const url = `/mensajes/${window.CONVERSATION_ID}/poll/?last_id=${lastMessageId}`;
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.json())
+            .then(data => {
+                if (data.messages && data.messages.length > 0) {
+                    let wasAtBottom = (thread.scrollHeight - thread.scrollTop - thread.clientHeight) < 80;
+                    data.messages.forEach(m => {
+                        appendNewMessage(m);
+                        lastMessageId = Math.max(lastMessageId, m.id);
+                    });
+                    if (wasAtBottom) scrollToBottom();
+                }
+                // Actualizar ticks de leído de mis mensajes (doble check verde)
+                if (data.my_read_ids && data.my_read_ids.length > 0) {
+                    data.my_read_ids.forEach(id => {
+                        const wrapper = document.getElementById(`msg-${id}`);
+                        if (!wrapper) return;
+                        const meta = wrapper.querySelector('.bubble-meta i');
+                        if (meta) {
+                            meta.setAttribute('data-lucide', 'check-check');
+                            meta.style.color = '#22c55e';
+                        }
+                    });
+                    lucide.createIcons();
+                }
+            })
+            .catch(() => {});
+    }
+
+    function appendNewMessage(m) {
+        const isMine = m.sender_id === window.CURRENT_USER_ID;
+        const wrapper = document.createElement('div');
+        wrapper.className = `chat-bubble-wrapper ${isMine ? 'mine' : 'their'}`;
+        wrapper.id = `msg-${m.id}`;
+
+        let content = '';
+        if (m.image) {
+            content += `<div class="chat-bubble-media-container"><img src="${m.image}" alt="Media" onclick="window.open(this.src)"></div>`;
+        }
+        if (m.text) {
+            content += `<div class="chat-text">${m.text.replace(/\n/g, '<br>')}</div>`;
+        }
+        if (m.audio) {
+            content += `<div class="chat-audio-player"><audio src="${m.audio}" controls style="width:200px;height:40px;"></audio></div>`;
+        }
+        const readIcon = isMine
+            ? (m.is_read
+                ? `<i data-lucide="check-check" style="width:12px;margin-left:2px;color:#22c55e;"></i>`
+                : `<i data-lucide="check" style="width:12px;margin-left:2px;color:rgba(255,255,255,0.5);"></i>`)
+            : '';
+        content += `<div class="bubble-meta">${m.time} ${readIcon}</div>`;
+
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${isMine ? 'mine' : 'their'}`;
+        bubble.innerHTML = content;
+        wrapper.appendChild(bubble);
+        thread.appendChild(wrapper);
+        lucide.createIcons();
+    }
+
+    setInterval(pollChat, 4000);
+    setTimeout(scrollToBottom, 150);
 
 </script>
 {% endblock %}

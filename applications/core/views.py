@@ -635,7 +635,15 @@ def toggle_favorite(request, listing_id):
 
 @login_required
 def inbox_view(request):
-    conversations = request.user.conversations.all().order_by('-updated_at')
+    from django.db.models import Count, Subquery, OuterRef
+
+    unread_subquery = Message.objects.filter(
+        conversation=OuterRef('pk'),
+    ).exclude(sender=request.user).filter(is_read=False).order_by().values('conversation').annotate(c=Count('id')).values('c')
+
+    conversations = request.user.conversations.all().order_by('-updated_at').annotate(
+        unread_count=Subquery(unread_subquery, output_field=models.IntegerField())
+    )
     
     # Obtener historias activas de las últimas 24h
     time_threshold = timezone.now() - datetime.timedelta(hours=24)
@@ -798,11 +806,76 @@ def chat_view(request, conversation_id):
         grouped_messages.append(current_group)
 
     other_user = conversation.participants.exclude(id=request.user.id).first()
+
+    # Marcar como leídos los mensajes entrantes al abrir el chat (estilo WhatsApp)
+    Message.objects.filter(
+        conversation=conversation,
+        sender=other_user,
+        is_read=False,
+    ).update(is_read=True)
+
     return render(request, "core/chat.html", {
         'conversation': conversation, 
         'grouped_messages': grouped_messages,
         'other_user': other_user
     })
+
+@csrf_exempt
+@login_required
+def chat_poll(request, conversation_id):
+    """
+    Polling estilo WhatsApp: devuelve los mensajes nuevos de la conversación
+    (los del otro usuario creados después de 'last_id') y los marca como leídos.
+    """
+    from django.db.models import Q
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    if request.user not in conversation.participants.all():
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+
+    last_id = request.GET.get('last_id')
+    other_user = conversation.participants.exclude(id=request.user.id).first()
+
+    qs = conversation.messages.all().order_by('id')
+    if last_id:
+        try:
+            qs = qs.filter(id__gt=int(last_id))
+        except (TypeError, ValueError):
+            pass
+
+    messages = []
+    for m in qs:
+        messages.append({
+            'id': m.id,
+            'sender': m.sender.username,
+            'sender_id': m.sender_id,
+            'text': m.text or "",
+            'image': m.image.url if m.image else None,
+            'audio': m.audio.url if m.audio else None,
+            'is_view_once': m.is_view_once,
+            'is_read': m.is_read,
+            'time': m.created_at.strftime("%H:%M"),
+        })
+
+    # Marcar como leídos los mensajes entrantes
+    if other_user:
+        Message.objects.filter(
+            conversation=conversation,
+            sender=other_user,
+            is_read=False,
+        ).update(is_read=True)
+
+    # Estado de mis propios mensajes (para actualizar los ticks de leído)
+    my_read_ids = list(Message.objects.filter(
+        conversation=conversation,
+        sender=request.user,
+        is_read=True,
+    ).values_list('id', flat=True))
+
+    return JsonResponse({
+        'messages': messages,
+        'my_read_ids': my_read_ids,
+    })
+
 
 @csrf_exempt
 @login_required

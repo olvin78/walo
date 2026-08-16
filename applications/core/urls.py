@@ -8,7 +8,7 @@ from .views import (add_review, category_detail, chat_view, create_listing,
                     toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug,
                     terms_view, privacy_view, cookies_view, legal_notice_view, save_marketing_consent,
                      city_landing, city_category_landing, mark_image_viewed, my_listings, edit_listing,
-                     delete_listing, support_view, help_center_view, safety_rules_view, selling_tips_view)
+                     delete_listing, support_view, help_center_view, safety_rules_view, selling_tips_view, chat_poll)
 
 urlpatterns = [
     path("", home, name="home"),
@@ -28,6 +28,7 @@ urlpatterns = [
     path("mensajes/eliminar/<int:conversation_id>/", delete_conversation, name="delete_chat"),
     path("mensajes/visto/<int:message_id>/", mark_image_viewed, name="mark_image_viewed"),
     path("mensajes/<int:conversation_id>/", chat_view, name="chat_detail"),
+    path("mensajes/<int:conversation_id>/poll/", chat_poll, name="chat_poll"),
     path("mensajes/nuevo/<int:listing_id>/", start_conversation, name="start_chat"),
     path("historias/eliminar/<int:story_id>/", delete_story, name="delete_story"),
     path("perfil/<str:username>/", user_profile, name="user_profile"),
