@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Centro de Ayuda | IGUALO · NICARAGUA{% endblock %}
+{% block meta_description %}Centro de ayuda de IGUALO: respuestas a las preguntas más frecuentes sobre publicar, comprar, vender, pagos, seguridad y más en Nicaragua.{% endblock %}
+
+{% block content %}
+<div class="legal-fluid-wrapper">
+    <div class="legal-container">
+        <header class="legal-header">
+            <h1 class="legal-title">Centro de Ayuda</h1>
+            <p class="legal-meta">Respuestas a las preguntas más frecuentes</p>
+        </header>
+
+        <article class="legal-content">
+            <section class="legal-section">
+                <h2>1. Empezar en IGUALO</h2>
+                <p>IGUALO es una plataforma de anuncios clasificados gratuita creada para que las personas de Nicaragua puedan comprar y vender productos y servicios de forma fácil, rápida y segura. Crear una cuenta es totalmente gratis y solo te toma un par de minutos. Necesitás un correo electrónico o un número de teléfono válido, y podés comenzar a explorar anuncios de inmediato.</p>
+                <p>Para publicar tu primer anuncio, hacé clic en el botón "Publicar" que aparece en el menú. Completá el título, la descripción, el precio, la categoría y una foto clara de tu producto, y listo: tu anuncio queda visible para toda la comunidad. Publicar es gratuito y no tiene límites de anuncios.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>2. Publicar un anuncio</h2>
+                <p>Publicar un anuncio es muy sencillo, pero te recomendamos seguir estas prácticas para obtener mejores resultados: usá un título claro y descriptivo (por ejemplo, "iPhone 11 de 128GB en buen estado"), escribí una descripción detallada con el estado del producto y la razón de la venta, y subí fotos reales y bien iluminadas. Las fotos son lo primero que ve el comprador.</p>
+                <p>También podés elegir entre precio fijo o la opción "Precio Negociable" si estás abierto a recibir ofertas. Recordá seleccionar la categoría y la subcategoría correctas para que tu anuncio aparezca en la búsqueda adecuada. Si tenés varias fotos, subilas todas: los anuncios con más imágenes reciben más visitas.</p>
+                <p>Una vez publicado, podés editar tu anuncio en cualquier momento desde la sección "Mis publicaciones". También podés marcarlo como vendido o eliminarlo cuando ya no lo necesites.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>3. Comprar en IGUALO</h2>
+                <p>Para comprar, simplemente buscá el producto que te interesa usando la barra de búsqueda o navegando por categorías. Cuando encuentres un anuncio que te guste, podés contactar al vendedor directamente a través de la mensajería interna de la plataforma, sin necesidad de compartir tu número de teléfono.</p>
+                <p>Te recomendamos hacer preguntas antes de comprar: pedile al vendedor fotos adicionales, preguntá por el estado real del producto, y acordá el lugar y la forma de encuentro. Si algo te parece demasiado bueno para ser verdad, probablemente lo sea.</p>
+                <p>Podés guardar tus anuncios favoritos tocando el corazón, lo que te permite comparar opciones y volver a ellos cuando quieras.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>4. Cuenta y perfil</h2>
+                <p>Tu perfil es tu carta de presentación en IGUALO. Podés agregar una foto de perfil, una breve biografía y tu ubicación para que los demás sepan quién sos. Recomendamos completar tu perfil al máximo: los vendedores con perfiles completos generan más confianza y reciben más consultas.</p>
+                <p>Si olvidás tu contraseña, podés restablecerla desde la pantalla de inicio de sesión. Recibirás un enlace en tu correo para crear una nueva. Si cambiás tu número de teléfono o tu correo, actualizá tus datos en la sección de configuración.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>5. Mensajería y comunicación</h2>
+                <p>La mensajería interna de IGUALO te permite comunicarte con compradores y vendedores de forma segura, sin exponer tus datos personales. Todas las conversaciones quedan registradas en la plataforma, lo que sirve como respaldo ante cualquier inconveniente.</p>
+                <p>Recomendamos mantener todas tus negociaciones dentro de la plataforma. Si un usuario insiste en salir de la mensajería interna o en comunicarse por otros medios, tené cuidado: podría estar intentando estafarte o evadir la responsabilidad.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>6. Métodos de pago</h2>
+                <p>IGUALO es un intermediario tecnológico: las transacciones se realizan directamente entre comprador y vendedor. La plataforma no maneja los pagos. Podés acordar con la otra persona la forma de pago que prefieran: efectivo, transferencia bancaria o aplicaciones de pago móvil como Tigo Money o Movii.</p>
+                <p>Nunca realices pagos por adelantado ni envíes dinero a personas que no conocés, especialmente si prometen entregarte el producto luego. La mayoría de las estafas en anuncios clasificados se basan en pagos anticipados que nunca se concretan.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>7. Problemas comunes y soluciones</h2>
+                <ul>
+                    <li><strong>No puedo iniciar sesión:</strong> verificá tu correo y contraseña, o restablecé tu contraseña desde la pantalla de acceso.</li>
+                    <li><strong>No veo mi anuncio:</strong> verificá que esté activo desde "Mis publicaciones". Si fue denunciado, puede estar en revisión.</li>
+                    <li><strong>No llegan mis mensajes:</strong> revisá la bandeja de entrada y verificá que el otro usuario no haya eliminado la conversación.</li>
+                    <li><strong>Las fotos no cargan:</strong> asegurate de que las imágenes tengan menos de 10MB y estén en formato JPG o PNG.</li>
+                    <li><strong>Quiero eliminar mi cuenta:</strong> escribinos a Euskodev@gmail.com y lo gestionamos por vos.</li>
+                </ul>
+            </section>
+        </article>
+
+        <footer class="legal-footer">
+            <p>¿No encontraste tu respuesta? <a href="{% url 'support' %}">Contactá con Soporte</a> o escribinos a <a href="mailto:Euskodev@gmail.com">Euskodev@gmail.com</a></p>
+        </footer>
+    </div>
+</div>
+
+<style>
+    .legal-fluid-wrapper {
+        background: #0a0b10;
+        min-height: 100vh;
+        padding: 100px 20px;
+        color: #fff;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .legal-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .legal-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .legal-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -2px;
+        margin-bottom: 20px;
+        background: linear-gradient(to right, #fff, #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .legal-meta {
+        color: rgba(255,255,255,0.4);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .legal-content {
+        line-height: 1.8;
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.8);
+        text-align: justify;
+    }
+
+    .legal-section {
+        margin-bottom: 50px;
+    }
+
+    .legal-section h2 {
+        color: var(--primary);
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+
+    .legal-section p {
+        margin-bottom: 20px;
+    }
+
+    .legal-section ul {
+        margin: 0 0 20px 20px;
+        padding: 0;
+    }
+
+    .legal-section li {
+        margin-bottom: 10px;
+    }
+
+    .legal-footer {
+        margin-top: 100px;
+        padding-top: 40px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        text-align: center;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.95rem;
+    }
+
+    .legal-footer a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .legal-title { font-size: 2.5rem; }
+        .legal-fluid-wrapper { padding: 60px 20px; }
+        .legal-content { font-size: 1rem; }
+    }
+</style>
+{% endblock %}

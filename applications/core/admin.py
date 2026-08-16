@@ -90,8 +90,26 @@ class MarketingConsentAdmin(admin.ModelAdmin):
 
 @admin.register(SystemPaymentSetting)
 class SystemPaymentSettingAdmin(admin.ModelAdmin):
-    list_display = ("enabled", "updated_at")
+    list_display = ("display_enabled", "display_status", "updated_at")
     readonly_fields = ("updated_at",)
+    list_display_links = ("display_enabled",)
+
+    @admin.display(description="Sistema de pagos activo")
+    def display_enabled(self, obj):
+        if obj.enabled:
+            return "✓ Sí, ACTIVO"
+        return "✗ No, INACTIVO"
+
+    @admin.display(description="Estado")
+    def display_status(self, obj):
+        from django.utils.safestring import mark_safe
+        if obj.enabled:
+            return mark_safe(
+                '<span style="background:#22c55e;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">🟢 Pro y promociones ENCENDIDOS</span>'
+            )
+        return mark_safe(
+            '<span style="background:#6b7280;color:#fff;padding:4px 12px;border-radius:20px;font-weight:700;">⚪ Sistema apagado</span>'
+        )
 
     def has_add_permission(self, request):
         return not SystemPaymentSetting.objects.exists()

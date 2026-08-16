@@ -57,7 +57,7 @@ def home(request):
 
     categories = Category.objects.all()[:6]
     latest_listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True).order_by('-created_at')[:4]
-    
+
     context = {
         'categories': categories,
         'latest_listings': latest_listings,
@@ -1067,6 +1067,18 @@ def cookies_view(request):
 
 def legal_notice_view(request):
     return render(request, 'core/legal/legal_notice.html')
+
+def support_view(request):
+    return render(request, 'core/support/support.html')
+
+def help_center_view(request):
+    return render(request, 'core/support/help_center.html')
+
+def safety_rules_view(request):
+    return render(request, 'core/support/safety_rules.html')
+
+def selling_tips_view(request):
+    return render(request, 'core/support/selling_tips.html')
 
 @csrf_exempt
 def save_marketing_consent(request):

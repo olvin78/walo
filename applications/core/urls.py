@@ -8,7 +8,7 @@ from .views import (add_review, category_detail, chat_view, create_listing,
                     toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug,
                     terms_view, privacy_view, cookies_view, legal_notice_view, save_marketing_consent,
                      city_landing, city_category_landing, mark_image_viewed, my_listings, edit_listing,
-                     delete_listing)
+                     delete_listing, support_view, help_center_view, safety_rules_view, selling_tips_view)
 
 urlpatterns = [
     path("", home, name="home"),
@@ -37,6 +37,10 @@ urlpatterns = [
     path('privacidad/', privacy_view, name='privacy'),
     path('cookies/', cookies_view, name='cookies'),
     path('aviso-legal/', legal_notice_view, name='legal_notice'),
+    path('soporte/', support_view, name='support'),
+    path('centro-de-ayuda/', help_center_view, name='help_center'),
+    path('reglas-de-seguridad/', safety_rules_view, name='safety_rules'),
+    path('consejos-para-vender/', selling_tips_view, name='selling_tips'),
     path('save-preferences/', save_marketing_consent, name='save_preferences'),
     path("configuracion/verificar/", verify_profile, name="verify_profile"),
     path("perfil/<str:username>/calificar/", rate_profile, name="rate_profile"),

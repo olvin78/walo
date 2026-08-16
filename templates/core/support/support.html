@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Soporte | IGUALO · NICARAGUA{% endblock %}
+{% block meta_description %}Contactá con el equipo de soporte de IGUALO. Resolvemos tus dudas sobre publicar anuncios, vender, comprar y el funcionamiento de la plataforma en Nicaragua.{% endblock %}
+
+{% block content %}
+<div class="legal-fluid-wrapper">
+    <div class="legal-container">
+        <header class="legal-header">
+            <h1 class="legal-title">Soporte</h1>
+            <p class="legal-meta">Estamos para ayudarte en cada paso</p>
+        </header>
+
+        <article class="legal-content">
+            <section class="legal-section">
+                <h2>¿Cómo podemos ayudarte hoy?</h2>
+                <p>En IGUALO queremos que tu experiencia comprando y vendiendo sea lo más sencilla y segura posible. Si tenés alguna duda, inconveniente o sugerencia, nuestro equipo de soporte está disponible para ayudarte. Podés escribirnos por correo a Euskodev@gmail.com o utilizar el formulario de sugerencias que aparece en el menú, y un agente te responderá lo antes posible.</p>
+                <p>Antes de escribirnos, te recomendamos revisar nuestro Centro de Ayuda, donde encontrarás respuestas a las preguntas más frecuentes. La mayoría de los inconvenientes se pueden resolver en pocos minutos sin necesidad de esperar respuesta de un agente.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>Canales de contacto</h2>
+                <p>Contamos con varios canales para que puedas comunicarte con nosotros de la forma que te resulte más cómoda. Todos nuestros canales de atención son gratuitos y están disponibles para usuarios de todo Nicaragua.</p>
+                <ul>
+                    <li><strong>Correo electrónico:</strong> Euskodev@gmail.com. Respondemos lo antes posible.</li>
+                    <li><strong>Formulario de sugerencias:</strong> disponible dentro de la plataforma, en el botón "Sugerencias" del menú de navegación.</li>
+                    <li><strong>Redes sociales:</strong> seguinos y escribinos por nuestros canales oficiales para dudas rápidas.</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>Qué podemos hacer por vos</h2>
+                <p>Nuestro equipo puede ayudarte con una gran variedad de temas. Estos son algunos de los más comunes:</p>
+                <ul>
+                    <li><strong>Problemas al publicar un anuncio:</strong> si tenés inconvenientes con las fotos, el título, el precio o la categoría.</li>
+                    <li><strong>Problemas con tu cuenta:</strong> si no podés iniciar sesión, recuperar tu contraseña o editar tu perfil.</li>
+                    <li><strong>Denuncias de anuncios:</strong> si ves un anuncio falso, prohibido o sospechoso.</li>
+                    <li><strong>Reportes de usuarios:</strong> si un usuario te acosa, te estafa o incumple las normas.</li>
+                    <li><strong>Dudas sobre verificación:</strong> si querés verificar tu perfil o tu negocio.</li>
+                    <li><strong>Facturación y promociones:</strong> si pagaste por un anuncio destacado o una membresía Pro y tenés dudas.</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>Información que necesitamos de vos</h2>
+                <p>Para ayudarte de la forma más rápida posible, cuando nos escribas incluí la siguiente información:</p>
+                <ul>
+                    <li>Tu nombre de usuario o el correo con el que te registraste.</li>
+                    <li>Una descripción clara del problema que estás teniendo.</li>
+                    <li>Si el problema es con un anuncio, el enlace o el número del anuncio.</li>
+                    <li>Capturas de pantalla, si las tenés, para entender mejor la situación.</li>
+                </ul>
+                <p>Entre más información nos brindes, más rápido podremos resolver tu caso. Recuerda no compartir jamás tu contraseña con nadie, ni siquiera con nuestro equipo de soporte.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>Compromiso de respuesta</h2>
+                <p>Nos comprometemos a responder cada consulta que recibimos. Aunque no siempre podemos resolver todos los temas de inmediato, siempre te daremos una respuesta concreta y los pasos a seguir. Si tu caso requiere revisión técnica o legal, te mantendremos informado del avance.</p>
+                <p>Valoramos muchísimo tus comentarios. Cada sugerencia que recibimos nos ayuda a mejorar la plataforma para toda la comunidad de IGUALO en Nicaragua.</p>
+            </section>
+        </article>
+
+        <footer class="legal-footer">
+            <p>¿Tenés una duda? Escribinos a <a href="mailto:Euskodev@gmail.com">Euskodev@gmail.com</a> o visitá el <a href="{% url 'help_center' %}">Centro de Ayuda</a></p>
+        </footer>
+    </div>
+</div>
+
+<style>
+    .legal-fluid-wrapper {
+        background: #0a0b10;
+        min-height: 100vh;
+        padding: 100px 20px;
+        color: #fff;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .legal-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .legal-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .legal-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -2px;
+        margin-bottom: 20px;
+        background: linear-gradient(to right, #fff, #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .legal-meta {
+        color: rgba(255,255,255,0.4);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .legal-content {
+        line-height: 1.8;
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.8);
+        text-align: justify;
+    }
+
+    .legal-section {
+        margin-bottom: 50px;
+    }
+
+    .legal-section h2 {
+        color: var(--primary);
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+
+    .legal-section p {
+        margin-bottom: 20px;
+    }
+
+    .legal-section ul {
+        margin: 0 0 20px 20px;
+        padding: 0;
+    }
+
+    .legal-section li {
+        margin-bottom: 10px;
+    }
+
+    .legal-footer {
+        margin-top: 100px;
+        padding-top: 40px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        text-align: center;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.95rem;
+    }
+
+    .legal-footer a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .legal-title { font-size: 2.5rem; }
+        .legal-fluid-wrapper { padding: 60px 20px; }
+        .legal-content { font-size: 1rem; }
+    }
+</style>
+{% endblock %}
