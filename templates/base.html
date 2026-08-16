@@ -656,22 +656,22 @@
       <a href="/" class="logo">IGUALO <span class="logo-spark">✦</span></a>
 
       <div class="cmp-navbar-menu" id="navbar-menu">
-        <a href="{% url 'home' %}"><i data-lucide="home" class="nav-icon"></i> Inicio</a>
-        <a href="{% url 'explore' %}"><i data-lucide="search" class="nav-icon"></i> Explorar</a>
+        <a href="{% url 'home' %}"><i data-lucide="store" class="nav-icon"></i> Inicio</a>
+        <a href="{% url 'explore' %}"><i data-lucide="compass" class="nav-icon"></i> Explorar</a>
 
         {% if user.is_authenticated %}
         <a href="{% url 'inbox' %}" class="nav-item-with-badge">
-          <i data-lucide="mail" class="nav-icon"></i> Mensajes
+          <i data-lucide="message-square" class="nav-icon"></i> Mensajes
           {% if unread_messages %}
             <span class="nav-unread-badge">{{ unread_messages }}</span>
           {% endif %}
         </a>
         <a href="{% url 'favorites' %}"><i data-lucide="heart" class="nav-icon"></i> Favoritos</a>
-        <a href="/publicar/"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
+        <a href="/publicar/"><i data-lucide="plus-square" class="nav-icon"></i> Publicar</a>
 
         <div class="cmp-navbar-dropdown" id="config-dropdown">
           <button class="dropdown-trigger" onclick="toggleConfigSubmenu(event)">
-            <i data-lucide="settings" class="nav-icon"></i> Configuraciones <span class="arrow">▾</span>
+            <i data-lucide="user-circle" class="nav-icon"></i> Configuraciones <span class="arrow">▾</span>
           </button>
           <div class="dropdown-menu" id="config-submenu">
             <a href="{% url 'user_profile' user.username %}"><i data-lucide="user" class="sub-icon"></i> Mi Perfil</a>
@@ -689,7 +689,7 @@
         <a href="{% url 'account_login' %}"><i data-lucide="log-in" class="nav-icon"></i> Entrar</a>
         <a href="{% url 'account_signup' %}" class="cmp-btn cmp-btn-primary nav-cta-mobile"><i data-lucide="rocket"
             class="nav-icon"></i> Registrarse</a>
-        <a href="{% url 'account_login' %}"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
+        <a href="{% url 'account_login' %}"><i data-lucide="plus-square" class="nav-icon"></i> Publicar</a>
         {% endif %}
 
         {% if user.is_authenticated %}
