@@ -20,12 +20,60 @@
   {% if category %}Encontrá {{ category.name|lower }} en {{ city_name }} con IGUALO.{% else %}Encontrá ofertas en {{ city_name }} con IGUALO.{% endif %}
 {% endblock %}
 {% block canonical %}
-  {% if category %}https://www.igualo.com{% url 'city_category_landing' city_slug category.slug %}{% else %}https://www.igualo.com{% url 'city_landing' city_slug %}{% endif %}
+  {% if category %}{{ site_url }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ site_url }}{% url 'city_landing' city_slug %}{% endif %}
 {% endblock %}
 {% block og_url %}
-  {% if category %}https://www.igualo.com{% url 'city_category_landing' city_slug category.slug %}{% else %}https://www.igualo.com{% url 'city_landing' city_slug %}{% endif %}
+  {% if category %}{{ site_url }}{% url 'city_category_landing' city_slug category.slug %}{% else %}{{ site_url }}{% url 'city_landing' city_slug %}{% endif %}
 {% endblock %}
 {% block robots %}{% if has_results %}index, follow{% else %}noindex, follow{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Inicio",
+      "item": "{{ site_url }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ city_name }}",
+      "item": "{{ site_url }}{% url 'city_landing' city_slug %}"
+    }{% if category %},
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ category.name }}",
+      "item": "{{ site_url }}{% url 'city_category_landing' city_slug category.slug %}"
+    }{% endif %}
+  ]
+}
+</script>
+{% if has_results %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "ItemList",
+  "name": "{% if category %}{{ category.name }} en {{ city_name }}{% else %}Anuncios en {{ city_name }}{% endif %}",
+  "itemListElement": [
+    {% for listing in listings %}
+    {
+      "@type": "ListItem",
+      "position": {{ forloop.counter }},
+      "name": "{{ listing.title|escapejs }}",
+      "url": "{{ site_url }}{{ listing.get_absolute_url }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="igualo-container">

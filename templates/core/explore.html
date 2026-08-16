@@ -11,7 +11,7 @@
   {% if current_category %}Encontrá lo mejor de {{ current_category.name }} en Nicaragua. Comprá y vendé en IGUALO.{% else %}Explorá miles de anuncios en Nicaragua. Celulares, carros, motos, tecnología y más en IGUALO.{% endif %}
 {% endblock %}
 
-{% block canonical %}https://www.igualo.com{% url 'explore' %}{% endblock %}
+{% block canonical %}{{ site_url }}{% url 'explore' %}{% endblock %}
 
 {% block robots %}
 {% if query or min_price or max_price or loc or radius or current_subcategory %}
@@ -20,6 +20,29 @@ noindex, follow
 index, follow
 {% endif %}
 {% endblock %}
+
+{% block extra_head %}
+{% if has_results and not query and not min_price and not max_price and not loc and not radius and not current_subcategory %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "ItemList",
+  "name": "{% if current_category %}{{ current_category.name }} en Nicaragua{% else %}Anuncios en Nicaragua{% endif %}",
+  "itemListElement": [
+    {% for listing in listings %}
+    {
+      "@type": "ListItem",
+      "position": {{ forloop.counter }},
+      "name": "{{ listing.title|escapejs }}",
+      "url": "{{ site_url }}{{ listing.get_absolute_url }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
 {% block body_class %}page-home page-explore{% endblock %}
 
 {% block content %}
@@ -545,7 +568,7 @@ index, follow
     }
 
     .filter-input-pro {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 16px 20px;
       border-radius: 18px;
@@ -553,20 +576,35 @@ index, follow
       font-weight: 600;
       outline: none;
       font-size: 1rem;
-      transition: 0.3s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       width: 100%;
+      backdrop-filter: blur(10px);
     }
 
-    .filter-input-pro:focus {
+    select.filter-input-pro {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 18px;
+      padding-right: 45px;
+      cursor: pointer;
+    }
+
+    .filter-input-pro:focus, select.filter-input-pro:focus {
       border-color: var(--primary);
-      background: rgba(34, 197, 94, 0.05);
+      background-color: rgba(34, 197, 94, 0.05);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
     }
 
     /* Fix para opciones invisibles (Blanco sobre Blanco) */
     .filter-input-pro option {
-      background: #1a1d26;
+      background: #0f1219;
       color: #fff;
-      padding: 10px;
+      padding: 15px;
+      font-weight: 600;
+      font-size: 1rem;
     }
 
     /* Distance Row */

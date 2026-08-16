@@ -7,9 +7,9 @@
 {% block og_description %}Comprá y vendé en Nicaragua con IGUALO. Marketplace local con ofertas reales cerca de vos.{% endblock %}
 {% block twitter_title %}IGUALO | Marketplace para comprar y vender en Nicaragua{% endblock %}
 {% block twitter_description %}Marketplace local para comprar y vender en Nicaragua. Publicá anuncios y encontrá ofertas.{% endblock %}
-{% block canonical %}https://www.igualo.com/{% endblock %}
-{% block og_url %}https://www.igualo.com/{% endblock %}
-{% block og_image %}https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endblock %}
+{% block canonical %}{{ site_url }}/{% endblock %}
+{% block og_url %}{{ site_url }}/{% endblock %}
+{% block og_image %}{{ site_url }}{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endblock %}
 {% block body_class %}page-home-pro{% endblock %}
 
 {% block extra_head %}
@@ -18,10 +18,10 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "IGUALO",
-    "url": "https://www.igualo.com/",
+    "url": "{{ site_url }}/",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://www.igualo.com/explorar/?q={search_term_string}",
+      "target": "{{ site_url }}/explorar/?q={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   }
@@ -31,8 +31,8 @@
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "IGUALO",
-    "url": "https://www.igualo.com/",
-    "logo": "https://www.igualo.com{% static 'img/igualo_hero_bg_nicaragua.png' %}"
+    "url": "{{ site_url }}/",
+    "logo": "{{ site_url }}{% static 'img/igualo_hero_bg_nicaragua.png' %}"
   }
 </script>
 <style>

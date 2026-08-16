@@ -63,6 +63,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -74,6 +75,21 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Caché de página (DatabaseCache: persistente y multiproceso)
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "igualo_cache",
+        "TIMEOUT": 300,
+    }
+}
+
+# Tiempos de caché para páginas públicas (segundos)
+CACHE_HOME_TTL = env.int("CACHE_HOME_TTL", default=120)
+CACHE_CATEGORY_TTL = env.int("CACHE_CATEGORY_TTL", default=300)
+CACHE_CITY_TTL = env.int("CACHE_CITY_TTL", default=300)
+CACHE_LISTING_TTL = env.int("CACHE_LISTING_TTL", default=120)
 
 if DEBUG:
     MIDDLEWARE.insert(2, "config.middleware.HostRedirectMiddleware")

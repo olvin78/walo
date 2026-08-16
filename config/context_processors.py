@@ -3,7 +3,7 @@ from applications.core.models import SystemPaymentSetting, Message
 
 
 def tracking(request):
-    """Expose global feature flags to templates."""
+    """Expose global feature flags and site metadata to templates."""
     system_payments_enabled = SystemPaymentSetting.get_solo().enabled
     container_id = getattr(settings, "GOOGLE_TAG_MANAGER_ID", "")
 
@@ -21,4 +21,6 @@ def tracking(request):
         "google_tag_manager_id": container_id,
         "system_payments_enabled": system_payments_enabled,
         "unread_messages": unread_messages,
+        "site_url": getattr(settings, "PUBLIC_BASE_URL", "https://www.igualo.com").rstrip("/"),
+        "site_name": "IGUALO",
     }

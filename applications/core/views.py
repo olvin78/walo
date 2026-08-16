@@ -19,6 +19,7 @@ import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
 from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory, SystemPaymentSetting
+from .decorators import cache_public_page
 
 CITY_LANDINGS = {
     "managua": "Managua",
@@ -36,6 +37,66 @@ def get_city_name_or_404(city_slug: str) -> str:
         raise Http404
     return city_name
 
+def normalize_search_token(value: str) -> str:
+    value = value.strip().lower()
+    return "".join(
+        ch for ch in unicodedata.normalize("NFD", value)
+        if unicodedata.category(ch) != "Mn"
+    )
+
+def build_search_query(query: str) -> Q:
+    if not query:
+        return Q()
+
+    synonyms = {
+        "movil": ["móvil", "telefono", "teléfono", "celular", "smartphone"],
+        "telefono": ["teléfono", "movil", "móvil", "celular", "smartphone"],
+        "celular": ["movil", "móvil", "telefono", "teléfono", "smartphone"],
+        "comida": ["comidas", "alimentos", "food", "restaurante", "delivery", "desayuno", "almuerzo", "cena", "merienda", "plato", "platos"],
+        "comidas": ["comida", "alimentos", "food", "restaurante", "delivery", "desayuno", "almuerzo", "cena", "merienda", "plato", "platos"],
+        "plato": ["platos", "comida", "desayuno", "almuerzo", "cena", "merienda"],
+        "platos": ["plato", "comida", "desayuno", "almuerzo", "cena", "merienda"],
+        "desayuno": ["comida", "plato", "platos", "merienda"],
+        "almuerzo": ["comida", "plato", "platos"],
+        "cena": ["comida", "plato", "platos"],
+        "coche": ["carro", "auto", "vehiculo", "vehículo"],
+        "carro": ["coche", "auto", "vehiculo", "vehículo"],
+        "auto": ["coche", "carro", "vehiculo", "vehículo"],
+        "ropa": ["moda", "camisa", "pantalon", "pantalón"],
+    }
+
+    words = [w for w in re.split(r"\s+", query.strip().lower()) if w]
+    if not words:
+        return Q()
+
+    search_q = Q()
+    for word in words:
+        word_tokens = {word, normalize_search_token(word)}
+        for extra in synonyms.get(word, []):
+            word_tokens.add(extra)
+            word_tokens.add(normalize_search_token(extra))
+        
+        word_q = Q()
+        for token in word_tokens:
+            word_q |= (
+                Q(title__icontains=token)
+                | Q(description__icontains=token)
+                | Q(category__name__icontains=token)
+                | Q(category__keywords__icontains=token)
+                | Q(subcategory__name__icontains=token)
+                | Q(subcategory__keywords__icontains=token)
+                | Q(location__icontains=token)
+            )
+        
+        # INTERSECCIÓN DE TÉRMINOS (Debe contener todas las palabras de la búsqueda)
+        if not search_q:
+            search_q = word_q
+        else:
+            search_q &= word_q
+
+    return search_q
+
+@cache_public_page(timeout=settings.CACHE_HOME_TTL, vary_on_query=True)
 def home(request):
     """
     Página de inicio (Landing Page) con secciones informativas, CTA y búsqueda integrada.
@@ -45,15 +106,8 @@ def home(request):
     search_results = None
     
     if query:
-        search_results = Listing.objects.select_related('user', 'user__profile').filter(
-            Q(title__icontains=query) | 
-            Q(description__icontains=query) | 
-            Q(category__name__icontains=query) |
-            Q(category__keywords__icontains=query) |
-            Q(subcategory__name__icontains=query) |
-            Q(subcategory__keywords__icontains=query) |
-            Q(location__icontains=query)
-        ).filter(is_active=True).order_by('-created_at')[:4]
+        search_q = build_search_query(query)
+        search_results = Listing.objects.select_related('user', 'user__profile').filter(search_q).filter(is_active=True).order_by('-created_at')[:4]
 
     categories = Category.objects.all()[:6]
     latest_listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True).order_by('-created_at')[:4]
@@ -66,6 +120,7 @@ def home(request):
     }
     return render(request, "core/home.html", context)
 
+@cache_public_page(timeout=settings.CACHE_CATEGORY_TTL, vary_on_query=True)
 def explore(request):
     """
     Página de Exploración (Marketplace) con el buscador, categorías y todos los productos.
@@ -87,104 +142,7 @@ def explore(request):
     listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True)
 
     if query:
-        synonyms = {
-            "movil": ["móvil", "telefono", "teléfono", "celular", "smartphone"],
-            "telefono": ["teléfono", "movil", "móvil", "celular", "smartphone"],
-            "celular": ["movil", "móvil", "telefono", "teléfono", "smartphone"],
-            "comida": ["comidas", "alimentos", "food", "restaurante", "delivery", "desayuno", "almuerzo", "cena", "merienda", "plato", "platos"],
-            "comidas": ["comida", "alimentos", "food", "restaurante", "delivery", "desayuno", "almuerzo", "cena", "merienda", "plato", "platos"],
-            "plato": ["platos", "comida", "desayuno", "almuerzo", "cena", "merienda"],
-            "platos": ["plato", "comida", "desayuno", "almuerzo", "cena", "merienda"],
-            "desayuno": ["comida", "plato", "platos", "merienda"],
-            "almuerzo": ["comida", "plato", "platos"],
-            "cena": ["comida", "plato", "platos"],
-            "coche": ["carro", "auto", "vehiculo", "vehículo"],
-            "carro": ["coche", "auto", "vehiculo", "vehículo"],
-            "auto": ["coche", "carro", "vehiculo", "vehículo"],
-            "ropa": ["moda", "camisa", "pantalon", "pantalón"],
-        }
-
-        def normalize_token(value: str) -> str:
-            value = value.strip().lower()
-            return "".join(
-                ch for ch in unicodedata.normalize("NFD", value)
-                if unicodedata.category(ch) != "Mn"
-            )
-
-        def ai_expand_terms(user_query: str) -> list[str]:
-            api_key = getattr(settings, "OPENAI_API_KEY", "")
-            model = getattr(settings, "OPENAI_MODEL", "gpt-4.1-mini")
-            if not api_key:
-                return []
-            prompt = (
-                "Eres un asistente de busqueda para un marketplace en Nicaragua. "
-                "Dado un termino de busqueda, devuelve SOLO un JSON array de palabras "
-                "relacionadas y sinonimos en español (max 8). No agregues texto extra. "
-                f"Termino: {user_query}"
-            )
-            try:
-                response = requests.post(
-                    "https://api.openai.com/v1/responses",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": model,
-                        "input": prompt,
-                        "max_output_tokens": 120,
-                        "temperature": 0.2,
-                    },
-                    timeout=6,
-                )
-                response.raise_for_status()
-                data = response.json()
-                text = ""
-                for item in data.get("output", []):
-                    for content in item.get("content", []):
-                        if content.get("type") == "output_text":
-                            text += content.get("text", "")
-                text = text.strip()
-                if not text:
-                    return []
-                parsed = json.loads(text)
-                if isinstance(parsed, list):
-                    return [str(t) for t in parsed][:8]
-                return []
-            except Exception:
-                return []
-
-        tokens = set()
-        cleaned = query.strip().lower()
-        if cleaned:
-            tokens.add(cleaned)
-            tokens.add(normalize_token(cleaned))
-            for token in re.split(r"\s+", cleaned):
-                if not token:
-                    continue
-                tokens.add(token)
-                tokens.add(normalize_token(token))
-                for extra in synonyms.get(token, []):
-                    tokens.add(extra)
-                    tokens.add(normalize_token(extra))
-
-            for extra in ai_expand_terms(cleaned):
-                tokens.add(extra)
-                tokens.add(normalize_token(extra))
-
-        search_q = Q()
-        for token in tokens:
-            search_q |= (
-                Q(title__icontains=token)
-                | Q(description__icontains=token)
-                | Q(category__name__icontains=token)
-                | Q(category__keywords__icontains=token)
-                | Q(subcategory__name__icontains=token)
-                | Q(subcategory__description__icontains=token)
-                | Q(subcategory__keywords__icontains=token)
-                | Q(location__icontains=token)
-            )
-
+        search_q = build_search_query(query)
         listings = listings.filter(search_q)
     
     current_category = None
@@ -432,6 +390,7 @@ def get_search_recommendations(query, current_category=None, user=None):
     return recommended.order_by('-created_at')[:8]
 
 
+@cache_public_page(timeout=settings.CACHE_CITY_TTL)
 def city_landing(request, city_slug):
     city_name = get_city_name_or_404(city_slug)
     # NOTE: location is free text. We match by substring for this phase.
@@ -447,6 +406,7 @@ def city_landing(request, city_slug):
     return render(request, "core/city_landing.html", context)
 
 
+@cache_public_page(timeout=settings.CACHE_CITY_TTL)
 def city_category_landing(request, city_slug, category_slug):
     city_name = get_city_name_or_404(city_slug)
     category = get_object_or_404(Category, slug=category_slug)
@@ -579,12 +539,14 @@ def create_listing(request):
         'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
     })
 
+@cache_public_page(timeout=settings.CACHE_CATEGORY_TTL)
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
     listings = category.listings.filter(is_active=True).order_by("-created_at")
     context = {"category": category, "listings": listings}
     return render(request, "core/category_detail.html", context)
 
+@cache_public_page(timeout=settings.CACHE_LISTING_TTL)
 def listing_detail_slug(request, listing_id, slug):
     listing = get_object_or_404(Listing, id=listing_id)
     
@@ -601,10 +563,14 @@ def listing_detail_slug(request, listing_id, slug):
 
     reviews = listing.reviews.all().order_by('-created_at')
 
+    # Fecha de validez del precio para el JSON-LD (90 días desde hoy)
+    price_valid_until = (timezone.now() + datetime.timedelta(days=90)).strftime("%Y-%m-%d")
+
     context = {
         "listing": listing,
         "is_favorite": is_favorite,
         "reviews": reviews,
+        "price_valid_until": price_valid_until,
     }
     return render(request, "core/listing_detail.html", context)
 

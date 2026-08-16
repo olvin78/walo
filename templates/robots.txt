@@ -3,9 +3,26 @@ Allow: /
 
 Disallow: /admin/
 Disallow: /accounts/
-Disallow: /inbox/
+Disallow: /mensajes/
+Disallow: /mensajes/eliminar/
+Disallow: /mensajes/nuevo/
+Disallow: /mensajes/visto/
 Disallow: /favoritos/
-Disallow: /perfil/editar/
+Disallow: /favoritos/toggle/
+Disallow: /configuracion/
+Disallow: /configuracion/verificar/
 Disallow: /publicar/
+Disallow: /mis-anuncios/
+Disallow: /historias/
+Disallow: /historias/eliminar/
+Disallow: /historias/subir/
+Disallow: /reportar-fallo/
+Disallow: /save-preferences/
+Disallow: /perfil/*/calificar/
+Disallow: /perfil/*/toggle-follow/
+Disallow: /anuncio/*/editar/
+Disallow: /anuncio/*/eliminar/
+Disallow: /anuncio/*/comentar/
+Disallow: /anuncio/*/oferta/
 
 Sitemap: https://www.igualo.com/sitemap.xml
