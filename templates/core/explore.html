@@ -150,13 +150,13 @@ index, follow
       <div class="stories-scroll">
         <a href="{% url 'explore' %}?category={{ parent_category.slug }}&subcategory=all"
           class="story-btn {% if current_category.id == parent_category.id and not current_subcategory %}active{% endif %}">
-          <div class="story-circle-pro">🏠</div>
+          <div class="story-circle-pro"><i data-category-icon="🏠"></i></div>
           <p>Ver Todo</p>
         </a>
         {% for sub in subcategories %}
         <a href="{% url 'explore' %}?category={{ parent_category.slug }}&subcategory={{ sub.slug }}"
           class="story-btn {% if current_subcategory.id == sub.id %}active{% endif %}">
-          <div class="story-circle-pro">{{ sub.icon }}</div>
+          <div class="story-circle-pro"><i data-category-icon="{{ sub.icon }}"></i></div>
           <p>{{ sub.name }}</p>
         </a>
         {% endfor %}
