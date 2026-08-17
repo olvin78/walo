@@ -25,6 +25,7 @@ CITY_LANDINGS = {
 
 
 class HomeSitemap(Sitemap):
+    protocol = "https"
     changefreq = "daily"
     priority = 1.0
 
@@ -36,6 +37,7 @@ class HomeSitemap(Sitemap):
 
 
 class CategorySitemap(Sitemap):
+    protocol = "https"
     changefreq = "weekly"
     priority = 0.8
 
@@ -48,6 +50,7 @@ class CategorySitemap(Sitemap):
 
 
 class ListingSitemap(Sitemap):
+    protocol = "https"
     changefreq = "daily"
     priority = 0.9
 
@@ -59,6 +62,7 @@ class ListingSitemap(Sitemap):
 
 
 class ProfileSitemap(Sitemap):
+    protocol = "https"
     changefreq = "weekly"
     priority = 0.5
 
@@ -69,11 +73,12 @@ class ProfileSitemap(Sitemap):
         return reverse("user_profile", kwargs={"username": obj.user.username})
 
     def lastmod(self, obj):
-        latest_listing = obj.user.listings.filter(is_active=True).order_by("-created_at").first()
+        latest_listing = obj.user.listing_set.filter(is_active=True).order_by("-created_at").first()
         return latest_listing.created_at if latest_listing else obj.user.date_joined
 
 
 class CitySitemap(Sitemap):
+    protocol = "https"
     changefreq = "daily"
     priority = 0.6
 
@@ -89,6 +94,7 @@ class CitySitemap(Sitemap):
 
 
 class CityCategorySitemap(Sitemap):
+    protocol = "https"
     changefreq = "daily"
     priority = 0.5
 
