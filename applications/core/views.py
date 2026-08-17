@@ -801,11 +801,24 @@ def chat_view(request, conversation_id):
         is_read=False,
     ).update(is_read=True)
 
+    user_conversations = request.user.conversations.exclude(id=conversation_id).order_by('-updated_at')
+    existing_chat_user_ids = {
+        c.get_other_user(request.user).id
+        for c in user_conversations
+        if c.get_other_user(request.user)
+    }
+    my_followers = (
+        request.user.profile.followers
+        .exclude(id__in=existing_chat_user_ids)
+        .exclude(id=request.user.id)
+    ) if hasattr(request.user, 'profile') else User.objects.none()
+
     return render(request, "core/chat.html", {
-        'conversation': conversation, 
+        'conversation': conversation,
         'grouped_messages': grouped_messages,
         'other_user': other_user,
-        'user_conversations': request.user.conversations.exclude(id=conversation_id).order_by('-updated_at')
+        'user_conversations': user_conversations,
+        'my_followers': my_followers,
     })
 
 @csrf_exempt
@@ -819,14 +832,16 @@ def forward_message(request):
 
     msg_ids_raw = request.POST.get('message_ids', '')
     target_convs_raw = request.POST.get('target_conversation_ids', '')
+    target_users_raw = request.POST.get('target_user_ids', '')
 
     try:
         message_ids = [int(x) for x in msg_ids_raw.split(',') if x.strip()]
         target_conv_ids = [int(x) for x in target_convs_raw.split(',') if x.strip()]
+        target_user_ids = [int(x) for x in target_users_raw.split(',') if x.strip()]
     except ValueError:
         return JsonResponse({"error": "IDs inválidos"}, status=400)
 
-    if not message_ids or not target_conv_ids:
+    if not message_ids or (not target_conv_ids and not target_user_ids):
         return JsonResponse({"error": "Faltan parámetros requeridos"}, status=400)
 
     original_messages = Message.objects.filter(id__in=message_ids)
@@ -837,7 +852,26 @@ def forward_message(request):
         if request.user not in msg.conversation.participants.all():
             return JsonResponse({"error": "No autorizado"}, status=403)
 
-    target_conversations = Conversation.objects.filter(id__in=target_conv_ids, participants=request.user)
+    target_conversations = list(Conversation.objects.filter(id__in=target_conv_ids, participants=request.user))
+
+    # Seguidores (u otros usuarios) sin conversación previa: se crea una nueva.
+    for uid in target_user_ids:
+        if uid == request.user.id:
+            continue
+        target_user = User.objects.filter(id=uid).first()
+        if not target_user:
+            continue
+        conv = (
+            Conversation.objects.filter(participants=request.user)
+            .filter(participants=target_user)
+            .first()
+        )
+        if not conv:
+            conv = Conversation.objects.create()
+            conv.participants.add(request.user, target_user)
+        if conv not in target_conversations:
+            target_conversations.append(conv)
+
     if not target_conversations:
         return JsonResponse({"error": "Conversaciones de destino no encontradas"}, status=404)
 
@@ -1026,6 +1060,20 @@ def start_conversation(request, listing_id):
         conversation.participants.add(request.user, listing.user)
     
     # Redirigir al detalle del chat (chat_view)
+    return redirect('chat_detail', conversation_id=conversation.id)
+
+@login_required
+def start_direct_user_chat(request, username):
+    target_user = get_object_or_404(User, username=username)
+    if target_user == request.user:
+        messages.info(request, "No puedes enviarte mensajes a ti mismo.")
+        return redirect('user_profile', username=username)
+    
+    conversation = Conversation.objects.filter(participants=request.user).filter(participants=target_user).first()
+    if not conversation:
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, target_user)
+    
     return redirect('chat_detail', conversation_id=conversation.id)
 
 @login_required

@@ -70,7 +70,7 @@
                         {% else %}
                             <button id="btnFollow" class="f-btn solid" onclick="handleFollowToggle()">Seguir</button>
                         {% endif %}
-                        <a href="{% url 'inbox' %}" class="f-btn outline">Mensaje</a>
+                        <a href="{% url 'start_direct_chat' profile_user.username %}" class="f-btn outline">Mensaje</a>
                     {% elif request.user == profile_user %}
                         <a href="{% url 'edit_profile' %}" class="f-btn outline">Editar mi perfil</a>
                         {% if system_payments_enabled and not profile_user.profile.is_pro %}
