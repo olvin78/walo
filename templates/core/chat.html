@@ -26,7 +26,7 @@
     }
 
     .page-chat-shell .cmp-navbar {
-        background: #0f172a !important;
+        display: none !important;
     }
     
     :root {
@@ -42,17 +42,18 @@
     .chat-shell {
         position: fixed;
         inset: 0;
-        top: 70px; /* Debajo de la navbar global */
+        top: 0 !important;
         display: flex;
         flex-direction: column;
         background: var(--chat-bg);
-        z-index: 1000;
-        height: calc(100dvh - 70px);
+        z-index: 10000;
+        height: 100vh !important;
+        height: 100dvh !important;
         font-family: 'Sora', 'Inter', sans-serif;
     }
 
     @media (max-width: 768px) {
-        .chat-shell { top: 60px; height: calc(100dvh - 60px); }
+        .chat-shell { top: 0 !important; height: 100vh !important; height: 100dvh !important; }
     }
 
     /* 2. TOPBAR (HEADER DEL CHAT) */
@@ -265,20 +266,8 @@
     }
     .mine .bubble-meta { color: rgba(255,255,255,0.85); }
 
-    .msg-delete-btn {
-        background: none;
-        border: none;
-        padding: 0;
-        margin-left: 2px;
-        display: inline-flex;
-        align-items: center;
-        cursor: pointer;
-        opacity: 0.55;
-        color: inherit;
-        transition: opacity 0.2s;
-    }
-    .msg-delete-btn:hover { opacity: 1; }
-    .msg-delete-btn i { width: 12px; height: 12px; }
+    .chat-bubble { cursor: pointer; user-select: none; -webkit-user-select: none; }
+    .chat-bubble.is-pressing { filter: brightness(0.92); }
 
     .chat-text--deleted {
         font-style: italic;
@@ -321,6 +310,81 @@
         justify-content: center;
         cursor: pointer;
         font-size: 1.5rem;
+    }
+
+    /* MENÚ DE ACCIONES DE MENSAJE (mantener presionado) */
+    .msg-actions-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.35);
+        backdrop-filter: blur(2px);
+        z-index: 6000;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .msg-actions-overlay.is-active { display: flex; }
+    .msg-actions-sheet {
+        background: #ffffff;
+        width: 100%;
+        max-width: 420px;
+        border-radius: 22px 22px 0 0;
+        padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+        animation: msgSheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .msg-actions-handle {
+        width: 36px;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        margin: 8px auto 10px;
+    }
+    @media (min-width: 640px) {
+        .msg-actions-overlay { align-items: center; }
+        .msg-actions-sheet { border-radius: 18px; }
+    }
+    @keyframes msgSheetUp {
+        from { transform: translateY(24px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .msg-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 12px;
+        background: none;
+        border: none;
+        border-radius: 14px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: #1e293b;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s;
+    }
+    .msg-action-btn:hover { background: #f8fafc; }
+    .msg-action-btn i { width: 18px; height: 18px; color: #64748b; }
+    .msg-action-btn--danger { color: #dc2626; }
+    .msg-action-btn--danger i { color: #dc2626; }
+    .msg-action-cancel {
+        margin-top: 6px;
+        padding: 14px 12px;
+        border-top: 1px solid #f1f5f9;
+        background: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: #94a3b8;
+        text-align: center;
+        cursor: pointer;
     }
 
     /* 5. MEDIA GRID (PREMIUM ADAPTIVE LOOK) */
@@ -522,7 +586,7 @@
     <!-- THREAD -->
     <div id="chat-thread" class="chat-thread">
         {% for group in grouped_messages %}
-            {% with first_msg=group.messages|first %}
+            {% with first_msg=group.messages|first last_msg=group.messages|last %}
                 {% if "HE HECHO UNA OFERTA" in first_msg.text %}
                     <div class="chat-bubble--offer">
                         <div style="font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; opacity: 0.7;">Propuesta recibida</div>
@@ -542,7 +606,12 @@
                             </div>
                         {% endif %}
 
-                        <div class="chat-bubble {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %} {% if group.is_media_group %}chat-bubble--has-image{% endif %}">
+                        <div class="chat-bubble {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %} {% if group.is_media_group %}chat-bubble--has-image{% endif %}"
+                             data-msg-id="{{ last_msg.id }}"
+                             data-mine="{% if first_msg.sender_id == request.user.pk %}1{% else %}0{% endif %}"
+                             data-deleted="{% if last_msg.is_deleted %}1{% else %}0{% endif %}"
+                             onmousedown="handlePressStart(event, this)" onmouseup="handlePressEnd(event, this)" onmouseleave="handlePressCancel(this)"
+                             ontouchstart="handlePressStart(event, this)" ontouchend="handlePressEnd(event, this)" ontouchmove="handlePressCancel(this)">
                             
                             {# IMAGEN (GRID ADAPTATIVO: Ocultación total de vistos) #}
                             {% if group.is_media_group %}
@@ -608,9 +677,6 @@
                                                 {% else %}
                                                     <i data-lucide="check" style="width: 12px; margin-left: 2px; color: rgba(255,255,255,0.5);"></i>
                                                 {% endif %}
-                                                <button type="button" class="msg-delete-btn" onclick="deleteMessage({{ m.id }}, event)" title="Eliminar mensaje">
-                                                    <i data-lucide="trash-2"></i>
-                                                </button>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -627,9 +693,6 @@
                                                         {% else %}
                                                             <i data-lucide="check" style="width: 12px; margin-left: 2px; color: rgba(255,255,255,0.5);"></i>
                                                         {% endif %}
-                                                        <button type="button" class="msg-delete-btn" onclick="deleteMessage({{ m.id }}, event)" title="Eliminar mensaje">
-                                                            <i data-lucide="trash-2"></i>
-                                                        </button>
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -689,6 +752,19 @@
 <div class="chat-lightbox" id="chatLightbox" onclick="closeImageLightbox()">
     <button type="button" class="chat-lightbox-close" onclick="closeImageLightbox()">&times;</button>
     <img id="chatLightboxImg" src="" alt="Foto" onclick="event.stopPropagation()">
+</div>
+
+<div class="msg-actions-overlay" id="msgActionsOverlay" onclick="closeMessageActions()">
+    <div class="msg-actions-sheet" onclick="event.stopPropagation()">
+        <div class="msg-actions-handle"></div>
+        <button type="button" class="msg-action-btn" onclick="performDeleteMessage('me')">
+            <i data-lucide="eye-off"></i> Eliminar para mí
+        </button>
+        <button type="button" class="msg-action-btn msg-action-btn--danger" id="msgActionDeleteEveryone" onclick="performDeleteMessage('everyone')">
+            <i data-lucide="trash-2"></i> Eliminar para todos
+        </button>
+        <button type="button" class="msg-action-cancel" onclick="closeMessageActions()">Cancelar</button>
+    </div>
 </div>
 
 <script>
@@ -855,7 +931,9 @@
     }
 
     // --- Lightbox de fotos (se agrandan en la misma página) ---
+    let suppressNextClick = false;
     function openImageLightbox(src) {
+        if (suppressNextClick) { suppressNextClick = false; return; }
         const lightbox = document.getElementById('chatLightbox');
         document.getElementById('chatLightboxImg').src = src;
         lightbox.classList.add('is-active');
@@ -865,17 +943,47 @@
         document.getElementById('chatLightboxImg').src = '';
     }
 
-    // --- Eliminar mensaje propio ---
-    function deleteMessage(msgId, event) {
-        if (event) event.stopPropagation();
-        if (!confirm('¿Eliminar este mensaje?')) return;
+    // --- Mantener presionado un mensaje para eliminarlo (estilo WhatsApp) ---
+    let pressTimer = null;
+    let activePressMsgId = null;
+
+    function handlePressStart(event, el) {
+        if (el.dataset.deleted === '1') return;
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+            el.classList.add('is-pressing');
+            suppressNextClick = true;
+            if (navigator.vibrate) navigator.vibrate(25);
+            showMessageActions(el);
+        }, 450);
+    }
+    function handlePressEnd(event, el) {
+        clearTimeout(pressTimer);
+        el.classList.remove('is-pressing');
+    }
+    function handlePressCancel(el) {
+        clearTimeout(pressTimer);
+        el.classList.remove('is-pressing');
+    }
+
+    function showMessageActions(el) {
+        activePressMsgId = el.dataset.msgId;
+        const isMine = el.dataset.mine === '1';
+        document.getElementById('msgActionDeleteEveryone').style.display = isMine ? 'flex' : 'none';
+        document.getElementById('msgActionsOverlay').classList.add('is-active');
+    }
+    function closeMessageActions() {
+        document.getElementById('msgActionsOverlay').classList.remove('is-active');
+    }
+    function performDeleteMessage(scope) {
+        closeMessageActions();
+        if (scope === 'everyone' && !confirm('¿Eliminar este mensaje para todos?')) return;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        fetch(`/mensajes/mensaje/eliminar/${msgId}/`, {
+        fetch(`/mensajes/mensaje/eliminar/${activePressMsgId}/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
-        }).then(res => {
-            if (res.ok) location.reload();
-        });
+            body: new URLSearchParams({ scope }),
+        }).then(res => { if (res.ok) location.reload(); });
     }
 
     // --- Polling estilo WhatsApp (recibir mensajes nuevos + ticks de leído) ---
