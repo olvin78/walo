@@ -11,16 +11,19 @@ def tracking(request):
         container_id = ""
 
     unread_messages = 0
+    is_pro = False
     if request.user.is_authenticated:
         conversation_ids = request.user.conversations.values_list("id", flat=True)
         unread_messages = Message.objects.filter(
             conversation_id__in=conversation_ids,
         ).exclude(sender=request.user).filter(is_read=False).count()
+        is_pro = bool(getattr(getattr(request.user, "profile", None), "is_pro", False))
 
     return {
         "google_tag_manager_id": container_id,
         "system_payments_enabled": system_payments_enabled,
         "unread_messages": unread_messages,
+        "nav_is_pro": is_pro,
         "site_url": getattr(settings, "PUBLIC_BASE_URL", "https://www.igualo.com").rstrip("/"),
         "site_name": "IGUALO",
     }
