@@ -744,7 +744,7 @@ def chat_view(request, conversation_id):
             return redirect(reverse('chat_detail', args=[conversation_id]))
     
     # Lógica de agrupación de mensajes para el rediseño "Bonito"
-    raw_messages = conversation.messages.all().order_by('created_at')
+    raw_messages = conversation.messages.exclude(deleted_for=request.user).order_by('created_at')
     
     # Pre-filtrado: Eliminar mensajes efímeros ya vistos para no dejar rastro
     filtered_messages = []
@@ -820,7 +820,7 @@ def chat_poll(request, conversation_id):
     last_id = request.GET.get('last_id')
     other_user = conversation.participants.exclude(id=request.user.id).first()
 
-    qs = conversation.messages.all().order_by('id')
+    qs = conversation.messages.exclude(deleted_for=request.user).order_by('id')
     if last_id:
         try:
             qs = qs.filter(id__gt=int(last_id))
@@ -890,6 +890,70 @@ def mark_image_viewed(request, message_id):
         return JsonResponse({"status": "deleted"})
         
     return JsonResponse({"status": "success", "viewed_by_sender": message.viewed_by_sender, "viewed_by_receiver": message.viewed_by_receiver})
+
+
+@csrf_exempt
+@login_required
+def delete_message(request):
+    """
+    Elimina uno o varios mensajes a la vez (un bloque completo de fotos, por
+    ejemplo), estilo WhatsApp, con dos modos (parámetro POST 'scope'):
+    - 'me': solo desaparecen de la vista de quien lo pide (cualquier
+      participante, mensajes propios o ajenos). No afecta a nadie más.
+    - 'everyone' (por defecto): solo el remitente puede hacerlo. Se conserva el
+      registro para no romper la conversación, pero se limpia el contenido y se
+      marca como eliminado para mostrar "Mensaje eliminado" a todos.
+    """
+    if request.method != 'POST':
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    ids_raw = request.POST.get('message_ids', '')
+    try:
+        message_ids = [int(x) for x in ids_raw.split(',') if x.strip()]
+    except ValueError:
+        return JsonResponse({"error": "IDs inválidos"}, status=400)
+    if not message_ids:
+        return JsonResponse({"error": "Falta message_ids"}, status=400)
+
+    messages = list(Message.objects.filter(id__in=message_ids))
+    if not messages:
+        return JsonResponse({"error": "No encontrado"}, status=404)
+
+    for message in messages:
+        if request.user not in message.conversation.participants.all():
+            return JsonResponse({"error": "No autorizado"}, status=403)
+
+    scope = request.POST.get('scope', 'everyone')
+
+    if scope == 'me':
+        for message in messages:
+            message.deleted_for.add(request.user)
+        return JsonResponse({"status": "deleted_for_me", "message_ids": message_ids})
+
+    user_is_pro = getattr(getattr(request.user, 'profile', None), 'is_pro', False)
+    if not user_is_pro:
+        return JsonResponse({"error": "La función Eliminar para todos es exclusiva de usuarios PRO"}, status=403)
+
+    for message in messages:
+        if message.sender_id != request.user.id:
+            return JsonResponse({"error": "No autorizado"}, status=403)
+
+    for message in messages:
+        if message.image:
+            message.image.delete(save=False)
+        if message.audio:
+            message.audio.delete(save=False)
+        if message.file:
+            message.file.delete(save=False)
+        message.is_deleted = True
+        message.text = ''
+        message.image = None
+        message.audio = None
+        message.file = None
+        message.save(update_fields=['is_deleted', 'text', 'image', 'audio', 'file'])
+
+    return JsonResponse({"status": "deleted", "message_ids": message_ids})
+
 
 @login_required
 def start_conversation(request, listing_id):

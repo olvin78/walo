@@ -1004,7 +1004,6 @@
 
     function handleContextMenu(event, el) {
         if (event) event.preventDefault();
-        if (el.dataset.deleted === '1') return false;
         suppressNextClick = true;
         if (navigator.vibrate) navigator.vibrate(25);
         showMessageActions(el);
@@ -1012,7 +1011,6 @@
     }
 
     function handlePressStart(event, el) {
-        if (el.dataset.deleted === '1') return;
         clearTimeout(pressTimer);
         pressTimer = setTimeout(() => {
             el.classList.add('is-pressing');
@@ -1037,14 +1035,20 @@
         activePressEl = el;
         activePressMsgId = el.dataset.msgId;
         const isMine = el.dataset.mine === '1';
+        const isDeleted = el.dataset.deleted === '1';
 
         const textEl = el.querySelector('.chat-text');
         const copyBtn = document.getElementById('msgActionCopyText');
         if (copyBtn) {
-            copyBtn.style.display = (textEl && textEl.innerText.trim() && !textEl.classList.contains('chat-text--deleted')) ? 'flex' : 'none';
+            copyBtn.style.display = (textEl && textEl.innerText.trim() && !isDeleted && !textEl.classList.contains('chat-text--deleted')) ? 'flex' : 'none';
         }
 
-        document.getElementById('msgActionDeleteEveryone').style.display = isMine ? 'flex' : 'none';
+        // 'Eliminar para todos' es una característica exclusiva para usuarios PRO
+        const deleteEveryoneBtn = document.getElementById('msgActionDeleteEveryone');
+        if (deleteEveryoneBtn) {
+            deleteEveryoneBtn.style.display = (isMine && !isDeleted && window.NAV_IS_PRO) ? 'flex' : 'none';
+        }
+
         document.getElementById('msgActionsOverlay').classList.add('is-active');
         lucide.createIcons();
     }
