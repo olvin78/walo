@@ -2,7 +2,7 @@ from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 
 from .views import (add_review, category_detail, chat_view, create_listing,
-                    delete_conversation, delete_story, edit_profile, explore,
+                    delete_conversation, delete_message, forward_message, delete_story, edit_profile, explore,
                     favorites_view, home, inbox_view, listing_detail, listing_detail_slug,
                     make_offer, signup, start_conversation, toggle_favorite,
                     toggle_follow, upload_story, user_profile, rate_profile, verify_profile, report_bug,
@@ -27,6 +27,8 @@ urlpatterns = [
     path("mensajes/", inbox_view, name="inbox"),
     path("mensajes/eliminar/<int:conversation_id>/", delete_conversation, name="delete_chat"),
     path("mensajes/visto/<int:message_id>/", mark_image_viewed, name="mark_image_viewed"),
+    path("mensajes/mensaje/eliminar/", delete_message, name="delete_message"),
+    path("mensajes/mensaje/reenviar/", forward_message, name="forward_message"),
     path("mensajes/<int:conversation_id>/", chat_view, name="chat_detail"),
     path("mensajes/<int:conversation_id>/poll/", chat_poll, name="chat_poll"),
     path("mensajes/nuevo/<int:listing_id>/", start_conversation, name="start_chat"),

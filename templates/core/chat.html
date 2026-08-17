@@ -811,6 +811,9 @@
         <button type="button" class="msg-action-btn" id="msgActionCopyText" onclick="copyMessageText()">
             <i data-lucide="copy"></i> Copiar texto
         </button>
+        <button type="button" class="msg-action-btn" id="msgActionForward" onclick="openForwardModal()">
+            <i data-lucide="forward"></i> Reenviar
+        </button>
         <button type="button" class="msg-action-btn" onclick="performDeleteMessage('me')">
             <i data-lucide="trash"></i> Eliminar para mí
         </button>
@@ -818,6 +821,48 @@
             <i data-lucide="trash-2"></i> Eliminar para todos
         </button>
         <button type="button" class="msg-action-cancel" onclick="closeMessageActions()">Cancelar</button>
+    </div>
+</div>
+
+<!-- MODAL DE REENVÍO (ESTILO WHATSAPP) -->
+<div class="msg-actions-overlay" id="forwardModalOverlay" onclick="closeForwardModal()">
+    <div class="msg-actions-sheet forward-sheet" onclick="event.stopPropagation()" style="max-height: 80vh;">
+        <div class="msg-actions-handle"></div>
+        <div style="font-weight: 700; font-size: 1.1rem; color: #fff; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span>Reenviar mensaje</span>
+            <button type="button" onclick="closeForwardModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <input type="text" id="forwardSearchInput" onkeyup="filterForwardChats()" placeholder="Buscar chat..." style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-size: 0.9rem; outline: none; margin-bottom: 12px;">
+
+        <div id="forwardChatsList" style="overflow-y: auto; max-height: 300px; display: flex; flex-direction: column; gap: 6px;">
+            {% for c in user_conversations %}
+                {% for p in c.participants.all %}
+                    {% if p.id != request.user.id %}
+                        <label class="forward-chat-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                {% if p.profile.avatar %}
+                                    <img src="{{ p.profile.avatar.url }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #94a3b8; font-size: 0.85rem;">{{ p.username|slice:":1"|upper }}</div>
+                                {% endif %}
+                                <div>
+                                    <div class="chat-name" style="font-weight: 600; font-size: 0.9rem; color: #f8fafc;">{{ p.username }}</div>
+                                    <div style="font-size: 0.75rem; color: #94a3b8;">{% if c.listing %}{{ c.listing.title|truncatechars:25 }}{% else %}Consulta General{% endif %}</div>
+                                </div>
+                            </div>
+                            <input type="checkbox" class="forward-checkbox" value="{{ c.id }}" style="width: 18px; height: 18px; accent-color: #22c55e;" onchange="updateForwardButton()">
+                        </label>
+                    {% endif %}
+                {% endfor %}
+            {% empty %}
+                <div style="text-align: center; color: #94a3b8; padding: 20px; font-size: 0.85rem;">No tienes otros chats activos</div>
+            {% endfor %}
+        </div>
+
+        <button type="button" id="btnExecuteForward" onclick="performForwardMessage()" disabled style="margin-top: 12px; width: 100%; padding: 14px; background: #22c55e; color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; opacity: 0.5; transition: 0.2s;">
+            Reenviar
+        </button>
     </div>
 </div>
 
@@ -1063,6 +1108,71 @@
             }
         }
         closeMessageActions();
+    }
+
+    // --- REENVÍO DE MENSAJES (ESTILO WHATSAPP) ---
+    function openForwardModal() {
+        closeMessageActions();
+        const modal = document.getElementById('forwardModalOverlay');
+        if (modal) {
+            document.querySelectorAll('.forward-checkbox').forEach(cb => cb.checked = false);
+            updateForwardButton();
+            modal.classList.add('is-active');
+        }
+    }
+    function closeForwardModal() {
+        const modal = document.getElementById('forwardModalOverlay');
+        if (modal) modal.classList.remove('is-active');
+    }
+    function updateForwardButton() {
+        const selected = document.querySelectorAll('.forward-checkbox:checked');
+        const btn = document.getElementById('btnExecuteForward');
+        if (btn) {
+            if (selected.length > 0) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.innerText = `Reenviar a (${selected.length})`;
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.innerText = 'Reenviar';
+            }
+        }
+    }
+    function filterForwardChats() {
+        const query = document.getElementById('forwardSearchInput').value.toLowerCase();
+        document.querySelectorAll('.forward-chat-item').forEach(item => {
+            const name = item.querySelector('.chat-name').innerText.toLowerCase();
+            item.style.display = name.includes(query) ? 'flex' : 'none';
+        });
+    }
+    function performForwardMessage() {
+        const selected = Array.from(document.querySelectorAll('.forward-checkbox:checked')).map(cb => cb.value);
+        if (selected.length === 0 || !activePressMsgId) return;
+
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const btn = document.getElementById('btnExecuteForward');
+        btn.disabled = true;
+        btn.innerText = "Reenviando...";
+
+        fetch(`/mensajes/mensaje/reenviar/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            body: new URLSearchParams({
+                message_ids: activePressMsgId,
+                target_conversation_ids: selected.join(',')
+            }),
+        }).then(res => res.json()).then(data => {
+            closeForwardModal();
+            if (data.status === 'success') {
+                alert(`Mensaje reenviado con éxito.`);
+            } else {
+                alert(data.error || "Error al reenviar mensaje");
+            }
+        }).catch(() => {
+            closeForwardModal();
+            alert("Error al reenviar mensaje");
+        });
     }
     function performDeleteMessage(scope) {
         closeMessageActions();

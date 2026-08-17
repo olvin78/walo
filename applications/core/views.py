@@ -802,8 +802,59 @@ def chat_view(request, conversation_id):
     return render(request, "core/chat.html", {
         'conversation': conversation, 
         'grouped_messages': grouped_messages,
-        'other_user': other_user
+        'other_user': other_user,
+        'user_conversations': request.user.conversations.exclude(id=conversation_id).order_by('-updated_at')
     })
+
+@csrf_exempt
+@login_required
+def forward_message(request):
+    """
+    Reenvía uno o varios mensajes a una o más conversaciones de destino.
+    """
+    if request.method != 'POST':
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    msg_ids_raw = request.POST.get('message_ids', '')
+    target_convs_raw = request.POST.get('target_conversation_ids', '')
+
+    try:
+        message_ids = [int(x) for x in msg_ids_raw.split(',') if x.strip()]
+        target_conv_ids = [int(x) for x in target_convs_raw.split(',') if x.strip()]
+    except ValueError:
+        return JsonResponse({"error": "IDs inválidos"}, status=400)
+
+    if not message_ids or not target_conv_ids:
+        return JsonResponse({"error": "Faltan parámetros requeridos"}, status=400)
+
+    original_messages = Message.objects.filter(id__in=message_ids)
+    if not original_messages:
+        return JsonResponse({"error": "Mensajes no encontrados"}, status=404)
+
+    for msg in original_messages:
+        if request.user not in msg.conversation.participants.all():
+            return JsonResponse({"error": "No autorizado"}, status=403)
+
+    target_conversations = Conversation.objects.filter(id__in=target_conv_ids, participants=request.user)
+    if not target_conversations:
+        return JsonResponse({"error": "Conversaciones de destino no encontradas"}, status=404)
+
+    forwarded_count = 0
+    for conv in target_conversations:
+        for orig in original_messages:
+            Message.objects.create(
+                conversation=conv,
+                sender=request.user,
+                text=orig.text,
+                image=orig.image,
+                audio=orig.audio,
+                file=orig.file,
+                is_view_once=False
+            )
+            forwarded_count += 1
+        conv.save()
+
+    return JsonResponse({"status": "success", "forwarded_count": forwarded_count})
 
 @csrf_exempt
 @login_required
