@@ -35,10 +35,6 @@
                     <h1 class="fluid-name">{{ profile_user.username }}</h1>
                     {% if profile_user.profile.is_verified %}
                         <span class="fluid-verified">✓ Verificado</span>
-                    {% elif profile_user.profile.verification_photo %}
-                        <span class="fluid-pending" style="color: rgba(255,255,255,0.3); font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 50px;">Verificación pendiente</span>
-                    {% else %}
-                        <span class="fluid-pending" style="color: rgba(255,255,255,0.3); font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 50px;">No verificado</span>
                     {% endif %}
                     {% if system_payments_enabled and profile_user.profile.is_pro %}
                         <span class="fluid-pro-badge">Pro</span>
