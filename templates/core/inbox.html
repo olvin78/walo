@@ -1173,8 +1173,8 @@
         
         {# BOTÓN DE ELIMINAR DESLIZABLE #}
         <div class="delete-action" onclick="confirmDelete({{ conversation.id }})"
-             style="position: absolute; right: 0; top: 0; bottom: 0; width: 90px; background: #dc2626; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; z-index: 1; border-radius: 0 18px 18px 0;">
-          Eliminar
+             style="position: absolute; right: 0; top: 0; bottom: 0; width: 90px; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center; color: #ef4444; font-weight: 700; font-size: 0.85rem; cursor: pointer; z-index: 1; border-radius: 0 18px 18px 0; gap: 6px;">
+          🗑️ Eliminar
         </div>
 
         <a href="{% url 'chat_detail' conversation.id %}" class="conversation-item" 
