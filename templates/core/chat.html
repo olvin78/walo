@@ -154,6 +154,11 @@
         position: relative;
         transition: 0.3s;
         word-wrap: break-word;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-touch-callout: none;
     }
 
     /* BURBUJA PROPIA (VERDE PREMIUM) */
@@ -1026,6 +1031,9 @@
     }
 
     function showMessageActions(el) {
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
         activePressEl = el;
         activePressMsgId = el.dataset.msgId;
         const isMine = el.dataset.mine === '1';
