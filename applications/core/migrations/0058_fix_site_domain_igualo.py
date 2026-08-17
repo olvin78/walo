@@ -17,7 +17,7 @@ def revert_site_domain(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0057_story_expires_at_is_active_text"),
+        ("core", "0056_message_deleted_for"),
         ("sites", "0002_alter_domain_unique"),
     ]
 
