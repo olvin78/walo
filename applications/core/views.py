@@ -1073,6 +1073,8 @@ def start_direct_user_chat(request, username):
     if not conversation:
         conversation = Conversation.objects.create()
         conversation.participants.add(request.user, target_user)
+    else:
+        conversation.save()
     
     return redirect('chat_detail', conversation_id=conversation.id)
 
