@@ -79,10 +79,12 @@ export default function LoginScreen() {
     }
   };
 
+  const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: 'REPLACED_GOOGLE_OAUTH_CLIENT_ID',
-    androidClientId: 'REPLACED_GOOGLE_OAUTH_CLIENT_ID',
-    iosClientId: 'REPLACED_GOOGLE_OAUTH_CLIENT_ID',
+    webClientId: googleClientId,
+    androidClientId: googleClientId,
+    iosClientId: googleClientId,
   });
 
   useEffect(() => {
