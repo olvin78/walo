@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, ListingReport, MarketingConsent, Message, Notification, Profile, ProfileReview, Story, Subcategory
+from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, ListingReport, MarketingConsent, Message, Notification, Profile, ProfileReview, Story, Subcategory, SystemPaymentSetting
 
 
 User = get_user_model()
@@ -24,6 +24,11 @@ def absolute_media_url(request, file_field):
     if request:
         return request.build_absolute_uri(url)
     return url
+
+
+class UploadUrlField(serializers.FileField):
+    def to_representation(self, value):
+        return absolute_media_url(self.context.get("request"), value)
 
 
 def split_location(location: str | None):
@@ -293,6 +298,7 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
     )
+    is_active = serializers.BooleanField(required=False, default=None, allow_null=True)
 
     class Meta:
         model = Listing
@@ -318,8 +324,8 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
     def validate_price(self, value):
-        if value <= 0:
-            raise ValidationError("El precio debe ser mayor que cero.")
+        if value < 0:
+            raise ValidationError("El precio no puede ser negativo.")
         return value
 
     def validate_images(self, value):
@@ -342,6 +348,11 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         if subcategory and category and subcategory.category_id != category.id:
             raise ValidationError({"subcategory": "La subcategoría no pertenece a la categoría seleccionada."})
 
+        is_negotiable = attrs.get("is_negotiable", getattr(self.instance, "is_negotiable", False))
+        price = attrs.get("price", getattr(self.instance, "price", 0))
+        if not is_negotiable and price <= 0:
+            raise ValidationError({"price": "El precio debe ser mayor que cero si no es negociable."})
+
         main_image = attrs.get("main_image")
         images = attrs.get("images", [])
         total_images = len(images) + (1 if main_image else 0)
@@ -354,6 +365,9 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         images = validated_data.pop("images", [])
         main_image = validated_data.pop("main_image", None)
+
+        if validated_data.get("is_active") is None:
+            validated_data.pop("is_active", None)
 
         if not main_image and images:
             main_image = images[0]
@@ -370,6 +384,8 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         images = validated_data.pop("images", [])
         main_image = validated_data.pop("main_image", None)
         deleted_images = validated_data.pop("deleted_images", [])
+        if validated_data.get("is_active") is None:
+            validated_data.pop("is_active", None)
 
         # 1. Handle Deletions
         if deleted_images:
@@ -409,10 +425,14 @@ class ListingWriteSerializer(serializers.ModelSerializer):
 
 class MeSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
+    system_payments_enabled = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "date_joined", "profile")
+        fields = ("id", "username", "email", "first_name", "last_name", "date_joined", "profile", "system_payments_enabled")
+
+    def get_system_payments_enabled(self, obj):
+        return SystemPaymentSetting.get_solo().enabled
 
     def get_profile(self, obj):
         profile = getattr(obj, "profile", None)
@@ -432,6 +452,11 @@ class MeSerializer(serializers.ModelSerializer):
             "reviews_count": profile.reviews_count,
             "is_verified": profile.is_verified,
             "is_pro": profile.is_pro,
+            "has_stripe_subscription": bool(profile.stripe_subscription_id),
+            "has_paypal_subscription": bool(profile.paypal_subscription_id),
+            "pro_cancel_at_period_end": profile.pro_cancel_at_period_end,
+            "pro_current_period_end": profile.pro_current_period_end,
+            "has_verification_photo": bool(profile.verification_photo),
             "followers_count": profile.followers.count(),
             "listings_count": obj.listing_set.filter(is_active=True).count(),
             "allows_notifications": consent.allows_notifications if consent else True,
@@ -441,7 +466,7 @@ class MeSerializer(serializers.ModelSerializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ("avatar", "cover_image", "bio", "phone", "location", "latitude", "longitude")
+        fields = ("avatar", "cover_image", "bio", "phone", "location", "latitude", "longitude", "expo_push_token", "verification_photo")
 
 
 class PasswordChangeSerializer(serializers.Serializer):
@@ -475,10 +500,11 @@ class ChatUserSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
     is_verified = serializers.SerializerMethodField()
+    is_pro = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "display_name", "avatar", "is_verified")
+        fields = ("id", "username", "display_name", "avatar", "is_verified", "is_pro")
 
     def get_display_name(self, obj):
         return obj.get_full_name().strip() or obj.username
@@ -493,15 +519,22 @@ class ChatUserSerializer(serializers.ModelSerializer):
         profile = getattr(obj, "profile", None)
         return bool(profile and profile.is_verified)
 
+    def get_is_pro(self, obj):
+        profile = getattr(obj, "profile", None)
+        return bool(profile and profile.is_pro)
+
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = ChatUserSerializer(read_only=True)
     is_mine = serializers.SerializerMethodField()
+    image = UploadUrlField(required=False, allow_null=True)
+    audio = UploadUrlField(required=False, allow_null=True)
+    file = UploadUrlField(required=False, allow_null=True)
 
     class Meta:
         model = Message
-        fields = ("id", "conversation", "sender", "text", "created_at", "is_read", "is_mine")
-        read_only_fields = ("id", "sender", "created_at", "is_read", "is_mine")
+        fields = ("id", "conversation", "sender", "text", "image", "audio", "file", "is_view_once", "viewed_by_sender", "viewed_by_receiver", "created_at", "is_read", "is_mine")
+        read_only_fields = ("id", "sender", "created_at", "is_read", "is_mine", "viewed_by_sender", "viewed_by_receiver")
 
     def get_is_mine(self, obj):
         request = self.context.get("request")
@@ -515,9 +548,15 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def validate_text(self, value):
         value = (value or "").strip()
-        if not value:
+        has_attachment = any(self.initial_data.get(field) for field in ("image", "audio", "file"))
+        if not value and not has_attachment:
             raise ValidationError("El mensaje no puede estar vacío.")
         return value
+
+    def validate(self, attrs):
+        if not any(attrs.get(field) for field in ("text", "image", "audio", "file")):
+            raise ValidationError("El mensaje no puede estar vacío.")
+        return attrs
 
     def create(self, validated_data):
         request = self.context["request"]

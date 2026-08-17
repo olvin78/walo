@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { 
+import React, { useCallback, useEffect, useState } from 'react';
+import {
   ActivityIndicator,
   Alert,
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  TouchableOpacity, 
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
   StatusBar,
-  TextInput
+  TextInput,
+  Platform,
+  RefreshControl,
+  Share as RNShare,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { ArrowLeft, Share2, BadgeCheck, Star, MessageSquare } from 'lucide-react-native';
+import { ArrowLeft, Share2, BadgeCheck, Star, MessageSquare, UserPlus, Check } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { useRouter } from 'expo-router';
 import { ProductCard } from '../components/ProductCard';
 import { getUserProfile, submitProfileReview, type ProfileReview, type UserProfileResponse } from '../../lib/igualo-api';
+import { WEB_BASE_URL } from '../services/api';
 
 type UserProfileScreenProps = {
   username?: string;
@@ -51,11 +55,44 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
   const [activeTab, setActiveTab] = useState('anuncios');
   const [profile, setProfile] = useState<UserProfileResponse>(fallbackUser);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedRating, setSelectedRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
+  const isTargetPro = Boolean(profile.profile.is_pro);
   const joinedYear = new Date(profile.date_joined).getFullYear();
+
+  const handleShareProfile = async () => {
+    const url = `${WEB_BASE_URL}/perfil/${profile.username}/`;
+    const lines = [
+      `👤 ${profile.display_name} en Igualo`,
+      `📦 ${profile.stats.listings_count} anuncios · ⭐ ${profile.stats.average_rating} (${profile.stats.reviews_count} opiniones)`,
+      profile.profile.location ? `📍 ${profile.profile.location}` : '',
+      '',
+      `👉 Entra para ver su perfil y sus anuncios:`,
+      url,
+    ].filter((line) => line !== '');
+    const options: any = {
+      title: `${profile.display_name} en Igualo`,
+      message: lines.join('\n'),
+    };
+    // En iOS se adjunta la foto del perfil como tarjeta en el compartir
+    if (Platform.OS === 'ios' && profile.profile.avatar) {
+      options.url = profile.profile.avatar;
+    }
+    try {
+      await RNShare.share(options);
+    } catch {}
+  };
+
+  const loadProfile = useCallback(async () => {
+    const data = await getUserProfile(username);
+    setProfile(data);
+    setSelectedRating(data.stats.user_rating || 5);
+    setReviewText(data.stats.user_comment || '');
+  }, [username]);
 
   useEffect(() => {
     let isMounted = true;
@@ -67,13 +104,7 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
       };
     }
     setIsLoading(true);
-    getUserProfile(username)
-      .then((data) => {
-        if (!isMounted) return;
-        setProfile(data);
-        setSelectedRating(data.stats.user_rating || 5);
-        setReviewText(data.stats.user_comment || '');
-      })
+    loadProfile()
       .catch(() => {
         if (isMounted) setProfile(fallbackUser);
       })
@@ -83,7 +114,18 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
     return () => {
       isMounted = false;
     };
-  }, [username]);
+  }, [username, loadProfile]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await loadProfile();
+    } catch {
+      // no-op, keep previous data on failure
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleSubmitReview = async () => {
     const comment = reviewText.trim();
@@ -141,7 +183,12 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         {/* Cover & Avatar Header */}
         <View style={styles.headerContainer}>
           <Image 
@@ -157,7 +204,7 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
             <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
               <ArrowLeft size={24} color={colors.white} strokeWidth={2.4} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.shareBtn}>
+            <TouchableOpacity style={styles.shareBtn} onPress={handleShareProfile}>
               <Share2 size={24} color={colors.white} strokeWidth={2.2} />
             </TouchableOpacity>
           </SafeAreaView>
@@ -203,29 +250,51 @@ export const UserProfileScreen = ({ username = 'juan' }: UserProfileScreenProps)
             </View>
           </View>
 
-          <TouchableOpacity style={styles.followBtn}>
-            <Text style={styles.followBtnText}>Seguir perfil</Text>
+          <TouchableOpacity 
+            style={[
+              styles.followBtnBase, 
+              isTargetPro ? styles.followBtnPro : styles.followBtnStandard,
+              isFollowing && (isTargetPro ? styles.followingBtnPro : styles.followingBtnStandard)
+            ]}
+            onPress={() => setIsFollowing(!isFollowing)}
+            activeOpacity={0.8}
+          >
+            {isFollowing ? (
+              <>
+                <Check size={18} color={isTargetPro ? '#B8860B' : colors.primary} strokeWidth={2.5} />
+                <Text style={[styles.followingBtnTextBase, isTargetPro ? styles.followingTextPro : styles.followingTextStandard]}>Siguiendo</Text>
+              </>
+            ) : (
+              <>
+                <UserPlus size={18} color={isTargetPro ? '#000000' : colors.white} strokeWidth={2.5} />
+                <Text style={[styles.followBtnTextBase, isTargetPro ? styles.followTextPro : styles.followTextStandard]}>Seguir perfil</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Tabs Section */}
         <View style={styles.tabsContainer}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'anuncios' && styles.activeTab]}
-            onPress={() => setActiveTab('anuncios')}
-          >
-            <Text style={[styles.tabText, activeTab === 'anuncios' && styles.activeTabText]}>
-              Anuncios ({profile.stats.listings_count})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'opiniones' && styles.activeTab]}
-            onPress={() => setActiveTab('opiniones')}
-          >
-            <Text style={[styles.tabText, activeTab === 'opiniones' && styles.activeTabText]}>
-              Opiniones ({profile.stats.reviews_count})
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.pillContainer}>
+            <TouchableOpacity 
+              style={[styles.pillTab, activeTab === 'anuncios' && styles.pillActive]}
+              onPress={() => setActiveTab('anuncios')}
+              activeOpacity={1}
+            >
+              <Text style={[styles.pillText, activeTab === 'anuncios' && styles.pillTextActive]}>
+                Anuncios ({profile.stats.listings_count})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.pillTab, activeTab === 'opiniones' && styles.pillActive]}
+              onPress={() => setActiveTab('opiniones')}
+              activeOpacity={1}
+            >
+              <Text style={[styles.pillText, activeTab === 'opiniones' && styles.pillTextActive]}>
+                Opiniones ({profile.stats.reviews_count})
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Content Area */}
@@ -312,11 +381,11 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   topActions: {
     position: 'absolute',
-    top: 10,
+    top: Platform.OS === 'ios' ? 50 : (StatusBar.currentHeight || 24) + 12,
     left: 15,
     right: 15,
     flexDirection: 'row',
@@ -387,9 +456,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginTop: 20,
-    backgroundColor: '#F9FAFB',
-    paddingVertical: 15,
-    borderRadius: 20,
+    backgroundColor: colors.white,
+    paddingVertical: 18,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 3,
     borderWidth: 1,
     borderColor: '#F3F4F6',
   },
@@ -465,67 +539,130 @@ const styles = StyleSheet.create({
     marginTop: 12,
     height: 44,
     borderRadius: 13,
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#D4AF37',
+    borderWidth: 2,
+    borderColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 5,
   },
   disabledBtn: {
     opacity: 0.6,
   },
   submitReviewText: {
-    color: colors.white,
+    color: '#000000',
     fontWeight: '900',
     fontSize: 14,
   },
-  followBtn: {
+  followBtnBase: {
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 20,
-    backgroundColor: colors.primary,
     width: '100%',
     height: 50,
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  followBtnStandard: {
+    backgroundColor: colors.primary,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  followBtnText: {
+  followBtnPro: {
+    backgroundColor: '#D4AF37',
+    borderWidth: 2,
+    borderColor: '#000000',
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  followBtnTextBase: {
+    fontWeight: '900',
+    fontSize: 16,
+    letterSpacing: 0.3,
+  },
+  followTextStandard: {
     color: colors.white,
-    fontWeight: '800',
+  },
+  followTextPro: {
+    color: '#000000',
+  },
+  followingBtnStandard: {
+    backgroundColor: '#ECFDF5',
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  followingBtnPro: {
+    backgroundColor: '#FFF8E1',
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 2,
+    borderColor: '#D4AF37',
+  },
+  followingBtnTextBase: {
+    fontWeight: '900',
     fontSize: 16,
   },
+  followingTextStandard: {
+    color: colors.primary,
+  },
+  followingTextPro: {
+    color: '#B8860B',
+  },
   tabsContainer: {
-    flexDirection: 'row',
-    marginTop: 30,
     paddingHorizontal: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    marginTop: 30,
+    marginBottom: 10,
   },
-  tab: {
-    marginRight: 25,
-    paddingBottom: 12,
+  pillContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    padding: 5,
   },
-  activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
+  pillTab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 16,
   },
-  tabText: {
-    fontSize: 15,
+  pillActive: {
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pillText: {
+    fontSize: 14,
     fontWeight: '700',
     color: colors.textLight,
   },
-  activeTabText: {
-    color: colors.primary,
+  pillTextActive: {
+    color: colors.text,
+    fontWeight: '900',
   },
   contentArea: {
-    padding: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.md,
   },
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   reviewCard: {
     padding: 16,

@@ -8,7 +8,8 @@ import {
   SafeAreaView, 
   FlatList, 
   TouchableOpacity, 
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Pencil, Eye, Trash2, Lock, ArrowLeft, Package } from 'lucide-react-native';
@@ -16,10 +17,12 @@ import { colors, spacing } from '../theme/colors';
 import { useRouter } from 'expo-router';
 import { deleteListing, getMeListings, type ListingSummary } from '../services/api';
 import { useAuth } from '../services/auth';
+import { ProFooter } from '../components/ProFooter';
 
 export const MyListingsScreen = () => {
   const router = useRouter();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const isMePro = Boolean(user?.profile?.is_pro);
   const [myListings, setMyListings] = useState<ListingSummary[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,7 +88,7 @@ export const MyListingsScreen = () => {
   };
 
   const renderItem = ({ item }: { item: ListingSummary }) => (
-    <View style={styles.listingCard}>
+    <View style={[styles.listingCard, isMePro && styles.listingCardPro]}>
       <Image 
         source={{ uri: item.main_image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800' }} 
         style={styles.listingImage} 
@@ -164,7 +167,12 @@ export const MyListingsScreen = () => {
         refreshing={isLoading}
         onEndReached={() => loadListings(false)}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isLoadingMore ? <ActivityIndicator style={{ margin: 20 }} color={colors.primary} /> : null}
+        ListFooterComponent={() => (
+          <View>
+            {isLoadingMore && <ActivityIndicator style={{ margin: 20 }} color={colors.primary} />}
+            {isMePro && myListings.length > 0 && <ProFooter />}
+          </View>
+        )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
@@ -179,7 +187,11 @@ export const MyListingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9f9f9',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -217,6 +229,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
+  },
+  listingCardPro: {
+    borderColor: '#F59E0B',
+    borderWidth: 2,
   },
   listingImage: {
     width: 100,

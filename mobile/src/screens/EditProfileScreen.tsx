@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -14,25 +14,37 @@ import {
   Alert,
   ActivityIndicator
 } from 'react-native';
-import { Modal } from 'react-native';
+import { Modal , Linking} from 'react-native';
 import { Image } from 'expo-image';
-import { X, User, Lock, ShieldCheck, Camera, Pencil, Locate, ChevronRight, Mail, ShieldCheck as ShieldIcon } from 'lucide-react-native';
+import { X, User, Lock, ShieldCheck, Camera, Pencil, Locate, ChevronRight, ChevronDown, Mail, ShieldCheck as ShieldIcon , Star, CreditCard, Wallet } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
+import * as WebBrowser from 'expo-web-browser';
+import * as ExpoLinking from 'expo-linking';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../services/auth';
-import { updateProfile, changePassword } from '../services/api';
+import { updateProfile, changePassword, togglePlan, createPaypalSubscription, confirmPaypalSubscription, cancelPaypalSubscription, createStripeCheckoutSession, confirmStripeSession, cancelStripeSubscription, WEB_BASE_URL } from '../services/api';
 import ManualMap from '../components/ManualMap';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export const EditProfileScreen = () => {
   const router = useRouter();
   const searchParams = useLocalSearchParams();
   const initialSection = (searchParams.section as 'public' | 'security' | 'verification') || 'public';
   const { user, reloadUser } = useAuth();
-  const [activeSection, setActiveSection] = useState<'public' | 'security' | 'verification'>(initialSection);
+  const [showProSuccessModal, setShowProSuccessModal] = useState(false);
+  const [proSuccessMessage, setProSuccessMessage] = useState({ title: '', desc: '', isPro: false });
+  const [showPlanPolicy, setShowPlanPolicy] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCancelPlanModal, setShowCancelPlanModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [activeSection, setActiveSection] = useState<'public' | 'security' | 'plan' | 'verification'>(initialSection);
 
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -51,6 +63,8 @@ export const EditProfileScreen = () => {
   const [newCover, setNewCover] = useState<ImagePicker.ImagePickerAsset | null>(null);
   
   const [isSaving, setIsSaving] = useState(false);
+  const isMePro = Boolean(user?.profile?.is_pro);
+  const systemPaymentsEnabled = Boolean(user?.system_payments_enabled);
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [isFetchingCurrentLocation, setIsFetchingCurrentLocation] = useState(false);
@@ -272,6 +286,160 @@ export const EditProfileScreen = () => {
     }
   };
 
+
+  const runCancelPlan = async () => {
+    try {
+      setIsSaving(true);
+      if (user?.profile?.has_stripe_subscription || user?.profile?.has_paypal_subscription) {
+        const result = user.profile.has_stripe_subscription
+          ? await cancelStripeSubscription()
+          : await cancelPaypalSubscription();
+        await reloadUser();
+        setProSuccessMessage({
+          title: 'Plan Cancelado',
+          desc: result.refunded
+            ? 'Se canceló tu suscripción y se reembolsó el cargo actual, ya no eres PRO.'
+            : 'No se renovará tu suscripción. Seguirás disfrutando de PRO hasta el final del período ya pagado.',
+          isPro: !result.refunded,
+        });
+      } else {
+        await togglePlan();
+        await reloadUser();
+        setProSuccessMessage({
+          title: 'Plan Cancelado',
+          desc: 'Has vuelto al plan básico y gratuito.',
+          isPro: false,
+        });
+      }
+      setShowProSuccessModal(true);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'No se pudo cancelar el plan.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTogglePro = () => {
+    if (isMePro) {
+      setShowCancelPlanModal(true);
+      return;
+    }
+    setShowPaymentModal(true);
+  };
+
+  const handleConfirmCancelPlan = () => {
+    setShowCancelPlanModal(false);
+    runCancelPlan();
+  };
+
+  const handleSelectStripe = async () => {
+    setShowPaymentModal(false);
+    try {
+      setIsSaving(true);
+      const redirectUrl = ExpoLinking.createURL('stripe-return');
+      const successUrl = `${redirectUrl}?session_id={CHECKOUT_SESSION_ID}`;
+      const session = await createStripeCheckoutSession(successUrl, redirectUrl);
+      if (!session.url) {
+        throw new Error('No se recibió el enlace de pago de Stripe.');
+      }
+      const result = await WebBrowser.openAuthSessionAsync(session.url, redirectUrl);
+      if (result.type !== 'success' || !result.url) {
+        return; // El usuario canceló el pago en Stripe
+      }
+      const sessionId = ExpoLinking.parse(result.url).queryParams?.session_id as string | undefined;
+      if (!sessionId) {
+        throw new Error('No se recibió el identificador de la sesión de pago.');
+      }
+      await confirmStripeSession(sessionId);
+      await reloadUser();
+      setProSuccessMessage({
+        title: '¡Bienvenido a PRO!',
+        desc: 'Has desbloqueado todas las funciones premium de Igualo.',
+        isPro: true,
+      });
+      setShowProSuccessModal(true);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'No se pudo completar el pago con Stripe.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSelectPaypal = async () => {
+    setShowPaymentModal(false);
+    try {
+      setIsSaving(true);
+      const redirectUrl = ExpoLinking.createURL('paypal-return');
+      const subscription = await createPaypalSubscription(redirectUrl);
+      if (!subscription.approve_url) {
+        throw new Error('No se recibió el enlace de pago de PayPal.');
+      }
+      const result = await WebBrowser.openAuthSessionAsync(subscription.approve_url, redirectUrl);
+      if (result.type !== 'success') {
+        return; // El usuario canceló la suscripción en PayPal
+      }
+      await confirmPaypalSubscription(subscription.id);
+      await reloadUser();
+      setProSuccessMessage({
+        title: '¡Bienvenido a PRO!',
+        desc: 'Has desbloqueado todas las funciones premium de Igualo.',
+        isPro: true,
+      });
+      setShowProSuccessModal(true);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'No se pudo completar el pago con PayPal.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleOpenScanner = async () => {
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) {
+        Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara para tomar la foto de verificación.');
+        return;
+      }
+    }
+    setShowScanner(true);
+  };
+
+  const uploadVerificationPhoto = async (uri: string) => {
+    setIsCapturing(true);
+    try {
+      const formData = new FormData();
+      const photoFile = Platform.OS === 'web'
+        ? await (await fetch(uri)).blob()
+        : { uri, name: 'verification.jpg', type: 'image/jpeg' };
+
+      formData.append('verification_photo', photoFile as any);
+
+      await updateProfile(formData);
+      await reloadUser();
+      setShowScanner(false);
+      Alert.alert('¡Escaneo recibido!', 'Tu identidad está siendo procesada. Te avisaremos cuando el sello de verificado aparezca en tu perfil.');
+    } catch (e) {
+      console.error('Error uploading verification photo', e);
+      Alert.alert('Error', 'No se pudo subir la foto de verificación. Inténtalo de nuevo.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  const handleCaptureScan = async () => {
+    if (!cameraRef.current || isCapturing) return;
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      if (photo?.uri) await uploadVerificationPhoto(photo.uri);
+    } catch (e) {
+      console.error('Error capturing photo', e);
+      Alert.alert('Error', 'No se pudo capturar la foto. Inténtalo de nuevo.');
+    }
+  };
+
   const handleSave = async () => {
     console.log('[EditProfile] handleSave ENTER');
     setIsSaving(true);
@@ -437,7 +605,16 @@ export const EditProfileScreen = () => {
           <Text style={[styles.tabLabel, activeSection === 'security' && styles.activeTabLabel]}>Seguridad</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        {systemPaymentsEnabled && (
+          <TouchableOpacity
+            style={[styles.tabItem, activeSection === 'plan' && (isMePro ? styles.activeTabItemPro : styles.activeTabItem)]}
+            onPress={() => setActiveSection('plan')}
+          >
+            <Star size={18} color={activeSection === 'plan' ? (isMePro ? '#F59E0B' : colors.primary) : '#9CA3AF'} strokeWidth={2} />
+            <Text style={[styles.tabLabel, activeSection === 'plan' && (isMePro ? styles.activeTabLabelPro : styles.activeTabLabel)]}>Mi plan</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
           style={[styles.tabItem, activeSection === 'verification' && styles.activeTabItem]} 
           onPress={() => setActiveSection('verification')}
         >
@@ -636,18 +813,104 @@ export const EditProfileScreen = () => {
             </View>
           )}
 
-          {activeSection === 'verification' && (
-            <View style={styles.comingSoonContainer}>
-              <View style={styles.soonIconWrapper}>
-                <ShieldIcon size={60} color={colors.primary} strokeWidth={1.6} />
+          {activeSection === 'plan' && systemPaymentsEnabled && (
+            <View style={styles.section}>
+              <View style={styles.verifyScannerCard}>
+                <View style={styles.scannerHeader}>
+                  <Text style={{ fontSize: 60, marginBottom: 15 }}>⭐</Text>
+                  <Text style={styles.scannerHeaderTitle}>Tu Plan Actual</Text>
+                  <Text style={styles.scannerHeaderDesc}>
+                    {isMePro ? 'Estás disfrutando de todos los beneficios de la cuenta PRO en Igualo.' : 'Actualmente estás en el plan básico y gratuito de Igualo.'}
+                  </Text>
+                </View>
+
+                {isMePro ? (
+                  <View style={styles.verifyStatusMsg}>
+                    <View style={[styles.statusIcon, {backgroundColor: '#FEF3C7'}]}><Text style={{ color: '#D97706', fontWeight: '800' }}>★</Text></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.verifyStatusTitle, {color: '#92400E'}]}>Suscripción PRO Activa</Text>
+                      <Text style={[styles.verifyStatusText, {color: '#B45309'}]}>Tienes acceso a insignias PRO, más visibilidad y contacto prioritario.</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.verifyStatusMsg}>
+                    <View style={[styles.statusIcon, {backgroundColor: '#F3F4F6'}]}><Text style={{ color: '#4B5563', fontWeight: '800' }}>✓</Text></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.verifyStatusTitle}>Plan Básico</Text>
+                      <Text style={styles.verifyStatusText}>Para destacar tus anuncios y obtener beneficios exclusivos, considera actualizar tu plan.</Text>
+                    </View>
+                  </View>
+                )}
+                
+                {!isMePro ? (
+                  <View style={styles.scannerActions}>
+                    <TouchableOpacity style={[styles.startCamBtn, {backgroundColor: '#D4AF37', borderColor: '#000', borderWidth: 2}]} onPress={handleTogglePro} disabled={isSaving}>
+                      <Text style={[styles.startCamBtnText, {color: '#000'}]}>{isSaving ? 'Cargando...' : 'Actualizar a PRO'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.scannerActions}>
+                    <TouchableOpacity style={[styles.startCamBtn, {backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1}]} onPress={handleTogglePro} disabled={isSaving}>
+                      <Text style={[styles.startCamBtnText, {color: '#EF4444'}]}>{isSaving ? 'Cargando...' : 'Cancelar Plan PRO'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <View style={styles.planPolicyBox}>
+                  <TouchableOpacity onPress={() => setShowPlanPolicy((value) => !value)} style={styles.planPolicyToggle}>
+                    <Text style={styles.planPolicyToggleText}>
+                      {isMePro ? 'Política de Cancelación' : 'Términos de Suscripción PRO'}
+                    </Text>
+                    <ChevronDown size={16} color={colors.textLight} strokeWidth={2.4} style={showPlanPolicy ? styles.planPolicyChevronOpen : undefined} />
+                  </TouchableOpacity>
+                  {showPlanPolicy && (
+                    <Text style={styles.planPolicyText}>
+                      {isMePro
+                        ? 'Al cancelar tu plan, este no se renovará para el próximo ciclo. Ten en cuenta que no se realizarán devoluciones de dinero por el período actual ya pagado, a menos que la cancelación ocurra dentro de las primeras 12 horas desde la activación y el pago sea anulado antes de nuestro período de facturación (días 23 al 25 de cada mes).'
+                        : 'Al activar tu cuenta Pro, el pago se renovará automáticamente cada mes. Puedes cancelar tu suscripción en cualquier momento desde esta configuración.'}
+                    </Text>
+                  )}
+                </View>
               </View>
-              <Text style={styles.comingSoonTitle}>Verificación de Perfil</Text>
-              <Text style={styles.comingSoonText}>
-                Estamos trabajando para traerte un sistema de verificación oficial. 
-                Pronto podrás obtener tu insignia de confianza.
-              </Text>
-              <View style={styles.activeSoonBadge}>
-                <Text style={styles.activeSoonText}>Disponible Próximamente</Text>
+            </View>
+          )}
+
+          {activeSection === 'verification' && (
+            <View style={styles.section}>
+              <View style={styles.verifyScannerCard}>
+                <View style={styles.scannerHeader}>
+                  <Text style={{ fontSize: 60, marginBottom: 15 }}>🛡️</Text>
+                  <Text style={styles.scannerHeaderTitle}>Verificación de Identidad</Text>
+                  <Text style={styles.scannerHeaderDesc}>
+                    Captura tu rostro para confirmar que eres una persona real. Esta foto será revisada por el equipo de Igualo.
+                  </Text>
+                </View>
+
+                {user?.profile?.is_verified ? (
+                  <View style={styles.verifyStatusMsg}>
+                    <View style={[styles.statusIcon, { backgroundColor: '#DCFCE7' }]}><Text style={{ color: '#16A34A', fontWeight: '800' }}>✓</Text></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.verifyStatusTitle, { color: '#15803D' }]}>Perfil verificado</Text>
+                      <Text style={[styles.verifyStatusText, { color: '#166534' }]}>Tu identidad ya fue confirmada. Tu sello de verificado está activo en tu perfil.</Text>
+                    </View>
+                  </View>
+                ) : user?.profile?.has_verification_photo ? (
+                  <View style={styles.verifyStatusMsg}>
+                    <View style={styles.statusIcon}><Text style={{ color: '#000', fontWeight: '800' }}>✓</Text></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.verifyStatusTitle}>Escaneo recibido</Text>
+                      <Text style={styles.verifyStatusText}>Tu identidad está siendo procesada. Te avisaremos cuando el sello de verificado aparezca en tu perfil.</Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {!user?.profile?.is_verified && (
+                  <View style={styles.scannerActions}>
+                    <TouchableOpacity style={styles.startCamBtn} onPress={handleOpenScanner}>
+                      <Text style={styles.startCamBtnText}>{user?.profile?.has_verification_photo ? 'Tomar otra foto' : 'Iniciar Escáner'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -782,6 +1045,155 @@ export const EditProfileScreen = () => {
         </View>
       </Modal>
 
+{/* Verification Scanner Modal */}
+      <Modal
+        visible={showScanner}
+        animationType="slide"
+        onRequestClose={() => setShowScanner(false)}
+      >
+        <View style={styles.scannerModalContainer}>
+          <StatusBar barStyle="light-content" />
+          <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="front" />
+
+          <View style={styles.scannerOverlay} pointerEvents="box-none">
+            <TouchableOpacity style={styles.scannerCloseBtn} onPress={() => setShowScanner(false)}>
+              <X size={22} color="#fff" strokeWidth={2.4} />
+            </TouchableOpacity>
+
+            <View style={styles.scannerGuideWrapper} pointerEvents="none">
+              <User size={Math.min(width * 1.4, height * 0.68)} color="#10B981" strokeWidth={0.7} />
+              <Text style={styles.scannerGuideText}>Encuadra tu rostro y hombros dentro de la guía</Text>
+            </View>
+
+            <View style={styles.scannerFooter}>
+              <TouchableOpacity
+                style={styles.scannerCaptureBtn}
+                onPress={handleCaptureScan}
+                disabled={isCapturing}
+                activeOpacity={0.8}
+              >
+                {isCapturing ? <ActivityIndicator color="#000" /> : <View style={styles.scannerCaptureBtnInner} />}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+{/* Cancel Plan Confirm Modal */}
+      <Modal
+        visible={showCancelPlanModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCancelPlanModal(false)}
+      >
+        <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+          <View style={styles.confirmCard}>
+            <View style={styles.confirmIconWrapper}>
+              <Text style={{ fontSize: 40 }}>⚠️</Text>
+            </View>
+            <Text style={styles.confirmTitle}>Cancelar Plan PRO</Text>
+            <Text style={styles.confirmDesc}>¿Estás seguro de que quieres cancelar tu plan PRO? Perderás tu insignia y la promoción de tus anuncios de inmediato.</Text>
+
+            <TouchableOpacity
+              style={[styles.modalActionBtn, { backgroundColor: '#EF4444', width: '100%' }]}
+              onPress={handleConfirmCancelPlan}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalActionBtnText}>Sí, cancelar PRO</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.confirmDismissBtn}
+              onPress={() => setShowCancelPlanModal(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.confirmDismissBtnText}>Volver</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+{/* Payment Method Modal */}
+      <Modal
+        visible={showPaymentModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaymentModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Actualizar a PRO</Text>
+              <TouchableOpacity onPress={() => setShowPaymentModal(false)}>
+                <X size={24} color={colors.text} strokeWidth={2.4} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.paymentModalSubtitle}>Elige tu método de pago para continuar.</Text>
+
+            <View style={styles.settingsGroup}>
+              <TouchableOpacity style={styles.settingsRow} onPress={handleSelectStripe}>
+                <View style={[styles.iconCircle, { backgroundColor: 'rgba(99, 91, 255, 0.1)' }]}>
+                  <CreditCard size={20} color="#635BFF" strokeWidth={2} />
+                </View>
+                <View style={styles.settingsTextWrapper}>
+                  <Text style={styles.settingsLabel}>Tarjeta / Google Pay / Apple Pay</Text>
+                  <Text style={styles.settingsSubLabel}>Débito, crédito o billetera digital</Text>
+                </View>
+                <ChevronRight size={18} color="#D1D5DB" strokeWidth={2.2} />
+              </TouchableOpacity>
+
+              <View style={styles.settingsSeparator} />
+
+              <TouchableOpacity style={styles.settingsRow} onPress={handleSelectPaypal}>
+                <View style={[styles.iconCircle, { backgroundColor: 'rgba(0, 48, 135, 0.1)' }]}>
+                  <Wallet size={20} color="#003087" strokeWidth={2} />
+                </View>
+                <View style={styles.settingsTextWrapper}>
+                  <Text style={styles.settingsLabel}>PayPal</Text>
+                  <Text style={styles.settingsSubLabel}>Paga con tu cuenta PayPal</Text>
+                </View>
+                <ChevronRight size={18} color="#D1D5DB" strokeWidth={2.2} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+{/* PRO Success Modal */}
+      <Modal
+        visible={showProSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowProSuccessModal(false)}
+      >
+        <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+          <View style={[styles.proSuccessCard, proSuccessMessage.isPro ? {borderColor: '#D4AF37', borderWidth: 2} : {}]}>
+            <View style={styles.proSuccessIconWrapper}>
+              <Text style={{ fontSize: 50 }}>{proSuccessMessage.isPro ? '👑' : '✓'}</Text>
+            </View>
+            <Text style={styles.proSuccessTitle}>{proSuccessMessage.title}</Text>
+            <Text style={styles.proSuccessDesc}>{proSuccessMessage.desc}</Text>
+            
+            <TouchableOpacity 
+              style={[styles.proSuccessBtn, proSuccessMessage.isPro ? {backgroundColor: '#D4AF37'} : {backgroundColor: colors.primary}]}
+              onPress={() => setShowProSuccessModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.proSuccessBtnText, proSuccessMessage.isPro ? {color: '#000'} : {color: '#fff'}]}>Continuar</Text>
+            </TouchableOpacity>
+
+            <View style={styles.proSimpleLegal}>
+              <Text style={styles.proSimpleLegalText}>
+                Consulta nuestras{' '}
+                <Text style={styles.proSimpleLegalLink} onPress={() => Linking.openURL(`${WEB_BASE_URL}/terminos/`)}>
+                  Políticas y Condiciones
+                </Text>
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -790,6 +1202,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: 'row',
@@ -1187,6 +1600,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: colors.text,
   },
+  paymentModalSubtitle: {
+    fontSize: 14,
+    color: colors.textLight,
+    marginBottom: 20,
+  },
   modalBody: {
     marginBottom: 30,
   },
@@ -1218,5 +1636,256 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 10,
     lineHeight: 18,
-  }
+  },
+  verifyScannerCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  scannerHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  scannerHeaderTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.text,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  scannerHeaderDesc: {
+    fontSize: 15,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  verifyStatusMsg: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    padding: 15,
+    borderRadius: 16,
+    marginBottom: 30,
+    width: '100%',
+  },
+  statusIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  verifyStatusTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  verifyStatusText: {
+    fontSize: 13,
+    color: colors.textLight,
+    lineHeight: 18,
+  },
+  planPolicyBox: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    width: '100%',
+  },
+  planPolicyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  planPolicyToggleText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textLight,
+  },
+  planPolicyChevronOpen: {
+    transform: [{ rotate: '180deg' }],
+  },
+  planPolicyText: {
+    fontSize: 12,
+    color: colors.textLight,
+    lineHeight: 18,
+    textAlign: 'justify',
+    marginTop: 10,
+  },
+  scannerActions: {
+    width: '100%',
+  },
+  startCamBtn: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  startCamBtnText: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  activeTabItemPro: {
+    borderBottomColor: '#D4AF37',
+  },
+  activeTabLabelPro: {
+    color: '#D4AF37',
+  },
+  scannerModalContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scannerOverlay: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  scannerCloseBtn: {
+    marginTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 10 : 50,
+    marginLeft: spacing.md,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scannerGuideWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannerGuideText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 20,
+    paddingHorizontal: 40,
+  },
+  scannerFooter: {
+    alignItems: 'center',
+    paddingBottom: 50,
+  },
+  scannerCaptureBtn: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 5,
+    borderColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scannerCaptureBtnInner: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#fff',
+  },
+  confirmCard: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  confirmIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  confirmDesc: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  confirmDismissBtn: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  confirmDismissBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textLight,
+  },
+  proSuccessCard: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  proSuccessIconWrapper: {
+    marginBottom: 20,
+  },
+  proSuccessTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  proSuccessDesc: {
+    fontSize: 15,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25,
+  },
+  proSuccessBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  proSuccessBtnText: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  proSimpleLegal: {
+    marginTop: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
+  proSimpleLegalText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
+  proSimpleLegalLink: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
 });

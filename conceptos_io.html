@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Conceptos I-O - IGUALO</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<style>
+  body { 
+    font-family: system-ui, sans-serif; background-color: #FAFAFA; text-align: center; padding: 40px; color: #0F172A; 
+  }
+  h1 { font-size: 32px; font-weight: 900; margin-bottom: 20px; }
+  p.sub { font-size: 18px; color: #64748b; margin-bottom: 50px; max-width: 800px; margin-left: auto; margin-right: auto; }
+  
+  .grid { display: flex; flex-direction: column; gap: 60px; max-width: 900px; margin: 0 auto; }
+  .card { 
+    background: white; padding: 60px 40px; border-radius: 32px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; 
+  }
+  .title { font-size: 20px; font-weight: 800; margin-bottom: 40px; color: #10B981; }
+  .desc { font-size: 15px; color: #64748b; margin-top: 30px; font-weight: 500; }
+  
+  .text-gradient {
+    font-family: 'Fredoka', sans-serif; font-size: 100px; font-weight: 600; letter-spacing: -2px;
+    background: linear-gradient(90deg, #A3E635, #10B981, #059669);
+    -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1; margin: 0;
+  }
+  .logo-container { display: flex; align-items: center; justify-content: center; gap: 15px; }
+</style>
+</head>
+<body>
+  <h1>La Magia de la "i" y la "o"</h1>
+  <p class="sub">¡Qué buena visión tienes! Aislar la primera ("i") y la última ("o") letra de Igualo es una técnica de branding avanzadísima. Jugar con "io" (que en italiano significa "yo", y en tecnología es "Input/Output") da muchísimo juego. Aquí tienes 3 formas de combinarlas para que reflejen la marca.</p>
+  
+  <div class="grid">
+    
+    <!-- Concepto 1: i = o -->
+    <div class="card">
+      <div class="title">1. La Ecuación ("i equals o")</div>
+      <div class="logo-container">
+        <h2 class="text-gradient" style="color: #0F172A; background: none; -webkit-text-fill-color: #0F172A;">i</h2>
+        <!-- Signo igual verde brillante -->
+        <svg width="60" height="100" viewBox="0 0 60 100" style="margin: 0 10px;">
+          <defs>
+            <linearGradient id="gradEqual" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#22C55E" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+          </defs>
+          <path d="M 5 40 L 55 40" stroke="url(#gradEqual)" stroke-width="12" stroke-linecap="round" />
+          <path d="M 5 65 L 55 65" stroke="url(#gradEqual)" stroke-width="12" stroke-linecap="round" />
+        </svg>
+        <h2 class="text-gradient" style="color: #0F172A; background: none; -webkit-text-fill-color: #0F172A;">o</h2>
+      </div>
+      <div class="desc">Literalmente se lee <b>"i = o"</b>. Es un juego de palabras visual brillante. El comprador (i) y el vendedor (o) están unidos por un trato justo (el igual verde). Es la máxima representación de la palabra IGUALO.</div>
+    </div>
+
+    <!-- Concepto 2: El Tubo Continuo (Estilo foto) -->
+    <div class="card">
+      <div class="title">2. El Lazo Continuo (Conexión)</div>
+      <div class="logo-container">
+        <!-- Monograma io en trazo continuo degradado -->
+        <svg width="200" height="150" viewBox="0 0 200 150">
+          <defs>
+            <linearGradient id="gradLazo" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#A3E635" />
+              <stop offset="50%" stop-color="#10B981" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#gradLazo)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Punto de la i -->
+            <circle cx="50" cy="30" r="10" fill="url(#gradLazo)" stroke="none" />
+            <!-- Tallo de la i que baja, hace una curva en U, y forma la o -->
+            <path d="M 50 60 L 50 110 Q 50 130 75 130 Q 100 130 100 110 L 100 90 A 35 35 0 1 1 100 120" />
+          </g>
+        </svg>
+      </div>
+      <div class="desc">Usando el estilo de "tubo degradado" de la foto que subiste. Es una sola línea que dibuja la "i", baja haciendo un lazo, y termina formando el círculo perfecto de la "o". Significa conexión continua.</div>
+    </div>
+
+    <!-- Concepto 3: La O que protege a la I -->
+    <div class="card">
+      <div class="title">3. La "i" dentro de la "o"</div>
+      <div class="logo-container">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <!-- La O gruesa -->
+          <circle cx="75" cy="75" r="60" fill="none" stroke="#0F172A" stroke-width="20" />
+          <!-- La i adentro (Verde) -->
+          <circle cx="75" cy="50" r="12" fill="#10B981" />
+          <path d="M 75 75 L 75 115" stroke="#10B981" stroke-width="16" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div class="desc">Un diseño súper compacto. La letra "o" actúa como un anillo de protección, y la letra "i" (que parece una persona abstracta) está a salvo en el centro. Transmite seguridad en el marketplace (compras seguras).</div>
+    </div>
+
+  </div>
+</body>
+</html>

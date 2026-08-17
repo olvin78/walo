@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 class Category(models.Model):
@@ -233,6 +236,7 @@ class Message(models.Model):
     text = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='chat_images/', null=True, blank=True)
     audio = models.FileField(upload_to='chat_audio/', null=True, blank=True)
+    file = models.FileField(upload_to='chat_files/', null=True, blank=True)
     is_read = models.BooleanField(default=False)
     is_view_once = models.BooleanField(default=False)
     viewed_by_sender = models.BooleanField(default=False)
@@ -257,6 +261,41 @@ class Profile(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=5.00)
     reviews_count = models.PositiveIntegerField(default=1) # Empezar con 1 para usuarios nuevos premium
     is_pro = models.BooleanField(default=False, verbose_name="pro", help_text="¿Es usuario Pro?")
+    expo_push_token = models.CharField(max_length=255, blank=True, null=True, verbose_name="Expo Push Token")
+
+    # Suscripción PRO recurrente (Stripe y/o PayPal)
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    paypal_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    pro_activated_at = models.DateTimeField(blank=True, null=True)
+    pro_current_period_end = models.DateTimeField(blank=True, null=True)
+    pro_cancel_at_period_end = models.BooleanField(default=False)
+
+    def refund_eligible(self) -> bool:
+        """Política de Cancelación: reembolso del cargo actual solo si se cancela
+        dentro de las primeras 12 horas desde la activación. Cada usuario se renueva
+        un mes después de su propia fecha de activación (estilo Amazon Prime)."""
+        if not self.pro_activated_at:
+            return False
+        return timezone.now() - self.pro_activated_at <= timedelta(hours=12)
+
+    def maybe_expire_pro(self):
+        """Si el usuario canceló la renovación y ya pasó su fecha de fin de período
+        pagado, le quita el PRO. Se llama de forma perezosa cada vez que se lee el
+        perfil (no depende de un webhook ni de una tarea programada)."""
+        if (
+            self.is_pro
+            and self.pro_cancel_at_period_end
+            and self.pro_current_period_end
+            and timezone.now() >= self.pro_current_period_end
+        ):
+            self.is_pro = False
+            self.pro_cancel_at_period_end = False
+            self.stripe_subscription_id = None
+            self.paypal_subscription_id = None
+            self.save(update_fields=[
+                "is_pro", "pro_cancel_at_period_end", "stripe_subscription_id", "paypal_subscription_id",
+            ])
 
     def save(self, *args, **kwargs):
         is_new_avatar = False
@@ -471,6 +510,34 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.notification_type} para {self.user.username}"
+
+
+def send_expo_push_notification(token, message, extra=None):
+    from exponent_server_sdk import PushClient, PushMessage
+    import requests
+    try:
+        response = PushClient().publish(
+            PushMessage(to=token, body=message, data=extra, sound="default")
+        )
+    except Exception as exc:
+        print(f"Error sending push notification: {exc}")
+
+@receiver(post_save, sender=Notification)
+def notify_expo_push(sender, instance, created, **kwargs):
+    if created and hasattr(instance.user, 'profile') and instance.user.profile.expo_push_token:
+        # Check if it's a valid Expo token format
+        token = instance.user.profile.expo_push_token
+        if token.startswith("ExponentPushToken"):
+            extra_data = {
+                "type": instance.notification_type,
+                "notification_id": instance.id
+            }
+            if instance.related_listing:
+                extra_data["listing_id"] = instance.related_listing.id
+            if instance.related_conversation:
+                extra_data["conversation_id"] = instance.related_conversation.id
+                
+            send_expo_push_notification(token, instance.body, extra=extra_data)
 
 
 @receiver(post_save, sender=Message)

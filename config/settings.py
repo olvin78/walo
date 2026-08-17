@@ -19,6 +19,18 @@ DEBUG = env.bool("DEBUG", default=False)
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="https://www.igualo.com")
 GOOGLE_TAG_MANAGER_ID = env("GOOGLE_TAG_MANAGER_ID", default="").strip()
 
+PAYPAL_MODE = env("PAYPAL_MODE", default="sandbox")
+PAYPAL_CLIENT_ID = env("PAYPAL_CLIENT_ID", default="")
+PAYPAL_SECRET = env("PAYPAL_SECRET", default="")
+PAYPAL_PLAN_ID = env("PAYPAL_PLAN_ID", default="")
+PAYPAL_API_BASE = (
+    "https://api-m.paypal.com" if PAYPAL_MODE == "live" else "https://api-m.sandbox.paypal.com"
+)
+PAYPAL_PRO_PRICE = env("PAYPAL_PRO_PRICE", default="2.99")
+PAYPAL_PRO_CURRENCY = env("PAYPAL_PRO_CURRENCY", default="USD")
+
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
+
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
     default=["localhost", "127.0.0.1", "igualo.com", "www.igualo.com"],

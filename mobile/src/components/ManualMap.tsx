@@ -38,6 +38,20 @@ const ManualMap = ({ latitude, longitude, setLatitude, setLongitude, setLocation
 
         if (locality) {
           setLocation(locality);
+          
+          // Privacy feature: force coordinates to the center of the locality
+          try {
+            const centerRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locality)}&limit=1`
+            );
+            const centerData = await centerRes.json();
+            if (centerData && centerData.length > 0) {
+              setLatitude(parseFloat(centerData[0].lat));
+              setLongitude(parseFloat(centerData[0].lon));
+            }
+          } catch (e) {
+            console.error('Error snapping to city center:', e);
+          }
         }
       }
     } catch (error) {

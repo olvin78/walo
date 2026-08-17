@@ -30,8 +30,8 @@
                 {% endif %}
                 <button class="nav-btn" onclick="switchTab('verify')">
                     <span class="icon">🛡️</span> Verificación
-                    <span class="badge-new">Pronto</span>
                 </button>
+
             </nav>
         </aside>
 
@@ -161,15 +161,25 @@
                             {% if profile.is_pro %}
                             <span class="fluid-pro-badge">Pro activo</span>
                             {% else %}
-                            <a href="{% url 'home' %}#soluciones-pro" class="f-btn pro-cta">Hazme Pro <span class="pro-cta-badge">★</span></a>
+                            <button type="button" class="f-btn pro-cta" onclick="openUpgradeModal();">Hazme Pro <span class="pro-cta-badge">★</span></button>
                             {% endif %}
                         </div>
                         <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
                             {% if profile.is_pro %}
                             <button type="button" class="f-btn plan-toggle-btn plan-toggle-danger" onclick="openPlanModal();">Cambiar a Gratis</button>
                             {% else %}
-                            <button type="submit" name="toggle_plan" value="1" class="f-btn plan-toggle-btn plan-toggle-primary">Activar Pro</button>
+                            <button type="button" class="f-btn plan-toggle-btn plan-toggle-primary" onclick="openUpgradeModal();">Activar Pro</button>
                             {% endif %}
+                        </div>
+
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.4); line-height: 1.5; text-align: left;">
+                                {% if profile.is_pro %}
+                                    <strong style="color: rgba(255,255,255,0.6);">Política de Cancelación:</strong> Al cancelar tu plan, este no se renovará para el próximo ciclo. Ten en cuenta que <strong>no se realizarán devoluciones de dinero</strong> por el período actual ya pagado, a menos que la cancelación ocurra dentro de las primeras 12 horas desde la activación y el pago sea anulado antes de nuestro período de facturación (días 23 al 25 de cada mes).
+                                {% else %}
+                                    <strong style="color: rgba(255,255,255,0.6);">Términos de Suscripción PRO:</strong> Al activar tu cuenta Pro, el pago se renovará automáticamente cada mes. Puedes cancelar tu suscripción en cualquier momento desde esta configuración.
+                                {% endif %}
+                            </p>
                         </div>
                     </section>
                 </div>
@@ -204,13 +214,17 @@
                         </div>
 
                         <div class="scanner-actions">
-                            <button type="button" id="startCamBtn" class="f-btn outline" onclick="initCamera()">Iniciar
-                                Escáner</button>
-                            <button type="button" id="captureBtn" class="f-btn solid" style="display:none;"
-                                onclick="takeSnapshot()">Capturar y Validar</button>
+                            <button type="button" id="startCamBtn" class="scanner-btn-primary" onclick="initCamera()">
+                                <span class="btn-icon">📸</span> Iniciar Escáner
+                            </button>
+                            <button type="button" id="captureBtn" class="scanner-btn-capture" style="display:none;" onclick="takeSnapshot()">
+                                <span class="btn-icon">⚡</span> Capturar y Validar
+                            </button>
                         </div>
                     </div>
                 </div>
+
+
 
                 <!-- Footer Acciones -->
                 <div class="settings-footer">
@@ -227,9 +241,59 @@
                         </div>
                         <h3 id="planModalTitle">Cambiar a plan Gratis</h3>
                         <p>Si bajas a Gratis, tus anuncios dejarán de llevar prioridad Pro y perderán la estrella automática.</p>
+                        
+                        <div style="background: rgba(239, 68, 68, 0.05); padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(239, 68, 68, 0.1);">
+                            <p style="font-size: 0.8rem; color: #fca5a5; margin: 0;">
+                                <strong>Importante:</strong> Al cancelar, no se renovará tu suscripción. No hacemos devoluciones de dinero a menos que canceles en las primeras 12 horas y antes de nuestro periodo de cobro (días 23 al 25).
+                            </p>
+                        </div>
+
                         <div class="plan-modal-actions">
-                            <button type="button" class="f-btn outline" onclick="closePlanModal()">Cancelar</button>
-                            <button type="button" class="f-btn plan-modal-confirm" onclick="submitPlanChange()">Sí, cambiar</button>
+                            <button type="button" class="f-btn outline" onclick="closePlanModal()">Cerrar</button>
+                            <button type="button" class="f-btn plan-modal-confirm" onclick="submitPlanChange()">Sí, cancelar Pro</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="planUpgradeModal" class="plan-modal" aria-hidden="true">
+                    <div class="plan-modal-backdrop" onclick="closeUpgradeModal()"></div>
+                    <div class="plan-modal-card" role="dialog" aria-modal="true" aria-labelledby="planUpgradeModalTitle" style="border-color: rgba(34, 197, 94, 0.2);">
+                        <div class="plan-modal-top">
+                            <span class="plan-modal-icon" style="background: rgba(34, 197, 94, 0.12); color: #86efac;">👑</span>
+                            <button type="button" class="plan-modal-close" onclick="closeUpgradeModal()">×</button>
+                        </div>
+                        <h3 id="planUpgradeModalTitle">Mejorar a Plan Pro</h3>
+                        <p>Lleva tus anuncios al siguiente nivel. Obtén mayor visibilidad y la insignia Pro en todo tu perfil.</p>
+
+                        <p style="font-size: 0.85rem; color: rgba(255,255,255,0.5); margin: 15px 0 8px;">Elige tu método de pago para continuar:</p>
+
+                        <div class="payment-method-list">
+                            <button type="submit" name="stripe_pay" value="1" class="payment-method-row">
+                                <span class="payment-method-icon" style="background: rgba(99, 91, 255, 0.12); color: #a5a0ff;">💳</span>
+                                <span class="payment-method-info">
+                                    <strong>Tarjeta / Google Pay / Apple Pay</strong>
+                                    <span>Débito, crédito o billetera digital</span>
+                                </span>
+                                <span class="payment-method-chevron">›</span>
+                            </button>
+                            <button type="submit" name="paypal_pay" value="1" class="payment-method-row">
+                                <span class="payment-method-icon" style="background: rgba(0, 112, 186, 0.12); color: #6fb8ff;">🅿️</span>
+                                <span class="payment-method-info">
+                                    <strong>PayPal</strong>
+                                    <span>Paga con tu cuenta PayPal</span>
+                                </span>
+                                <span class="payment-method-chevron">›</span>
+                            </button>
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin: 0;">
+                                <strong>Suscripción:</strong> Al activar, aceptas las Condiciones de Suscripción PRO. El plan se renueva automáticamente. Puedes cancelar en cualquier momento desde esta misma página.
+                            </p>
+                        </div>
+
+                        <div class="plan-modal-actions">
+                            <button type="button" class="f-btn outline" onclick="closeUpgradeModal()" style="width: 100%;">Cerrar</button>
                         </div>
                     </div>
                 </div>
@@ -240,6 +304,52 @@
 </div>
 
 <style>
+    .fluid-pro-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(251, 191, 36, 0.12);
+        border: 1px solid rgba(251, 191, 36, 0.22);
+        color: #fbbf24;
+        font-size: 0.75rem;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .f-btn.pro-cta {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #111827;
+        color: #fbbf24;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(251, 191, 36, 0.22);
+        cursor: pointer;
+    }
+    .f-btn.pro-cta:hover {
+        background: #0f172a;
+        color: #fcd34d;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
+        transform: translateY(-3px);
+    }
+    .pro-cta-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        background: rgba(251, 191, 36, 0.12);
+        color: #fbbf24;
+        font-size: 0.75rem;
+        font-weight: 900;
+        border-radius: 999px;
+        border: 1px solid rgba(251, 191, 36, 0.22);
+        transform: translateY(-1px);
+    }
+
     .settings-fluid-wrapper {
         background: #0a0b10;
         min-height: 100vh;
@@ -679,6 +789,65 @@
         transform: translateY(-2px);
     }
 
+    .payment-method-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .payment-method-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        cursor: pointer;
+        text-align: left;
+        transition: 0.2s;
+        font-family: inherit;
+    }
+
+    .payment-method-row:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .payment-method-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .payment-method-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .payment-method-info strong {
+        color: #fff;
+        font-size: 0.9rem;
+    }
+
+    .payment-method-info span {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.78rem;
+        margin-top: 2px;
+    }
+
+    .payment-method-chevron {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 1.4rem;
+    }
+
     /* Scanner Styles */
     .verify-scanner-card {
         background: rgba(255, 255, 255, 0.02);
@@ -750,7 +919,63 @@
     .scanner-actions {
         display: flex;
         justify-content: center;
-        gap: 15px;
+        gap: 16px;
+        margin-top: 24px;
+    }
+
+    .scanner-btn-primary {
+        background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 16px 36px;
+        border-radius: 16px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .scanner-btn-primary:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 14px 32px rgba(34, 197, 94, 0.5);
+        background: linear-gradient(135deg, #26d063 0%, #16a34a 100%);
+    }
+
+    .scanner-btn-primary:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    .scanner-btn-capture {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 16px 36px;
+        border-radius: 16px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .scanner-btn-capture:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 14px 32px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-icon {
+        font-size: 1.2rem;
     }
 
     .verify-status-msg {
@@ -924,6 +1149,16 @@
         if (typeof event !== 'undefined' && event.currentTarget) {
             event.currentTarget.classList.add('active');
         }
+    }
+
+    function openUpgradeModal() {
+        document.getElementById('planUpgradeModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeUpgradeModal() {
+        document.getElementById('planUpgradeModal').classList.remove('open');
+        document.body.style.overflow = '';
     }
 
     function openPlanModal() {

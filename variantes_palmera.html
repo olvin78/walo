@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Variantes Palmera - IGUALO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Usamos Fredoka porque tiene ese estilo redondeado, grueso y amigable de la foto que mandaste -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<style>
+  body { 
+    font-family: system-ui, sans-serif; 
+    background-color: #FAFAFA; 
+    text-align: center; 
+    padding: 40px; 
+    color: #0F172A; 
+  }
+  h1 { font-size: 32px; font-weight: 900; margin-bottom: 20px; }
+  p.sub { font-size: 18px; color: #64748b; margin-bottom: 50px; max-width: 800px; margin-left: auto; margin-right: auto; }
+  
+  .grid { 
+    display: flex; flex-direction: column; gap: 60px; max-width: 900px; margin: 0 auto; 
+  }
+  .card { 
+    background: white; padding: 60px 40px; border-radius: 32px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+    display: flex; flex-direction: column; align-items: center; 
+  }
+  .title { font-size: 20px; font-weight: 800; margin-bottom: 40px; color: #10B981; }
+  .desc { font-size: 15px; color: #64748b; margin-top: 30px; font-weight: 500; }
+  
+  /* El Gradiente exacto de la foto que te gustó */
+  .text-gradient {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 90px;
+    font-weight: 600;
+    letter-spacing: -2px;
+    background: linear-gradient(90deg, #A3E635, #22C55E, #059669); /* Verde lima a esmeralda */
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+    margin: 0;
+  }
+
+  .logo-container {
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+</style>
+</head>
+<body>
+  <h1>¡Ese logo es una locura de bonito!</h1>
+  <p class="sub">Me encanta. Ese estilo de <b>"tubo continuo curvo" con gradiente verde</b> es espectacular. Para darle el toque nicaragüense sin exagerar, he creado 3 variantes sutiles integrando una <b>Palmera</b> en ese mismo estilo de diseño (gordito, curvo y degradado).</p>
+  
+  <div class="grid">
+    
+    <!-- Variante 1: La 'l' es la palmera -->
+    <div class="card">
+      <div class="title">1. La Palmera Oculta (La letra 'L')</div>
+      <div class="logo-container">
+        <h2 class="text-gradient" style="margin-right: 5px;">igua</h2>
+        <!-- SVG de la palmera reemplazando la l -->
+        <svg width="60" height="100" viewBox="0 0 60 100" style="margin-top: -10px;">
+          <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#22C55E" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#grad1)" stroke-width="12" stroke-linecap="round">
+            <!-- Tallo (La letra L) -->
+            <path d="M 30 35 L 30 90" />
+            <!-- Hojas de palmera sutiles -->
+            <path d="M 30 35 Q 10 20 5 40" />
+            <path d="M 30 35 Q 50 20 55 40" />
+            <path d="M 30 35 Q 30 10 45 10" />
+          </g>
+        </svg>
+        <h2 class="text-gradient">o</h2>
+      </div>
+      <div class="desc">La letra "l" (ele) de Igualo crece sutilmente hasta convertirse en una palmera minimalista con 3 hojitas curvas. Es súper sutil, no rompe la lectura de la palabra y le da ese toque tropical nica.</div>
+    </div>
+
+    <!-- Variante 2: El Swoosh Palmera -->
+    <div class="card">
+      <div class="title">2. El "Swoosh" Tropical (La Sonrisa)</div>
+      <div class="logo-container" style="flex-direction: column;">
+        <h2 class="text-gradient" style="z-index: 2;">igualo</h2>
+        <!-- Sonrisa que termina en hoja de palmera -->
+        <svg width="300" height="60" viewBox="0 0 300 60" style="margin-top: -30px; z-index: 1;">
+          <defs>
+            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#A3E635" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#grad2)" stroke-width="12" stroke-linecap="round">
+            <!-- Curva de la sonrisa -->
+            <path d="M 20 10 Q 150 70 280 10" />
+            <!-- Detalle de palmera en la punta derecha -->
+            <path d="M 280 10 Q 295 -5 295 15" />
+            <path d="M 280 10 Q 265 -5 275 -15" />
+          </g>
+        </svg>
+      </div>
+      <div class="desc">Mantenemos el texto intacto y perfecto, y le agregamos la "sonrisa" curva por debajo (como en la foto que enviaste). Pero al final de la curva, remata sutilmente en unas hojas de palmera.</div>
+    </div>
+
+    <!-- Variante 3: El Punto de la 'i' -->
+    <div class="card">
+      <div class="title">3. El Punto de la 'i'</div>
+      <div class="logo-container">
+        <!-- SVG de la palmera reemplazando el punto de la i -->
+        <svg width="30" height="90" viewBox="0 0 30 90" style="margin-right: -10px; margin-top: -15px;">
+          <defs>
+            <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#A3E635" />
+              <stop offset="100%" stop-color="#22C55E" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#grad3)" stroke-width="6" stroke-linecap="round">
+            <!-- Tallo de la i -->
+            <path d="M 15 45 L 15 85" stroke-width="12" />
+            <!-- Mini palmerita arriba (el punto) -->
+            <path d="M 15 25 L 15 35" stroke-width="6"/>
+            <path d="M 15 25 Q 5 15 2 25" />
+            <path d="M 15 25 Q 25 15 28 25" />
+            <path d="M 15 25 Q 15 10 22 10" />
+          </g>
+        </svg>
+        <h2 class="text-gradient">gualo</h2>
+      </div>
+      <div class="desc">La opción más discreta de todas. El punto de la letra "i" es una micro-palmera. A primera vista parece un punto normal, pero cuando te fijas de cerca, ves el detalle tropical. Súper fino.</div>
+    </div>
+
+  </div>
+</body>
+</html>

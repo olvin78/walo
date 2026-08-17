@@ -23,7 +23,8 @@ export const CATEGORIES: Category[] = [
   { id: '5', name: 'Empleo', icon: 'briefcase-outline' },
   { id: '6', name: 'Servicios', icon: 'construct-outline' },
   { id: '7', name: 'Inmuebles', icon: 'business-outline' },
-  { id: '8', name: 'Otros', icon: 'grid-outline' },
+  { id: '8', name: 'Libros', icon: 'book-outline' },
+  { id: '9', name: 'Otros', icon: 'grid-outline' },
 ];
 
 export const PRODUCTS: Product[] = [
@@ -35,7 +36,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800&auto=format&fit=crop&q=60',
     category: 'Móviles',
     isNew: true,
-    isFeatured: true,
+    isFeatured: false,
   },
   {
     id: '2',
@@ -60,7 +61,7 @@ export const PRODUCTS: Product[] = [
     location: 'Estelí',
     image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=60',
     category: 'Informática',
-    isFeatured: true,
+    isFeatured: false,
   },
   {
     id: '5',

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
+  RefreshControl,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -12,23 +13,28 @@ import {
   useWindowDimensions,
   Animated,
 } from 'react-native';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import { Image } from 'expo-image';
 import { Heart, Star, MapPin, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing } from '../theme/colors';
 import { getFavoriteListings, setListingFavorite, type ListingSummary } from '../../lib/igualo-api';
 import { useAuth } from '../services/auth';
+import { ProFooter } from '../components/ProFooter';
 
-function formatPrice(value: any) {
+function formatPrice(value: any, currency?: string) {
   const numeric = typeof value === 'string' ? Number(value) : value;
-  if (isNaN(numeric)) return `C$ ${value}`;
-  return `C$ ${new Intl.NumberFormat('es-NI', { maximumFractionDigits: 0 }).format(numeric)}`;
+  const prefix = currency === 'USD' ? '$' : 'C$';
+  if (isNaN(numeric)) return `${prefix} ${value}`;
+  return `${prefix} ${new Intl.NumberFormat('es-NI', { maximumFractionDigits: 0 }).format(numeric)}`;
 }
 
 export const FavoritesScreen = () => {
   const router = useRouter();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
+  const isMePro = Boolean(user?.profile?.is_pro);
   const { width } = useWindowDimensions();
   const [favorites, setFavorites] = useState<ListingSummary[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
@@ -42,9 +48,29 @@ export const FavoritesScreen = () => {
   const isTablet = width >= 768 && width < 1024;
   const isMobile = width < 768;
   const numColumns = isDesktop ? 4 : isTablet ? 3 : 2;
-  const cardWidth = (Math.min(width, 1200) - spacing.md * (numColumns + 1)) / numColumns;
+  const cardWidth = (Math.min(width, 1200) - spacing.sm * (numColumns + 1)) / numColumns;
+
+  // En móvil, los favoritos se agrupan en bandas de 2 filas independientes
+  // que se deslizan hacia los lados; el scroll vertical de la página no cambia.
+  const productBands = React.useMemo(() => {
+    if (!isMobile) return [];
+    const columnsPerBand = numColumns * 2;
+    const bandSize = columnsPerBand * 2;
+    const bands: ListingSummary[][] = [];
+    for (let i = 0; i < favorites.length; i += bandSize) {
+      bands.push(favorites.slice(i, i + bandSize));
+    }
+    return bands;
+  }, [favorites, numColumns, isMobile]);
+
+  const splitBandRows = (band: ListingSummary[]) => {
+    const topRow: ListingSummary[] = [];
+    const bottomRow: ListingSummary[] = [];
+    band.forEach((item, i) => (i % 2 === 0 ? topRow : bottomRow).push(item));
+    return [topRow, bottomRow] as const;
+  };
   const headerMaxHeight = isMobile ? 132 : 180;
-  const headerMinHeight = isMobile ? (Platform.OS === 'ios' ? 72 : 56) : (Platform.OS === 'ios' ? 90 : 60);
+  const headerMinHeight = isMobile ? (Platform.OS === 'ios' ? 100 : 90) : (Platform.OS === 'ios' ? 120 : 100);
   const headerScrollDistance = headerMaxHeight - headerMinHeight;
 
   const headerHeight = scrollY.interpolate({
@@ -61,7 +87,13 @@ export const FavoritesScreen = () => {
 
   const headerShadow = scrollY.interpolate({
     inputRange: [0, headerScrollDistance],
-    outputRange: [0, 0.1],
+    outputRange: [0, 0.08],
+    extrapolate: 'clamp',
+  });
+
+  const titleScale = scrollY.interpolate({
+    inputRange: [0, headerScrollDistance],
+    outputRange: [1, 0.85],
     extrapolate: 'clamp',
   });
 
@@ -101,9 +133,10 @@ export const FavoritesScreen = () => {
     }
   };
 
-  const renderItem = ({ item }: { item: ListingSummary }) => (
+  const renderCard = (item: ListingSummary) => (
     <TouchableOpacity
-      style={[styles.card, { width: cardWidth }]}
+      key={`art-${item.id}`}
+      style={[styles.card, { width: cardWidth }, item.is_promoted && styles.promotedCard]}
       activeOpacity={0.9}
       onPress={() => router.push(`/listing/${item.id}`)}
     >
@@ -116,13 +149,16 @@ export const FavoritesScreen = () => {
         </BlurView>
         {item.is_promoted && (
           <View style={styles.promoBadge}>
-            <Star size={8} color={colors.white} fill={colors.white} />
-            <Text style={styles.promoText}>TOP</Text>
+            <Text style={styles.promoText}>★ PRO</Text>
           </View>
         )}
       </View>
       <View style={styles.infoBox}>
-        <Text style={styles.priceText}>{formatPrice(item.price)}</Text>
+        {item.is_negotiable ? (
+          <Text style={styles.negotiableText}>🤝 Precio Negociable</Text>
+        ) : (
+          <Text style={styles.priceText}>{formatPrice(item.price, item.currency)}</Text>
+        )}
         <Text style={styles.titleText} numberOfLines={1}>{item.title}</Text>
         <View style={styles.locBox}>
           <MapPin size={10} color={colors.textLight} strokeWidth={2.2} />
@@ -132,68 +168,149 @@ export const FavoritesScreen = () => {
     </TouchableOpacity>
   );
 
+  const renderItem = ({ item }: { item: ListingSummary }) => renderCard(item);
+
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       
-      <Animated.View style={[styles.header, { height: headerHeight, shadowOpacity: headerShadow }]}> 
-        <Animated.Image
-          source={require('../../assets/images/favorites_art_light.png')}
-          style={[styles.headerBg, { opacity: imageOpacity }]}
-          resizeMode="cover"
+      <Animated.View pointerEvents="box-none" style={[styles.header, { height: headerHeight, shadowOpacity: headerShadow }]}>
+        <LinearGradient
+          colors={['#0F172A', '#064E3B', '#10B981']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1.5 }}
+          style={StyleSheet.absoluteFillObject}
         />
-        <View style={styles.headerOverlay} />
+        {/* Glow Orbs for the header */}
+        <View style={styles.headerOrb1} />
+        <View style={styles.headerOrb2} />
+        
         <View style={[styles.headerContent, isMobile && styles.headerContentMobile]}>
-          <Text style={styles.headerTitle}>Favoritos</Text>
-          <Text style={[styles.headerMeta, isMobile && styles.headerMetaMobile]}>
-            {favorites.length} {favorites.length === 1 ? 'guardado' : 'guardados'}
-          </Text>
+          <Animated.View style={[styles.headerTitleRow, { transform: [{ scale: titleScale }] }]}>
+            <Text style={styles.headerTitle}>Tus Favoritos</Text>
+            {favorites.length > 0 && (
+              <View style={styles.countBadge}>
+                <Heart size={14} color="#10B981" fill="#10B981" strokeWidth={2.5} />
+                <Text style={styles.countBadgeText}>{favorites.length}</Text>
+              </View>
+            )}
+          </Animated.View>
         </View>
       </Animated.View>
 
-      <Animated.FlatList
-        data={favorites}
-        renderItem={renderItem}
-        keyExtractor={(item) => `art-${item.id}`}
-        numColumns={numColumns}
-        key={numColumns}
-        contentContainerStyle={[styles.list, { paddingTop: headerMaxHeight + (isMobile ? 6 : 10) }]}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
-        onRefresh={() => { setRefreshing(true); loadFavorites(true); }}
-        refreshing={refreshing}
-        ListEmptyComponent={() => !isLoading && (
-          <View style={[styles.empty, isMobile && styles.emptyMobile]}>
-            <View style={[styles.emptyHeroCard, isMobile && styles.emptyHeroCardMobile]}>
-              <Image
-                source={require('../../assets/images/favorites_art_light.png')}
-                style={[styles.emptyHeroImage, isMobile && styles.emptyHeroImageMobile]}
-                contentFit="cover"
-              />
-              <View style={styles.emptyGlow} />
-              <View style={[styles.emptyCopyBox, isMobile && styles.emptyCopyBoxMobile]}>
-                <View style={styles.emptyMiniBadge}>
-                  <Heart size={12} color={colors.favorite} strokeWidth={2.4} fill={colors.favorite} />
-                  <Text style={styles.emptyMiniBadgeText}>Guardados para ti</Text>
+      {isMobile ? (
+        <Animated.ScrollView
+          contentContainerStyle={[styles.list, { paddingTop: headerMaxHeight + 6 }]}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); loadFavorites(true); }}
+              progressViewOffset={headerMaxHeight + 6}
+            />
+          }
+        >
+          {favorites.length === 0 ? (
+            !isLoading && (
+              <View style={[styles.empty, styles.emptyMobile]}>
+                <View style={[styles.emptyHeroCard, styles.emptyHeroCardMobile]}>
+                  <View style={styles.emptyGlow} />
+                  <View style={[styles.emptyCopyBox, styles.emptyCopyBoxMobile]}>
+                    <View style={styles.emptyIconCircle}>
+                      <Heart size={38} color={colors.white} strokeWidth={2.5} fill={colors.white} />
+                    </View>
+                    <Text style={[styles.emptyTitle, styles.emptyTitleMobile]}>Ningún favorito aún</Text>
+                    <Text style={[styles.emptySub, styles.emptySubMobile]}>Los tesoros que guardes dándole al corazón aparecerán aquí mágicamente.</Text>
+                  </View>
                 </View>
-                <Text style={[styles.emptyTitle, isMobile && styles.emptyTitleMobile]}>Todavia no has guardado nada</Text>
-                <Text style={[styles.emptySub, isMobile && styles.emptySubMobile]}>Cuando encuentres algo interesante, aparecera aqui para que lo tengas siempre a mano.</Text>
+                <TouchableOpacity
+                  style={styles.exploreBtn}
+                  onPress={() => router.push('/(tabs)/search')}
+                  activeOpacity={0.8}
+                >
+                  <Search size={18} color={colors.white} strokeWidth={2.5} />
+                  <Text style={styles.exploreBtnText}>Explorar artículos</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-            <TouchableOpacity 
-              style={styles.exploreBtn}
-              onPress={() => router.push('/(tabs)/search')}
-            >
-              <Search size={16} color={colors.white} strokeWidth={2.4} />
-              <Text style={styles.exploreBtnText}>Descubrir productos</Text>
-            </TouchableOpacity>
+            )
+          ) : (
+            productBands.map((band, bandIndex) => {
+              const [topRow, bottomRow] = splitBandRows(band);
+              return (
+                <View key={`band-${bandIndex}`} style={styles.bandGroup}>
+                  <GestureScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.bandContent}
+                    style={styles.bandRow}
+                  >
+                    {topRow.map((item) => renderCard(item))}
+                  </GestureScrollView>
+                  <GestureScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.bandContent}
+                    style={styles.bandRow}
+                  >
+                    {bottomRow.map((item) => renderCard(item))}
+                  </GestureScrollView>
+                </View>
+              );
+            })
+          )}
+          <View style={{ paddingBottom: 120 }}>
+            {isMePro && favorites.length > 0 && <ProFooter />}
           </View>
-        )}
-        ListFooterComponent={() => <View style={{ height: 120 }} />}
-      />
+        </Animated.ScrollView>
+      ) : (
+        <Animated.FlatList
+          data={favorites}
+          renderItem={renderItem}
+          keyExtractor={(item) => `art-${item.id}`}
+          numColumns={numColumns}
+          key={numColumns}
+          contentContainerStyle={[styles.list, { paddingTop: headerMaxHeight + 10 }]}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          onRefresh={() => { setRefreshing(true); loadFavorites(true); }}
+          refreshing={refreshing}
+          progressViewOffset={headerMaxHeight + 10}
+          ListEmptyComponent={() => !isLoading && (
+            <View style={styles.empty}>
+              <View style={styles.emptyHeroCard}>
+                <View style={styles.emptyGlow} />
+                <View style={styles.emptyCopyBox}>
+                  <View style={styles.emptyIconCircle}>
+                    <Heart size={38} color={colors.white} strokeWidth={2.5} fill={colors.white} />
+                  </View>
+                  <Text style={styles.emptyTitle}>Ningún favorito aún</Text>
+                  <Text style={styles.emptySub}>Los tesoros que guardes dándole al corazón aparecerán aquí mágicamente.</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.exploreBtn}
+                onPress={() => router.push('/(tabs)/search')}
+                activeOpacity={0.8}
+              >
+                <Search size={18} color={colors.white} strokeWidth={2.5} />
+                <Text style={styles.exploreBtnText}>Explorar artículos</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          ListFooterComponent={() => (
+            <View style={{ paddingBottom: 120 }}>
+              {isMePro && favorites.length > 0 && <ProFooter />}
+            </View>
+          )}
+        />
+      )}
 
       {isLoading && !refreshing && (
         <View style={styles.loader}>
@@ -212,46 +329,94 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    backgroundColor: colors.white,
+    backgroundColor: '#0F172A',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 8,
   },
-  headerBg: { width: '100%', height: '100%', position: 'absolute' },
-  headerOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(16,185,129,0.08)' },
+  headerOrb1: {
+    position: 'absolute',
+    top: -50,
+    left: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+  },
+  headerOrb2: {
+    position: 'absolute',
+    bottom: -80,
+    right: -40,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+  },
   headerContent: {
     paddingHorizontal: 30,
     height: '100%',
     justifyContent: 'flex-end',
-    paddingBottom: 18,
+    paddingBottom: 25,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
   },
   headerContentMobile: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    transformOrigin: 'left bottom',
   },
   headerTitle: {
-    color: '#064E3B',
-    fontSize: 28,
+    color: '#FFFFFF',
+    fontSize: 34,
     fontWeight: '900',
-    letterSpacing: -0.8,
+    letterSpacing: -1,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  headerMeta: {
-    color: '#065F46',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
+  countBadge: {
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  headerMetaMobile: {
-    fontSize: 12,
+  countBadgeText: {
+    color: '#064E3B',
+    fontSize: 15,
+    fontWeight: '900',
   },
-  list: { paddingHorizontal: spacing.md },
+  list: { paddingHorizontal: spacing.sm / 2 },
+  bandGroup: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  bandRow: {
+    // Cada fila es su propio ScrollView independiente: mover una no afecta a la otra.
+  },
+  bandContent: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm / 2,
+  },
   card: {
     backgroundColor: colors.white,
     borderRadius: 24,
-    marginHorizontal: spacing.sm,
-    marginBottom: spacing.lg,
+    marginHorizontal: spacing.sm / 2,
+    marginBottom: spacing.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#F1F1F1',
@@ -261,7 +426,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  imageBox: { height: 170, position: 'relative', backgroundColor: '#F9FAFB' },
+  promotedCard: {
+    borderColor: '#F59E0B',
+    borderWidth: 2,
+  },
+  imageBox: { height: 190, position: 'relative', backgroundColor: '#F9FAFB' },
   image: { width: '100%', height: '100%' },
   favBox: {
     position: 'absolute',
@@ -277,105 +446,100 @@ const styles = StyleSheet.create({
   },
   promoBadge: {
     position: 'absolute',
-    bottom: 12,
+    top: 12,
     left: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: '#1F2937',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    zIndex: 1,
   },
-  promoText: { color: colors.white, fontSize: 9, fontWeight: '900' },
-  infoBox: { padding: 15 },
-  priceText: { color: colors.text, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
-  titleText: { color: colors.textLight, fontSize: 13, marginTop: 4, fontWeight: '500' },
-  locBox: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
-  locText: { color: '#9CA3AF', fontSize: 11, fontWeight: '600' },
+  promoText: {
+    color: '#FBBF24',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  infoBox: { padding: 14 },
+  priceText: { fontSize: 20, fontWeight: '900', color: colors.text, marginBottom: 4, letterSpacing: -0.5 },
+  negotiableText: { fontSize: 14, fontWeight: '800', color: colors.primary, marginBottom: 4 },
+  titleText: { fontSize: 14, color: '#4B5563', fontWeight: '600', marginBottom: 8 },
+  locBox: { flexDirection: 'row', alignItems: 'center' },
+  locText: { fontSize: 11, color: colors.textLight, fontWeight: '700', marginLeft: 4 },
   empty: { marginTop: 64, alignItems: 'center', paddingHorizontal: 20 },
   emptyMobile: { marginTop: 8, paddingHorizontal: 12 },
   emptyHeroCard: {
     width: '100%',
     maxWidth: 520,
-    backgroundColor: '#F3FBF7',
-    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 36,
     borderWidth: 1,
-    borderColor: '#D1FAE5',
+    borderColor: 'rgba(255,255,255,0.9)',
     overflow: 'hidden',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.07,
-    shadowRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.04,
+    shadowRadius: 30,
     elevation: 3,
+    alignItems: 'center',
   },
   emptyHeroCardMobile: {
-    borderRadius: 24,
-  },
-  emptyHeroImage: {
-    width: '100%',
-    height: 180,
-    backgroundColor: '#ECFDF5',
-  },
-  emptyHeroImageMobile: {
-    height: 118,
+    borderRadius: 30,
   },
   emptyGlow: {
     position: 'absolute',
-    top: 24,
-    right: -20,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(16,185,129,0.10)',
+    top: -60,
+    right: -60,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    filter: 'blur(30px)',
   },
   emptyCopyBox: {
     paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 24,
+    paddingTop: 50,
+    paddingBottom: 50,
+    alignItems: 'center',
   },
   emptyCopyBoxMobile: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 18,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
-  emptyMiniBadge: {
-    flexDirection: 'row',
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary,
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    marginBottom: 12,
+    justifyContent: 'center',
+    marginBottom: 24,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 6,
   },
-  emptyMiniBadgeText: {
-    color: '#047857',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  emptyTitle: { color: '#111827', fontSize: 27, fontWeight: '900', textAlign: 'center', letterSpacing: -0.8 },
-  emptySub: { color: '#6B7280', fontSize: 15, textAlign: 'center', marginTop: 12, lineHeight: 23, fontWeight: '600' },
-  emptyTitleMobile: { fontSize: 20, lineHeight: 24 },
-  emptySubMobile: { fontSize: 13, lineHeight: 19, marginTop: 8 },
+  emptyTitle: { color: '#0f172a', fontSize: 26, fontWeight: '900', textAlign: 'center', letterSpacing: -0.5 },
+  emptySub: { color: '#64748b', fontSize: 16, textAlign: 'center', marginTop: 12, lineHeight: 24, fontWeight: '500' },
+  emptyTitleMobile: { fontSize: 22 },
+  emptySubMobile: { fontSize: 14, marginTop: 10 },
   exploreBtn: {
-    marginTop: 24,
-    backgroundColor: '#111827',
-    paddingHorizontal: 24,
-    paddingVertical: 15,
+    marginTop: 32,
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 32,
+    paddingVertical: 18,
     borderRadius: 100,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    shadowColor: '#111827',
+    gap: 12,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 6,
   },
-  exploreBtnText: { color: colors.white, fontWeight: '800', fontSize: 14 },
+  exploreBtnText: { color: colors.white, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
   loader: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.8)', zIndex: 100 },
 });

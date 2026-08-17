@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Easing, FlatList, Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { BadgeCheck, Trash2, Lock, ArrowLeft, Plus, Volume2, VolumeX, MoreHorizontal, X, MessageSquare, Send, Image as ImageIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { colors, spacing } from '../theme/colors';
 import { createStory, deleteConversation, deleteStory, getConversations, getStories, type Conversation, type Story } from '../services/api';
 import { useAuth } from '../services/auth';
 import { StoryEditorScreen } from './StoryEditorScreen';
+import { ProFooter } from '../components/ProFooter';
 
 const fallbackAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200';
 const storyHoldThresholdMs = 300;
@@ -26,9 +27,66 @@ function formatTime(value?: string) {
   return new Date(value).toLocaleDateString('es-NI', { day: '2-digit', month: 'short' });
 }
 
+const SPARKLE_DATA = [
+  { left: '8%',  char: '✦', size: 10, delay: 0,    dur: 2200 },
+  { left: '20%', char: '★', size: 8,  delay: 300,  dur: 2600 },
+  { left: '33%', char: '✦', size: 12, delay: 600,  dur: 2000 },
+  { left: '47%', char: '✧', size: 9,  delay: 150,  dur: 2400 },
+  { left: '60%', char: '★', size: 11, delay: 450,  dur: 2100 },
+  { left: '74%', char: '✦', size: 8,  delay: 750,  dur: 2500 },
+  { left: '88%', char: '✧', size: 10, delay: 200,  dur: 2300 },
+];
+
+function ProSparkles() {
+  const anims = useRef(SPARKLE_DATA.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    const loops = anims.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(SPARKLE_DATA[i].delay),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: SPARKLE_DATA[i].dur,
+            useNativeDriver: true,
+            easing: Easing.linear,
+          }),
+          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      )
+    );
+    loops.forEach(l => l.start());
+    return () => loops.forEach(l => l.stop());
+  }, [anims]);
+
+  return (
+    <View style={sparkleStyles.container} pointerEvents="none">
+      {SPARKLE_DATA.map((s, i) => {
+        const translateY = anims[i].interpolate({ inputRange: [0, 1], outputRange: [0, 55] });
+        const opacity    = anims[i].interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 0.6, 0] });
+        return (
+          <Animated.Text
+            key={i}
+            style={[sparkleStyles.star, { left: s.left as any, fontSize: s.size, color: i % 2 === 0 ? '#F59E0B' : '#FEF08A', transform: [{ translateY }], opacity }]}
+          >
+            {s.char}
+          </Animated.Text>
+        );
+      })}
+    </View>
+  );
+}
+
+const sparkleStyles = StyleSheet.create({
+  container: { position: 'relative', height: 60, width: '100%', overflow: 'hidden' },
+  star: { position: 'absolute', top: 0, fontWeight: '400' },
+});
+
+
 export const MessagesScreen = () => {
   const router = useRouter();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user: currentUser } = useAuth();
+  const isMePro = Boolean(currentUser?.profile?.is_pro);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
   const [selectedStoryGroup, setSelectedStoryGroup] = useState<StoryGroup | null>(null);
@@ -82,13 +140,15 @@ export const MessagesScreen = () => {
     }
     setIsLoading(true);
     try {
-      setConversations(await getConversations());
+      const data = await getConversations();
+      setConversations(data);
     } catch {
       setConversations([]);
     } finally {
       setIsLoading(false);
     }
   }, [isAuthenticated]);
+
 
   useEffect(() => {
     if (!isAuthLoading) loadConversations();
@@ -258,14 +318,18 @@ export const MessagesScreen = () => {
       ]);
     };
 
+    const isPro = otherUser?.is_pro || false;
     const conversationCard = (
       <TouchableOpacity style={styles.conversationItem} onPress={() => router.push(`/messages/${item.id}`)} onLongPress={handleDeleteItem} delayLongPress={Platform.OS === 'web' ? 500 : 350}>
-        <Image source={{ uri: otherUser?.avatar || fallbackAvatar }} style={styles.avatar} />
+        <View style={[styles.avatarWrap, isPro && styles.avatarWrapPro]}>
+          <Image source={{ uri: otherUser?.avatar || fallbackAvatar }} style={styles.avatar} />
+        </View>
         <View style={styles.infoContainer}>
           <View style={styles.headerRow}>
             <View style={styles.nameWrapper}>
-              <Text style={styles.userName}>{otherUser?.display_name || 'Usuario'}</Text>
-              {otherUser?.is_verified ? <BadgeCheck size={14} color="#3b82f6" strokeWidth={2.4} style={{ marginLeft: 4 }} /> : null}
+              <Text style={[styles.userName, isPro && styles.userNamePro]}>{otherUser?.display_name || 'Usuario'}</Text>
+              {isPro ? <Text style={styles.proBadgeInline}>★ PRO</Text> : null}
+              {!isPro && otherUser?.is_verified ? <BadgeCheck size={14} color="#3b82f6" strokeWidth={2.4} style={{ marginLeft: 4 }} /> : null}
             </View>
             <Text style={styles.time}>{formatTime(lastMessage?.created_at || item.updated_at)}</Text>
           </View>
@@ -318,9 +382,17 @@ export const MessagesScreen = () => {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft size={24} color={colors.text} strokeWidth={2.2} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mensajes</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={styles.headerTitle}>Mensajes</Text>
+          {isMePro && (
+            <View style={styles.headerProBadge}>
+              <Text style={styles.headerProBadgeText}>✦ PRO</Text>
+            </View>
+          )}
+        </View>
         <View style={{ width: 32 }} />
       </View>
+      {isMePro && <View style={styles.headerProAccent} />}
 
       <Modal visible={!!editingImage} animationType="slide">
         {editingImage ? (
@@ -335,10 +407,10 @@ export const MessagesScreen = () => {
       <View style={styles.storiesSection}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContent}>
           <TouchableOpacity style={styles.storyItem} onPress={handleCreateStory} disabled={isCreatingStory}>
-            <View style={[styles.storyCircle, styles.myStoryCircle]}>
-              {isCreatingStory ? <ActivityIndicator color={colors.primary} /> : <Plus size={26} color={colors.primary} strokeWidth={2.4} />}
+            <View style={[styles.storyCircle, styles.myStoryCircle, isMePro && styles.myStoryCirclePro]}>
+              {isCreatingStory ? <ActivityIndicator color={colors.primary} /> : <Plus size={26} color={isMePro ? '#F59E0B' : colors.primary} strokeWidth={2.4} />}
             </View>
-            <Text style={styles.storyName} numberOfLines={1}>Tu historia</Text>
+            <Text style={[styles.storyName, isMePro && { color: '#92400E' }]} numberOfLines={1}>Tu historia{isMePro ? ' ✦' : ''}</Text>
           </TouchableOpacity>
 
           {groupedStories.map((group) => {
@@ -459,21 +531,32 @@ export const MessagesScreen = () => {
         onRefresh={loadConversations}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={(
-          <View style={styles.centerState}>
-            <MessageSquare size={64} color="#D1D5DB" strokeWidth={1.6} />
-            <Text style={styles.emptyTitle}>Aún no tienes chats</Text>
-            <Text style={styles.emptyText}>Escribe a un vendedor desde el detalle de un anuncio. Solo apareceran aqui las conversaciones donde hayas enviado al menos un mensaje.</Text>
+          <View style={[styles.centerState, isMePro && styles.centerStatePro]}>
+            <MessageSquare size={64} color={isMePro ? '#FDE68A' : '#D1D5DB'} strokeWidth={1.6} />
+            <Text style={[styles.emptyTitle, isMePro && styles.emptyTitlePro]}>Aun no tienes chats</Text>
+            <Text style={[styles.emptyText, isMePro && styles.emptyTextPro]}>Escribe a un vendedor desde el detalle de un anuncio. Solo apareceran aqui las conversaciones donde hayas enviado al menos un mensaje.</Text>
+            {isMePro && (
+              <View style={styles.emptyProHint}>
+                <Text style={styles.emptyProHintText}>✦ Tu cuenta PRO da visibilidad prioritaria a tus anuncios</Text>
+              </View>
+            )}
           </View>
         )}
+        ListFooterComponent={isMePro && visibleConversations.length > 0 ? (
+          <ProFooter />
+        ) : null}
       />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
+  container: { flex: 1, backgroundColor: colors.white, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.white },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, height: 60, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  headerProBadge: { backgroundColor: '#1F2937', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
+  headerProBadgeText: { color: '#FBBF24', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
+  headerProAccent: { height: 2.5, backgroundColor: '#F59E0B', opacity: 0.6 },
   backBtn: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: '900', color: colors.text },
   storiesSection: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingBottom: spacing.sm },
@@ -481,6 +564,7 @@ const styles = StyleSheet.create({
   storyItem: { width: 76, alignItems: 'center' },
   storyCircle: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' },
   myStoryCircle: { borderWidth: 2, borderColor: '#D1FAE5', borderStyle: 'dashed' },
+  myStoryCirclePro: { borderWidth: 2.5, borderColor: '#F59E0B', borderStyle: 'solid', backgroundColor: '#FFFBEB', shadowColor: '#1F2937', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 3 },
   storyRing: { width: 68, height: 68, borderRadius: 34, padding: 3, borderWidth: 2, borderColor: colors.primary },
   storyImage: { width: '100%', height: '100%', borderRadius: 31, backgroundColor: '#F3F4F6' },
   storyName: { marginTop: 6, fontSize: 11, color: colors.text, fontWeight: '700', textAlign: 'center' },
@@ -506,7 +590,11 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 40 },
   emptyList: { flexGrow: 1 },
   conversationItem: { flexDirection: 'row', padding: spacing.md, alignItems: 'center' },
-  avatar: { width: 56, height: 56, borderRadius: 18, backgroundColor: '#F3F4F6' },
+  avatarWrap: { width: 56, height: 56, borderRadius: 18 },
+  avatarWrapPro: { borderWidth: 2, borderColor: '#F59E0B', borderRadius: 18, shadowColor: '#1F2937', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 3 },
+  avatar: { width: '100%', height: '100%', borderRadius: 16, backgroundColor: '#F3F4F6' } as any,
+  proBadgeInline: { marginLeft: 5, fontSize: 9, fontWeight: '900', color: '#F59E0B', letterSpacing: 0.5 },
+  userNamePro: { color: '#92400E' },
   infoContainer: { flex: 1, marginLeft: 15 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   nameWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1 },
@@ -530,4 +618,12 @@ const styles = StyleSheet.create({
   emptyText: { marginTop: spacing.sm, color: colors.textLight, textAlign: 'center', lineHeight: 22 },
   loginBtn: { marginTop: spacing.xl, backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 },
   loginBtnText: { color: colors.white, fontWeight: '900' },
+  centerStatePro: { backgroundColor: '#FFFBEB' },
+  emptyTitlePro: { color: '#92400E' },
+  emptyTextPro: { color: '#B45309' },
+  emptyProHint: { marginTop: spacing.lg, backgroundColor: '#1F2937', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  emptyProHintText: { color: '#FBBF24', fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  proFooter: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.lg, paddingVertical: spacing.xl, marginTop: spacing.md },
+  proFooterLine: { flex: 1, height: 1, backgroundColor: '#FDE68A' },
+  proFooterText: { color: '#D97706', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
 });

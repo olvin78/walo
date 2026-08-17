@@ -99,6 +99,7 @@ export type Me = {
   first_name?: string;
   last_name?: string;
   date_joined: string;
+  system_payments_enabled?: boolean;
   profile: {
     avatar?: string | null;
     cover_image?: string | null;
@@ -113,6 +114,11 @@ export type Me = {
     followers_count?: number;
     listings_count?: number;
     is_pro?: boolean;
+    has_stripe_subscription?: boolean;
+    has_paypal_subscription?: boolean;
+    pro_cancel_at_period_end?: boolean;
+    pro_current_period_end?: string | null;
+    has_verification_photo?: boolean;
     allows_notifications?: boolean;
   } | null;
 };
@@ -144,8 +150,9 @@ export type ListingPayload = {
   payment_methods?: string;
   latitude?: string | number | null;
   longitude?: string | number | null;
-  main_image?: { uri: string; name?: string; type?: string } | null;
-  images?: { uri: string; name?: string; type?: string }[];
+  main_image?: { uri: string; name?: string; type?: string } | Blob | null;
+  images?: ({ uri: string; name?: string; type?: string } | Blob)[];
+  deleted_images?: number[];
 };
 
 export type ProfileReview = {
@@ -195,13 +202,20 @@ export type ChatUser = {
   display_name: string;
   avatar?: string | null;
   is_verified?: boolean;
+  is_pro?: boolean;
 };
 
 export type ChatMessage = {
   id: number;
   conversation: number;
   sender: ChatUser;
-  text: string;
+  text?: string | null;
+  image?: string | null;
+  audio?: string | null;
+  file?: string | null;
+  is_view_once?: boolean;
+  viewed_by_sender?: boolean;
+  viewed_by_receiver?: boolean;
   created_at: string;
   is_read: boolean;
   is_mine: boolean;
@@ -259,19 +273,40 @@ const fallbackBaseUrl = Platform.select({
 
 export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || fallbackBaseUrl || '').replace(/\/$/, '');
 
+export const WEB_BASE_URL = API_BASE_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
 let memoryAccessToken: string | null = null;
 let memoryRefreshToken: string | null = null;
 
 const storage = {
-  get(key: string) {
-    if (typeof localStorage === 'undefined') return null;
-    return localStorage.getItem(key);
+  async get(key: string) {
+    if (typeof localStorage !== 'undefined') return localStorage.getItem(key);
+    try {
+      const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+      return await AsyncStorage.getItem(key);
+    } catch {
+      return null;
+    }
   },
-  set(key: string, value: string) {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+  async set(key: string, value: string) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+      return;
+    }
+    try {
+      const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+      await AsyncStorage.setItem(key, value);
+    } catch {}
   },
-  remove(key: string) {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+  async remove(key: string) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(key);
+      return;
+    }
+    try {
+      const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+      await AsyncStorage.removeItem(key);
+    } catch {}
   },
 };
 
@@ -284,13 +319,13 @@ export function setTokens(access: string | null, refresh: string | null) {
   else storage.remove('igualo_refresh');
 }
 
-export function getAccessToken() {
-  memoryAccessToken = memoryAccessToken || storage.get('igualo_access');
+export async function getAccessToken() {
+  if (!memoryAccessToken) memoryAccessToken = await storage.get('igualo_access');
   return memoryAccessToken;
 }
 
-export function getRefreshToken() {
-  memoryRefreshToken = memoryRefreshToken || storage.get('igualo_refresh');
+export async function getRefreshToken() {
+  if (!memoryRefreshToken) memoryRefreshToken = await storage.get('igualo_refresh');
   return memoryRefreshToken;
 }
 
@@ -304,9 +339,9 @@ function normalizePath(path: string) {
   return normalized.startsWith('/') ? normalized : `/${normalized}`;
 }
 
-function buildHeaders(init?: RequestInit) {
+async function buildHeaders(init?: RequestInit) {
   const headers = new Headers(init?.headers);
-  const token = getAccessToken();
+  const token = await getAccessToken();
   if (token) headers.set('Authorization', `Bearer ${token}`);
   return headers;
 }
@@ -335,13 +370,13 @@ export class ApiError extends Error {
 export async function apiRequest<T>(path: string, init?: RequestInit, retry = true): Promise<T> {
   const normalizedPath = normalizePath(path);
   const url = normalizedPath.startsWith('http') ? normalizedPath : `${API_BASE_URL}${normalizedPath}`;
-  const headers = buildHeaders(init);
+  const headers = await buildHeaders(init);
   const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
   if (init?.body && !isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
   const response = await fetch(url, { ...init, headers });
 
-  if (response.status === 401 && retry && getRefreshToken()) {
+  if (response.status === 401 && retry && await getRefreshToken()) {
     const refreshed = await refreshToken().catch(() => null);
     if (refreshed) return apiRequest<T>(path, init, false);
   }
@@ -365,13 +400,15 @@ function appendListingPayload(formData: FormData, payload: Partial<ListingPayloa
   if (payload.price !== undefined) formData.append('price', String(payload.price));
   if (payload.category !== undefined) formData.append('category', String(payload.category));
   if (payload.location !== undefined) formData.append('location', payload.location);
-  if (payload.subcategory) formData.append('subcategory', String(payload.subcategory));
+  if (payload.subcategory !== undefined) formData.append('subcategory', payload.subcategory === null ? '' : String(payload.subcategory));
   if (typeof payload.is_active === 'boolean') formData.append('is_active', String(payload.is_active));
+  if (typeof payload.is_negotiable === 'boolean') formData.append('is_negotiable', String(payload.is_negotiable));
   if (payload.payment_methods) formData.append('payment_methods', payload.payment_methods);
   if (payload.latitude !== null && payload.latitude !== undefined) formData.append('latitude', String(payload.latitude));
   if (payload.longitude !== null && payload.longitude !== undefined) formData.append('longitude', String(payload.longitude));
   if (payload.main_image) formData.append('main_image', payload.main_image as unknown as Blob);
   payload.images?.forEach((image) => formData.append('images', image as unknown as Blob));
+  payload.deleted_images?.forEach((id) => formData.append('deleted_images', String(id)));
 }
 
 export async function login(loginValue: string, password: string) {
@@ -407,19 +444,29 @@ export async function register(payload: RegisterPayload) {
   return response;
 }
 
+let refreshPromise: Promise<string> | null = null;
+
 export async function refreshToken() {
-  const refresh = getRefreshToken();
+  const refresh = await getRefreshToken();
   if (!refresh) throw new ApiError(401, { detail: 'No refresh token' });
-  const response = await apiRequest<{ access: string }>('/auth/refresh/', {
-    method: 'POST',
-    body: JSON.stringify({ refresh }),
-  }, false);
-  setTokens(response.access, refresh);
-  return response.access;
+  if (!refreshPromise) {
+    refreshPromise = apiRequest<{ access: string; refresh?: string }>('/auth/refresh/', {
+      method: 'POST',
+      body: JSON.stringify({ refresh }),
+    }, false)
+      .then((response) => {
+        setTokens(response.access, response.refresh ?? refresh);
+        return response.access;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
 }
 
 export async function logout() {
-  const refresh = getRefreshToken();
+  const refresh = await getRefreshToken();
   if (refresh) {
     await apiRequest('/auth/logout/', {
       method: 'POST',
@@ -526,7 +573,25 @@ export function createConversation(listingId: number | string, text?: string) {
   });
 }
 
-export function sendMessage(conversationId: number | string, text: string) {
+export function sendMessage(conversationId: number | string, text: string, attachment?: {
+  image?: { uri: string; name?: string; type?: string } | Blob;
+  audio?: { uri: string; name?: string; type?: string } | Blob;
+  file?: { uri: string; name?: string; type?: string } | Blob;
+  is_view_once?: boolean;
+}) {
+  if (attachment?.image || attachment?.audio || attachment?.file) {
+    const formData = new FormData();
+    formData.append('conversation', String(conversationId));
+    formData.append('text', text);
+    if (attachment.image) formData.append('image', attachment.image as unknown as Blob);
+    if (attachment.audio) formData.append('audio', attachment.audio as unknown as Blob);
+    if (attachment.file) formData.append('file', attachment.file as unknown as Blob);
+    if (attachment.is_view_once !== undefined) formData.append('is_view_once', String(attachment.is_view_once));
+    return apiRequest<ChatMessage>('/messages/', {
+      method: 'POST',
+      body: formData,
+    });
+  }
   return apiRequest<ChatMessage>('/messages/', {
     method: 'POST',
     body: JSON.stringify({ conversation: conversationId, text }),
@@ -535,6 +600,10 @@ export function sendMessage(conversationId: number | string, text: string) {
 
 export function markMessageRead(messageId: number | string) {
   return apiRequest<ChatMessage>(`/messages/${messageId}/read/`, { method: 'PATCH' });
+}
+
+export function markMessageViewOnce(messageId: number | string) {
+  return apiRequest<ChatMessage | { status: 'deleted' }>(`/messages/${messageId}/view-once/`, { method: 'PATCH' });
 }
 
 export function getStories() {
@@ -605,6 +674,53 @@ export function updateProfile(payload: {
   return apiRequest<Me>('/me/', {
     method: 'PATCH',
     body: formData,
+  });
+}
+
+export function togglePlan() {
+  return apiRequest<Me>('/me/', {
+    method: 'PATCH',
+    body: JSON.stringify({ toggle_plan: '1' }),
+  });
+}
+
+export function createPaypalSubscription(returnUrl: string) {
+  return apiRequest<{ id: string; approve_url: string | null }>('/paypal/create-subscription/', {
+    method: 'POST',
+    body: JSON.stringify({ return_url: returnUrl }),
+  });
+}
+
+export function confirmPaypalSubscription(subscriptionId: string) {
+  return apiRequest<Me>('/paypal/confirm-subscription/', {
+    method: 'POST',
+    body: JSON.stringify({ subscription_id: subscriptionId }),
+  });
+}
+
+export function cancelPaypalSubscription() {
+  return apiRequest<Me & { refunded: boolean }>('/paypal/cancel-subscription/', {
+    method: 'POST',
+  });
+}
+
+export function createStripeCheckoutSession(successUrl: string, cancelUrl: string) {
+  return apiRequest<{ id: string; url: string | null }>('/stripe/create-session/', {
+    method: 'POST',
+    body: JSON.stringify({ success_url: successUrl, cancel_url: cancelUrl }),
+  });
+}
+
+export function confirmStripeSession(sessionId: string) {
+  return apiRequest<Me>('/stripe/confirm-session/', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+}
+
+export function cancelStripeSubscription() {
+  return apiRequest<Me & { refunded: boolean }>('/stripe/cancel-subscription/', {
+    method: 'POST',
   });
 }
 

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Branding Pro Max - IGUALO</title>
+<!-- Importando tipografías premium de Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<style>
+  body { 
+    margin: 0; padding: 0; 
+    background-color: #0F172A; /* Fondo oscuro premium */
+    color: white; 
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center; 
+  }
+  h1 { margin-top: 60px; font-size: 28px; color: #94A3B8; }
+  
+  .container {
+    width: 100%; max-width: 900px;
+    display: flex; flex-direction: column; gap: 80px;
+    padding: 60px 20px;
+  }
+
+  .showcase {
+    background: #1E293B;
+    border-radius: 32px;
+    padding: 80px 40px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* --- ESTILO 1: El Gradiente Líquido (Outfit) --- */
+  .logo-liquid {
+    font-family: 'Outfit', sans-serif;
+    font-size: 96px;
+    font-weight: 900;
+    letter-spacing: -4px;
+    background: linear-gradient(90deg, #10B981, #0EA5E9, #10B981);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shine 3s linear infinite;
+    margin: 0;
+  }
+  @keyframes shine {
+    to { background-position: 200% center; }
+  }
+
+  /* --- ESTILO 2: El Glassmorphism (Space Grotesk) --- */
+  .logo-glass-container {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .glow-orb {
+    position: absolute;
+    width: 150px; height: 150px;
+    background: #10B981;
+    border-radius: 50%;
+    filter: blur(60px);
+    z-index: 1;
+  }
+  .logo-glass {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 82px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 20px 60px;
+    border-radius: 100px;
+    z-index: 2;
+    margin: 0;
+  }
+
+  /* --- ESTILO 3: El Punto Esmeralda (Minimalista) --- */
+  .logo-dot {
+    font-family: 'Outfit', sans-serif;
+    font-size: 110px;
+    font-weight: 900;
+    letter-spacing: -6px;
+    color: white;
+    display: flex; align-items: baseline;
+    margin: 0;
+  }
+  .dot {
+    width: 24px; height: 24px;
+    background: #10B981;
+    border-radius: 50%;
+    margin-left: 8px;
+    box-shadow: 0 0 30px #10B981;
+  }
+
+  .desc { text-align: center; margin-top: 30px; color: #94A3B8; font-size: 16px; }
+
+</style>
+</head>
+<body>
+  <h1>Si los dibujos no funcionan, la tipografía es la reina.</h1>
+  
+  <div class="container">
+    
+    <!-- Opción 1 -->
+    <div class="showcase">
+      <h2 class="logo-liquid">igualo</h2>
+      <div class="desc">1. El Gradiente Animado (Estilo Web3). Letras gruesas, pegadas, con un brillo esmeralda/azul que fluye constantemente.</div>
+    </div>
+
+    <!-- Opción 2 -->
+    <div class="showcase">
+      <div class="logo-glass-container">
+        <div class="glow-orb"></div>
+        <h2 class="logo-glass">IGUALO</h2>
+      </div>
+      <div class="desc">2. El Cristal "Pro Max" (Estilo Apple). Un orbe verde brillando detrás de una placa de cristal esmerilado. Futuro puro.</div>
+    </div>
+
+    <!-- Opción 3 -->
+    <div class="showcase">
+      <div class="logo-dot">
+        igualo<div class="dot"></div>
+      </div>
+      <div class="desc">3. El Punto Esmeralda (Estilo Agencia). Poderoso, masivo, blanco puro, rematado con un punto verde brillante. Imposible de ignorar.</div>
+    </div>
+
+  </div>
+</body>
+</html>

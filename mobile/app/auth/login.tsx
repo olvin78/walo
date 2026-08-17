@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,13 +16,13 @@ import {
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import { useEffect } from 'react';
 
 WebBrowser.maybeCompleteAuthSession();
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useRouter } from 'expo-router';
-import { User, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { User, Lock, AlertCircle, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { colors, spacing } from '../../src/theme/colors';
 import { useAuth } from '../../src/services/auth';
 import { ApiError } from '../../src/services/api';
@@ -37,6 +37,26 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const { width } = useWindowDimensions();
 
+  // Floating animation for logo
+  const floatAnim = useSharedValue(0);
+
+  useEffect(() => {
+    floatAnim.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const floatingStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: floatAnim.value }]
+    };
+  });
+
   const handleSubmit = async () => {
     if (!loginValue.trim() || !password) {
       Alert.alert('Datos incompletos', 'Escribe tu usuario/correo y contraseña.');
@@ -46,7 +66,7 @@ export default function LoginScreen() {
     setIsSubmitting(true);
     try {
       await login(loginValue.trim(), password);
-      router.replace('/(tabs)/profile');
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('[Igualo Login] Failed', error instanceof ApiError ? { status: error.status, body: error.data } : error);
       const message = error instanceof ApiError && [400, 401].includes(error.status)
@@ -76,7 +96,7 @@ export default function LoginScreen() {
     setIsSubmitting(true);
     try {
       await loginWithGoogle(idToken);
-      router.replace('/(tabs)/profile');
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('[Igualo Google Login] Failed', error);
       setErrorMessage('No se pudo iniciar sesión con Google');
@@ -113,124 +133,154 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Ambient background magic (Pro Max effects) */}
+          <LinearGradient
+            colors={['rgba(16, 185, 129, 0.12)', 'rgba(255, 255, 255, 0)']}
+            locations={[0, 1]}
+            style={styles.topGlow}
+          />
+          <Animated.View pointerEvents="none" style={[styles.glowOrb, styles.glowOrbLeft]} />
+          <Animated.View pointerEvents="none" style={[styles.glowOrb, styles.glowOrbRight]} />
+
           <View style={[styles.container, isWide && styles.containerWide]}>
-            {/* Hero Image Section */}
-            <View style={styles.heroSection}>
-              <Image
-                source={require('../../assets/images/auth_hero.png')}
-                style={styles.heroImage}
-                contentFit="cover"
-                contentPosition="top"
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,1)']}
-                style={styles.heroGradient}
-              />
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => router.back()}
+                activeOpacity={0.8}
+              >
+                <ArrowLeft size={22} color={colors.text} strokeWidth={2.4} />
+              </TouchableOpacity>
             </View>
 
             {/* Form Section */}
             <View style={[styles.formSection, isWide && styles.formSectionWide]}>
-              <Text style={styles.logo}>IGUALO</Text>
-              <Text style={styles.title}>¡Bienvenido de vuelta!</Text>
-              <Text style={styles.subtitle}>Inicia sesión para acceder a tu cuenta</Text>
-
-              {/* Username / Email Input */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <View style={styles.inputIconBox}>
-                    <User size={18} color={colors.primary} strokeWidth={2} />
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Usuario o email"
-                    placeholderTextColor="#9CA3AF"
-                    value={loginValue}
-                    onChangeText={setLoginValue}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+              <Animated.View 
+                entering={FadeInDown.delay(100).duration(800).springify().damping(14)}
+                style={[styles.logoContainer, floatingStyle]}
+              >
+                <View style={styles.logoWrapper}>
+                  <Image source={require('../../assets/images/igualo-icon.png')} style={styles.logoImg} contentFit="contain" />
                 </View>
-              </View>
+                <Text style={styles.logoText}>IGUALO</Text>
+              </Animated.View>
 
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <View style={styles.inputIconBox}>
-                    <Lock size={18} color={colors.primary} strokeWidth={2} />
+              <Animated.View entering={FadeInUp.delay(200).duration(800).springify().damping(14)}>
+                <Text style={styles.title}>¡Bienvenido de vuelta!</Text>
+                <Text style={styles.subtitle}>Inicia sesión para acceder a tu cuenta</Text>
+              </Animated.View>
+
+              <Animated.View entering={FadeInUp.delay(300).duration(800).springify().damping(14)} style={styles.inputsBlock}>
+                {/* Username / Email Input */}
+                <View style={styles.inputContainer}>
+                  <View style={styles.inputWrapper}>
+                    <View style={styles.inputIconBox}>
+                      <User size={18} color={colors.primary} strokeWidth={2.5} />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Usuario o email"
+                      placeholderTextColor="#94a3b8"
+                      value={loginValue}
+                      onChangeText={setLoginValue}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
                   </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Contraseña"
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeBtn}
-                    onPress={() => setShowPassword(!showPassword)}
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputContainer}>
+                  <View style={styles.inputWrapper}>
+                    <View style={styles.inputIconBox}>
+                      <Lock size={18} color={colors.primary} strokeWidth={2.5} />
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Contraseña"
+                      placeholderTextColor="#94a3b8"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeBtn}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword 
+                        ? <EyeOff size={20} color="#94a3b8" strokeWidth={2} />
+                        : <Eye size={20} color="#94a3b8" strokeWidth={2} />}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Error Message */}
+                {errorMessage ? (
+                  <View style={styles.errorBox}>
+                    <AlertCircle size={16} color={colors.error} strokeWidth={2.2} />
+                    <Text style={styles.errorText}>{errorMessage}</Text>
+                  </View>
+                ) : null}
+              </Animated.View>
+
+              <Animated.View entering={FadeInUp.delay(400).duration(800).springify().damping(14)}>
+                {/* Login Button */}
+                <TouchableOpacity
+                  style={[styles.primaryBtn, isSubmitting && styles.buttonDisabled]}
+                  onPress={handleSubmit}
+                  disabled={isSubmitting}
+                  activeOpacity={0.9}
+                >
+                  <LinearGradient
+                    colors={['#34D399', '#10B981', '#059669']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.primaryBtnGradient}
                   >
-                    {showPassword 
-                      ? <EyeOff size={20} color="#9CA3AF" strokeWidth={2} />
-                      : <Eye size={20} color="#9CA3AF" strokeWidth={2} />}
-                  </TouchableOpacity>
+                    <View style={styles.primaryBtnInner}>
+                      {isSubmitting ? (
+                        <ActivityIndicator color={colors.white} />
+                      ) : (
+                        <>
+                          <Text style={styles.primaryBtnText}>Entrar</Text>
+                          <ArrowRight size={18} color={colors.white} strokeWidth={2.4} />
+                        </>
+                      )}
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.googleButton, (!request || isSubmitting) && styles.buttonDisabled]}
+                  onPress={handleGoogleLogin}
+                  disabled={!request || isSubmitting}
+                  activeOpacity={0.8}
+                >
+                  <Image 
+                    source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png' }}
+                    style={{ width: 22, height: 22 }}
+                    contentFit="contain"
+                  />
+                  <Text style={styles.googleButtonText}>Iniciar sesión con Google</Text>
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>O</Text>
+                  <View style={styles.dividerLine} />
                 </View>
-              </View>
 
-              {/* Error Message */}
-              {errorMessage ? (
-                <View style={styles.errorBox}>
-                  <AlertCircle size={16} color={colors.error} strokeWidth={2.2} />
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-              ) : null}
-
-              {/* Login Button */}
-              <TouchableOpacity
-                style={[styles.button, isSubmitting && styles.buttonDisabled]}
-                onPress={handleSubmit}
-                disabled={isSubmitting}
-                activeOpacity={0.85}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.buttonText}>Entrar</Text>
-                    <ArrowRight size={18} color={colors.white} strokeWidth={2.2} />
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.googleButton, !request && styles.buttonDisabled]}
-                onPress={handleGoogleLogin}
-                disabled={!request || isSubmitting}
-                activeOpacity={0.85}
-              >
-                <Image 
-                  source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png' }}
-                  style={{ width: 24, height: 24 }}
-                  contentFit="contain"
-                />
-                <Text style={styles.googleButtonText}>Iniciar sesion con Google</Text>
-              </TouchableOpacity>
-
-              {/* Divider */}
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>o</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Register Link */}
-              <TouchableOpacity
-                style={styles.registerBtn}
-                onPress={() => router.push('/auth/register')}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.registerBtnText}>Crear cuenta nueva</Text>
-              </TouchableOpacity>
+                {/* Register Link */}
+                <TouchableOpacity
+                  style={styles.secondaryBtn}
+                  onPress={() => router.push('/auth/register')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.secondaryBtnText}>Crear cuenta nueva</Text>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </View>
         </ScrollView>
@@ -242,7 +292,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: '#FAFAFA',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   flex: {
@@ -259,90 +309,144 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
-  // Hero Image
-  heroSection: {
-    height: 280,
-    width: '100%',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroGradient: {
+  topGlow: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    height: 120,
+    height: 300,
   },
-  // Form
+  glowOrb: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    opacity: 0.5,
+  },
+  glowOrbLeft: {
+    top: -80,
+    left: -100,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  glowOrbRight: {
+    top: -40,
+    right: -100,
+    backgroundColor: 'rgba(14, 165, 233, 0.06)',
+  },
+  header: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
   formSection: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl * 2,
-    marginTop: -spacing.lg,
   },
   formSectionWide: {
     paddingHorizontal: spacing.xl + 8,
   },
-  logo: {
-    color: colors.primary,
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.15)',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 12,
+  },
+  logoImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+  },
+  logoText: {
+    color: '#022c22',
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: 4,
+  },
+  title: {
+    color: '#0f172a',
     fontSize: 32,
     fontWeight: '900',
     textAlign: 'center',
-    letterSpacing: 2,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 26,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginTop: spacing.sm,
     letterSpacing: -0.5,
   },
   subtitle: {
-    color: '#9CA3AF',
-    fontSize: 14,
+    color: '#64748b',
+    fontSize: 15,
     textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg + spacing.sm,
+    marginTop: 8,
+    marginBottom: 32,
     fontWeight: '500',
   },
-  // Inputs
+  inputsBlock: {
+    gap: 16,
+    marginBottom: 32,
+  },
   inputContainer: {
-    marginBottom: spacing.md,
+    width: '100%',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    borderRadius: 16,
+    height: 60,
+    borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: colors.white,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   inputIconBox: {
-    width: 48,
+    width: 52,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    color: colors.text,
-    fontWeight: '500',
+    fontSize: 16,
+    color: '#0f172a',
+    fontWeight: '600',
     paddingRight: spacing.md,
   },
   eyeBtn: {
-    width: 48,
+    width: 52,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Error
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -350,7 +454,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
     borderRadius: 12,
-    marginBottom: spacing.md,
+    marginTop: -8,
+    marginBottom: 8,
     gap: 8,
   },
   errorText: {
@@ -359,95 +464,90 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
   },
-  // Buttons
-  button: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 6 },
+  primaryBtn: {
+    height: 60,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 20,
+    elevation: 8,
+    marginBottom: 16,
+  },
+  primaryBtnGradient: {
+    flex: 1,
+    padding: 1,
+  },
+  primaryBtnInner: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    borderRadius: 19,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   buttonDisabled: {
     opacity: 0.7,
   },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  buttonText: {
+  primaryBtnText: {
     color: colors.white,
     fontWeight: '900',
     fontSize: 17,
     letterSpacing: 0.3,
   },
   googleButton: {
-    height: 56,
-    borderRadius: 16,
+    height: 60,
+    borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.md,
+    borderColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: colors.white,
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 2,
   },
-  googleIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#F9FAFB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   googleButtonText: {
-    color: colors.text,
+    color: '#0f172a',
     fontWeight: '800',
-    fontSize: 15,
+    fontSize: 16,
   },
-  // Divider
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.lg,
+    marginVertical: 24,
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
+    height: 1.5,
+    backgroundColor: 'rgba(0,0,0,0.04)',
   },
   dividerText: {
-    color: '#9CA3AF',
+    color: '#94a3b8',
     fontSize: 13,
-    fontWeight: '600',
-    marginHorizontal: spacing.md,
+    fontWeight: '800',
+    marginHorizontal: 16,
   },
-  // Register Button
-  registerBtn: {
-    height: 56,
-    borderRadius: 16,
+  secondaryBtn: {
+    height: 60,
+    borderRadius: 20,
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(16, 185, 129, 0.04)',
   },
-  registerBtnText: {
-    color: colors.primary,
+  secondaryBtnText: {
+    color: '#059669',
     fontWeight: '900',
     fontSize: 16,
-    letterSpacing: 0.3,
   },
 });

@@ -18,10 +18,12 @@ import { useRouter } from 'expo-router';
 import { colors, spacing } from '../theme/colors';
 import { getNotifications, markNotificationRead, markAllNotificationsRead, updateProfile, type Notification } from '../services/api';
 import { useAuth } from '../services/auth';
+import { ProFooter } from '../components/ProFooter';
 
 export const NotificationsScreen = () => {
   const router = useRouter();
   const { isAuthenticated, user, reloadUser } = useAuth();
+  const isMePro = Boolean(user?.profile?.is_pro);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -71,7 +73,7 @@ export const NotificationsScreen = () => {
       case 'message':
       case 'offer':
         if (item.related_conversation) {
-          router.push(`/chat/${item.related_conversation}`);
+          router.push(`/messages/${item.related_conversation}`);
         }
         break;
       case 'favorite':
@@ -118,19 +120,19 @@ export const NotificationsScreen = () => {
 
   const renderItem = ({ item }: { item: Notification }) => (
     <TouchableOpacity
-      style={[styles.notificationItem, !item.is_read && styles.unreadItem]}
+      style={[styles.notificationItem, !item.is_read && styles.unreadItem, !item.is_read && isMePro && styles.unreadItemPro]}
       onPress={() => handleNotificationPress(item)}
     >
-      <View style={[styles.iconContainer, { backgroundColor: item.is_read ? '#F3F4F6' : 'rgba(16, 185, 129, 0.1)' }]}>
+      <View style={[styles.iconContainer, { backgroundColor: item.is_read ? '#F3F4F6' : (isMePro ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)') }]}>
         {(() => {
           const Icon = getIcon(item.notification_type);
-          return <Icon size={24} color={item.is_read ? colors.textLight : colors.primary} strokeWidth={2} />;
+          return <Icon size={24} color={item.is_read ? colors.textLight : (isMePro ? '#F59E0B' : colors.primary)} strokeWidth={2} />;
         })()}
       </View>
       <View style={styles.textContainer}>
         <View style={styles.topRow}>
           <Text style={[styles.title, !item.is_read && styles.unreadText]}>{item.title}</Text>
-          {!item.is_read && <View style={styles.unreadDot} />}
+          {!item.is_read && <View style={[styles.unreadDot, isMePro && styles.unreadDotPro]} />}
         </View>
         <Text style={styles.body} numberOfLines={2}>{item.body}</Text>
         <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString()}</Text>
@@ -207,6 +209,11 @@ export const NotificationsScreen = () => {
                   </View>
                 </TouchableOpacity>
               ) : null}
+            </View>
+          }
+          ListFooterComponent={
+            <View>
+              {isMePro && notifications.length > 0 && <ProFooter />}
             </View>
           }
           ListEmptyComponent={
@@ -394,6 +401,14 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.primary,
+  },
+  unreadDotPro: {
+    backgroundColor: '#F59E0B',
+  },
+  unreadItemPro: {
+    backgroundColor: 'rgba(245, 158, 11, 0.03)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#F59E0B',
   },
   body: {
     fontSize: 13,

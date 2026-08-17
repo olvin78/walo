@@ -11,10 +11,9 @@ type ManualMapProps = {
 };
 
 const ManualMap = ({ latitude, longitude, setLatitude, setLongitude, style }: ManualMapProps) => {
-  // We use an iframe for OpenStreetMap on Web for free interactivity
-  // Nominatim doesn't have a direct "click to get coord" iframe that is easy, 
-  // so we show the location.
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${longitude-0.01}%2C${latitude-0.01}%2C${longitude+0.01}%2C${latitude+0.01}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+  // We use an iframe for Google Maps on Web for free interactivity
+  // This avoids WebGL requirement issues that some users experience with OSM or other providers.
+  const mapUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&hl=es&z=15&output=embed`;
 
   return (
     <View style={[style, styles.container]}>

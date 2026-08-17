@@ -3,6 +3,12 @@
 
 {% block title %}Perfil de {{ profile_user.username }} | Igualo Fluido{% endblock %}
 
+{% block og_title %}{{ profile_user.username }} en Igualo{% endblock %}
+{% block og_type %}profile{% endblock %}
+{% block og_description %}{% if profile_user.profile.bio %}{{ profile_user.profile.bio|truncatechars:140 }}{% else %}Perfil de {{ profile_user.username }} en Igualo. Ver sus anuncios, opiniones y valoraciones.{% endif %}{% endblock %}
+{% block og_image %}{% if profile_user.profile.has_avatar_file %}{{ request.scheme }}://{{ request.get_host }}{{ profile_user.profile.avatar.url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block og_image_alt %}Perfil de {{ profile_user.username }} en Igualo{% endblock %}
+
 {% block content %}
 <div class="pro-fluid-wrapper" style="padding-bottom: 80px;">
     <!-- Hero Stage (Simple Gradient) -->

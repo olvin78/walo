@@ -8,21 +8,22 @@ interface CategoryPillProps {
   icon: string;
   onPress: () => void;
   active?: boolean;
+  isPro?: boolean;
 }
 
-export const CategoryPill: React.FC<CategoryPillProps> = ({ name, icon, onPress, active = false }) => {
+export const CategoryPill: React.FC<CategoryPillProps> = ({ name, icon, onPress, active = false, isPro = false }) => {
   const isEmojiIcon = icon && !icon.includes('-') && icon.length <= 4;
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={[styles.iconContainer, active && styles.activeIconContainer]}>
+      <View style={[styles.iconContainer, active && styles.activeIconContainer, isPro && styles.iconContainerPro]}>
         {isEmojiIcon ? (
           <Text style={styles.emojiIcon}>{icon}</Text>
         ) : (
           <Ionicons name={(icon || 'grid-outline') as any} size={28} color={colors.primary} />
         )}
       </View>
-      <Text style={[styles.name, active && styles.activeName]} numberOfLines={1}>{name}</Text>
+      <Text style={[styles.name, active && styles.activeName, isPro && styles.namePro]} numberOfLines={1}>{name}</Text>
     </TouchableOpacity>
   );
 };
@@ -65,5 +66,13 @@ const styles = StyleSheet.create({
   },
   emojiIcon: {
     fontSize: 28,
+  },
+  iconContainerPro: {
+    borderColor: '#F59E0B',
+    borderWidth: 1.5,
+  },
+  namePro: {
+    color: '#92400E',
+    fontWeight: '700',
   },
 });

@@ -29,32 +29,50 @@
     top: 15px; 
     right: 15px; 
     z-index: 10; 
-    background: rgba(0, 0, 0, 0.45); 
-    backdrop-filter: blur(12px); 
-    height: 38px; 
-    width: 38px;
+    background: radial-gradient(circle at 30% 30%, rgba(245, 197, 24, 0.25), rgba(15, 23, 42, 0.85)); 
+    backdrop-filter: blur(14px); 
+    height: 40px; 
+    width: 40px;
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    border: 1px solid rgba(255, 215, 0, 0.4); 
-    transition: all 0.3s ease;
+    border: 1px solid rgba(245, 197, 24, 0.65); 
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: help;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 16px rgba(245, 197, 24, 0.35);
+    animation: goldPulseAura 3s infinite alternate ease-in-out;
 }
+
+@keyframes goldPulseAura {
+    0% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(245, 197, 24, 0.25);
+    }
+    100% {
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 22px rgba(245, 197, 24, 0.55);
+    }
+}
+
 .featured-badge-pro span.star-icon { 
-    color: #FFD700; 
-    font-size: 1.3rem; 
-    filter: drop-shadow(0 0 5px rgba(255,215,0,0.4));
+    background: linear-gradient(135deg, #fff3a1 0%, #f5c518 40%, #d49400 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.35rem; 
+    filter: drop-shadow(0 2px 6px rgba(245, 197, 24, 0.6));
     transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
     pointer-events: none; 
+    display: inline-block;
 }
+
 .featured-badge-pro:hover {
-    background: rgba(0, 0, 0, 0.6);
-    border-color: #FFD700;
+    background: radial-gradient(circle at 30% 30%, rgba(245, 197, 24, 0.4), rgba(15, 23, 42, 0.95));
+    border-color: #f5c518;
+    transform: scale(1.1);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 197, 24, 0.75);
 }
+
 .featured-badge-pro:hover span.star-icon { 
-    transform: rotate(360deg); 
+    transform: rotate(360deg) scale(1.15); 
 }
 
 .walo-badge-negotiable {

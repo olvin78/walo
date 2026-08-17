@@ -2,12 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { 
   ActivityIndicator,
   Alert,
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  TouchableOpacity, 
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Platform,
   StatusBar,
@@ -26,6 +26,7 @@ import {
   type Subcategory,
   type ListingDetail 
 } from '../services/api';
+import { processImageForUpload } from '../services/upload';
 import { useAuth } from '../services/auth';
 
 interface EditListingScreenProps {
@@ -34,7 +35,8 @@ interface EditListingScreenProps {
 
 export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId }) => {
   const router = useRouter();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isLoading: isAuthLoading, user: currentUser } = useAuth();
+  const isMePro = Boolean(currentUser?.profile?.is_pro);
 
   // Form State
   const [existingImages, setExistingImages] = useState<{id: number, url: string}[]>([]);
@@ -64,7 +66,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
       
       setCategories(categoriesData);
       
-      // Fill form
+      // Rellenar el formulario con los datos del anuncio
       setTitle(listingData.title);
       setPrice(String(listingData.price));
       setLocation(listingData.location || '');
@@ -81,16 +83,15 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
       }
       
       if (listingData.payment_methods) {
-        setPaymentMethods(listingData.payment_methods.split(',').map(m => m.trim()));
+        setPaymentMethods(String(listingData.payment_methods).split(',').map(m => m.trim()));
       }
 
-      // Handle images: Include main_image if not already in images list
+      // Fotos existentes: si la principal no está en la lista, se agrega al inicio con id 0
       const imgs = listingData.images || [];
       const mainUrl = listingData.main_image;
       
       const allExisting = imgs.map(img => ({ id: img.id, url: img.url || '' }));
       
-      // If main image is not in the related images list, add it at the beginning with id 0 (reserved for main)
       if (mainUrl && !allExisting.some(img => img.url === mainUrl)) {
         setExistingImages([{ id: 0, url: mainUrl }, ...allExisting]);
       } else {
@@ -124,11 +125,9 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
 
   const removeExistingImage = (id: number) => {
     setExistingImages(existingImages.filter(img => img.id !== id));
+    // id 0 es la foto principal: al dejarla null, el backend elige la siguiente
     if (id !== 0) {
       setDeletedImageIds([...deletedImageIds, id]);
-    } else {
-      // If id is 0, we are "deleting" the main image field from the database
-      // The backend logic I added will pick a new main if this is null
     }
   };
 
@@ -144,16 +143,14 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
     }
   };
 
-  const imageToUpload = (uri: string, index: number) => ({
-    uri,
-    name: `listing-edit-${Date.now()}-${index}.jpg`,
-    type: 'image/jpeg',
+  const imageToUpload = async (uri: string, index: number) => ({
+    ...(await processImageForUpload(uri, `listing-edit-${Date.now()}-${index}.jpg`)),
   });
 
   const allImages = [...existingImages.map(img => img.url), ...newImages];
 
   const handleUpdate = async () => {
-    if (!title.trim() || !price.trim() || !category || !location.trim() || !description.trim()) {
+    if (!title.trim() || (!isNegotiable && !price.trim()) || !category || !location.trim() || !description.trim()) {
       Alert.alert('Faltan datos', 'Completa los campos obligatorios.');
       return;
     }
@@ -162,7 +159,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
     try {
       const payload: any = {
         title: title.trim(),
-        price: price.trim(),
+        price: isNegotiable ? '0' : price.trim(),
         category: category.id,
         subcategory: subcategory?.id ?? null,
         is_negotiable: isNegotiable,
@@ -173,32 +170,30 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
         deleted_images: deletedImageIds,
       };
 
-      // Si no quedan fotos existentes y no hay nuevas, avisar
+      // Validación: el anuncio debe tener al menos una foto
       if (existingImages.length === 0 && newImages.length === 0) {
         Alert.alert('Faltan fotos', 'Tu anuncio debe tener al menos una foto.');
         setIsSubmitting(false);
         return;
       }
 
-      // Si la foto principal (la primera) es nueva, enviarla como main_image
+      // Si la foto principal es nueva, se envía como main_image
       if (allImages[0] && newImages.includes(allImages[0])) {
-         payload.main_image = imageToUpload(allImages[0], 0);
-         // Quitarla de la lista de 'images' adicionales para no duplicarla
-         payload.images = newImages.filter(uri => uri !== allImages[0]).map((uri, i) => imageToUpload(uri, i + 1));
+         payload.main_image = await imageToUpload(allImages[0], 0);
+         // Se excluye la principal de 'images' para no duplicarla
+         payload.images = await Promise.all(newImages.filter(uri => uri !== allImages[0]).map((uri, i) => imageToUpload(uri, i + 1)));
       } else {
-         payload.images = newImages.map((uri, index) => imageToUpload(uri, index));
+         payload.images = await Promise.all(newImages.map((uri, index) => imageToUpload(uri, index)));
       }
 
-      // Si borramos la principal y no pusimos una nueva primera, el backend pondrá la siguiente disponible
+      // Si se borró la principal sin reemplazo, el backend usa la siguiente disponible
       if (!existingImages.some(img => img.id === 0) && !payload.main_image) {
-        // Marcamos main_image como null para que el backend busque la siguiente
         payload.main_image = null;
       }
 
       await updateListing(listingId, payload);
-      
-      Alert.alert('Éxito', 'Anuncio actualizado correctamente');
-      router.push(`/listing/${listingId}`);
+
+      router.replace(`/listing/${listingId}?updated=true`);
     } catch (error) {
       Alert.alert('Error', 'No se pudo actualizar el anuncio');
     } finally {
@@ -235,7 +230,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
           {/* SIMULATION PREVIEW */}
           <View style={styles.previewContainer}>
             <Text style={styles.sectionHeader}>VISTA PREVIA</Text>
-            <View style={styles.previewCard}>
+            <View style={[styles.previewCard, isMePro && styles.proBorder]}>
               <View style={styles.previewImageWrapper}>
                 <Image 
                   source={{ uri: allImages.length > 0 ? allImages[0] : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800' }} 
@@ -262,13 +257,13 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
           <View style={styles.section}>
             <Text style={styles.stepTitle}>01. GALERÍA MULTIMEDIA</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-              <TouchableOpacity style={styles.addImageBtn} onPress={pickImage}>
+              <TouchableOpacity style={[styles.addImageBtn, isMePro && styles.proDashedBorder]} onPress={pickImage}>
                 <Plus size={32} color={colors.textLight} strokeWidth={2.4} />
                 <Text style={styles.addImageText}>Añadir</Text>
               </TouchableOpacity>
               
               {existingImages.map((img) => (
-                <View key={`existing-${img.id}`} style={styles.imageWrapper}>
+                <View key={`existing-${img.id}`} style={[styles.imageWrapper, isMePro && styles.proBorder]}>
                   <Image source={{ uri: img.url }} style={styles.previewImage} />
                   <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removeExistingImage(img.id)}>
                     <XCircle size={20} color={colors.error} strokeWidth={2.2} />
@@ -277,7 +272,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
               ))}
 
               {newImages.map((uri, index) => (
-                <View key={`new-${index}`} style={styles.imageWrapper}>
+                <View key={`new-${index}`} style={[styles.imageWrapper, isMePro && styles.proBorder]}>
                   <Image source={{ uri }} style={styles.previewImage} />
                   <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removeNewImage(uri)}>
                     <XCircle size={20} color={colors.error} strokeWidth={2.2} />
@@ -297,7 +292,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
             <View style={styles.inputBlock}>
               <Text style={styles.label}>Título</Text>
               <TextInput 
-                style={styles.titleInput}
+                style={[styles.titleInput, isMePro && styles.proBottomBorder]}
                 placeholder="¿Qué vendes?"
                 value={title}
                 onChangeText={setTitle}
@@ -307,17 +302,19 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
             <View style={styles.row}>
               <View style={[styles.inputBlock, { flex: 1 }]}>
                 <Text style={styles.label}>Precio (C$)</Text>
-                <TextInput 
-                  style={styles.priceInput}
-                  placeholder="0.00"
+                <TextInput
+                  style={[styles.priceInput, isNegotiable && styles.priceInputDisabled, isMePro && styles.proBottomBorder]}
+                  placeholder={isNegotiable ? "Negociable" : "0.00"}
+                  placeholderTextColor={isNegotiable ? colors.textLight : colors.primary}
                   keyboardType="decimal-pad"
-                  value={price}
+                  value={isNegotiable ? '' : price}
                   onChangeText={setPrice}
+                  editable={!isNegotiable}
                 />
               </View>
               <View style={[styles.inputBlock, { flex: 1.2, marginLeft: 15 }]}>
                 <Text style={styles.label}>Clasificación</Text>
-                <TouchableOpacity style={styles.selector}>
+                <TouchableOpacity style={[styles.selector, isMePro && styles.proBottomBorder]}>
                   <Text style={styles.selectorText}>{category?.name || 'Elegir...'}</Text>
                   <ChevronDown size={16} color={colors.textLight} strokeWidth={2.4} />
                 </TouchableOpacity>
@@ -325,7 +322,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
             </View>
 
             <TouchableOpacity
-              style={styles.negotiableToggle}
+              style={[styles.negotiableToggle, isMePro && styles.proBorder]}
               onPress={() => setIsNegotiable(!isNegotiable)}
               activeOpacity={0.7}
             >
@@ -342,7 +339,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
               {categories.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={[styles.categoryChip, category?.id === item.id && styles.categoryChipActive]}
+                  style={[styles.categoryChip, category?.id === item.id && styles.categoryChipActive, isMePro && styles.proBorder]}
                   onPress={() => {
                     setCategory(item);
                     setSubcategory(null);
@@ -360,7 +357,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
                   {category.subcategories.map((sub) => (
                     <TouchableOpacity
                       key={sub.id}
-                      style={[styles.subcategoryChip, subcategory?.id === sub.id && styles.subcategoryChipActive]}
+                      style={[styles.subcategoryChip, subcategory?.id === sub.id && styles.subcategoryChipActive, isMePro && styles.proBorder]}
                       onPress={() => setSubcategory(subcategory?.id === sub.id ? null : sub)}
                     >
                       {sub.icon ? <Text style={styles.subcategoryChipEmoji}>{sub.icon}</Text> : null}
@@ -373,7 +370,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
 
             <View style={styles.inputBlock}>
               <Text style={styles.label}>Ubicación</Text>
-              <View style={styles.inputWithIcon}>
+              <View style={[styles.inputWithIcon, isMePro && styles.proBottomBorder]}>
                 <MapPin size={18} color={colors.textLight} strokeWidth={2} />
                 <TextInput 
                   style={styles.input}
@@ -389,7 +386,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
           <View style={styles.section}>
             <Text style={styles.stepTitle}>03. DISPONIBILIDAD</Text>
             <TouchableOpacity 
-              style={[styles.statusToggle, !isActive && styles.statusToggleInactive]} 
+              style={[styles.statusToggle, !isActive && styles.statusToggleInactive, isMePro && styles.proBorder]} 
               onPress={() => setIsActive(!isActive)}
             >
               <View>
@@ -404,7 +401,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
           <View style={styles.section}>
             <Text style={styles.stepTitle}>04. DESCRIPCIÓN</Text>
             <TextInput 
-              style={styles.descriptionInput}
+              style={[styles.descriptionInput, isMePro && styles.proBorder]}
               placeholder="Detalles del producto..."
               multiline
               numberOfLines={4}
@@ -414,7 +411,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity style={[styles.publishBtn, isSubmitting && styles.publishBtnDisabled]} onPress={handleUpdate} disabled={isSubmitting}>
+            <TouchableOpacity style={[styles.publishBtn, isMePro && styles.proBorder, isSubmitting && styles.publishBtnDisabled]} onPress={handleUpdate} disabled={isSubmitting}>
               {isSubmitting ? <ActivityIndicator color={colors.white} /> : <Text style={styles.publishBtnText}>Guardar Cambios ✨</Text>}
             </TouchableOpacity>
           </View>
@@ -427,7 +424,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
+  container: { flex: 1, backgroundColor: colors.white, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
   center: { justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -454,6 +451,9 @@ const styles = StyleSheet.create({
   previewPrice: { fontSize: 18, fontWeight: '900', color: colors.primary },
   previewLocation: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   divider: { height: 1, backgroundColor: '#F3F4F6', marginBottom: 30 },
+  proBorder: { borderWidth: 2, borderColor: '#D4AF37' },
+  proDashedBorder: { borderWidth: 2, borderColor: '#D4AF37' },
+  proBottomBorder: { borderBottomColor: '#D4AF37' },
   section: { marginBottom: 35 },
   stepTitle: { fontSize: 11, fontWeight: '900', color: colors.primary, letterSpacing: 1.5, marginBottom: 20 },
   imageScroll: { flexDirection: 'row' },
@@ -469,6 +469,7 @@ const styles = StyleSheet.create({
   titleInput: { fontSize: 20, fontWeight: '900', color: colors.text, borderBottomWidth: 2, borderBottomColor: '#F3F4F6', paddingVertical: 8 },
   row: { flexDirection: 'row', alignItems: 'flex-end' },
   priceInput: { fontSize: 18, fontWeight: '900', color: colors.primary, borderBottomWidth: 2, borderBottomColor: '#F3F4F6', paddingVertical: 8 },
+  priceInputDisabled: { opacity: 0.6 },
   selector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 2, borderBottomColor: '#F3F4F6', paddingVertical: 10 },
   selectorText: { fontSize: 15, fontWeight: '800', color: colors.text, flex: 1 },
   categoryScroll: { marginTop: -5, marginBottom: 20 },

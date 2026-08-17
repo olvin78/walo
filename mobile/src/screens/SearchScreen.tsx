@@ -14,7 +14,8 @@ import {
   StatusBar,
   RefreshControl
 } from 'react-native';
-import { XCircle, ArrowUpDown, MapPin } from 'lucide-react-native';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
+import { XCircle, ArrowUpDown, MapPin, SlidersHorizontal } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { POPULAR_SEARCHES } from '../data/mockData';
@@ -24,11 +25,14 @@ import { ProductCard } from '../components/ProductCard';
 import { getCategories, searchListings, type Category, type ListingSummary, type Subcategory } from '../../lib/igualo-api';
 import { FilterModal, type FilterValues } from '../components/FilterModal';
 import * as Location from 'expo-location';
+import { useAuth } from '../services/auth';
 
 const MAX_WIDTH = 1200;
 
 export const SearchScreen = () => {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
+  const isMePro = Boolean(currentUser?.profile?.is_pro);
   const params = useLocalSearchParams<{ q?: string; category?: string; subcategory?: string; openFilter?: string }>();
   const [query, setQuery] = useState(typeof params.q === 'string' ? params.q : '');
   const [activeCategory, setActiveCategory] = useState(typeof params.category === 'string' ? params.category : '');
@@ -59,20 +63,41 @@ export const SearchScreen = () => {
   const isDesktop = width >= 1024;
   const isTablet = width >= 768 && width < 1024;
   
+  const isPhone = !isDesktop && !isTablet;
+
   const numColumns = useMemo(() => {
     if (isDesktop) return 4;
     if (isTablet) return 3;
     return 2;
   }, [isDesktop, isTablet]);
 
-  const categoriesScrollRef = useRef<ScrollView | null>(null);
+  const cardWidth = useMemo(() => {
+    const contentWidth = Math.min(width, MAX_WIDTH);
+    return (contentWidth - spacing.sm * (numColumns + 1)) / numColumns;
+  }, [width, numColumns]);
 
-  const getCategoryName = (item: any): string => {
-    if (item?.category && typeof item.category === 'object') {
-      return item.category.name || 'Otros';
+  // En móvil, cada banda de resultados muestra 2 filas fijas y se desliza hacia
+  // los lados para ver más columnas; el scroll vertical de la página (paginación
+  // infinita) no cambia, solo se agrupan los items en bandas horizontales.
+  const productBands = useMemo(() => {
+    if (!isPhone) return [];
+    const columnsPerBand = numColumns * 2;
+    const bandSize = columnsPerBand * 2;
+    const bands: ListingSummary[][] = [];
+    for (let i = 0; i < listings.length; i += bandSize) {
+      bands.push(listings.slice(i, i + bandSize));
     }
-    return item?.category || 'Otros';
+    return bands;
+  }, [listings, numColumns, isPhone]);
+
+  const splitBandRows = (band: ListingSummary[]) => {
+    const topRow: ListingSummary[] = [];
+    const bottomRow: ListingSummary[] = [];
+    band.forEach((item, i) => (i % 2 === 0 ? topRow : bottomRow).push(item));
+    return [topRow, bottomRow] as const;
   };
+
+  const categoriesScrollRef = useRef<ScrollView | null>(null);
 
   const activeCategoryObj = useMemo(() => {
     return categories.find((c) => c.slug === activeCategory) || null;
@@ -81,18 +106,6 @@ export const SearchScreen = () => {
   const activeCategorySubs = useMemo(() => {
     return activeCategoryObj?.subcategories || [];
   }, [activeCategoryObj]);
-
-  const listingsByCategory = useMemo(() => {
-    const groups: { [key: string]: any[] } = {};
-    listings.forEach(item => {
-      const catName = getCategoryName(item);
-      if (!groups[catName]) {
-        groups[catName] = [];
-      }
-      groups[catName].push(item);
-    });
-    return groups;
-  }, [listings]);
 
   useEffect(() => {
     setQuery(typeof params.q === 'string' ? params.q : '');
@@ -249,23 +262,7 @@ export const SearchScreen = () => {
 
   const renderHeader = () => (
     <View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Búsquedas populares</Text>
-        <View style={styles.chipsContainer}>
-          {POPULAR_SEARCHES.map((item) => (
-            <TouchableOpacity 
-              key={item} 
-              style={styles.chip} 
-              onPress={() => {
-                setQuery(item);
-                router.setParams({ q: item });
-              }}
-            >
-              <Text style={styles.chipText}>{item}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+
 
       <View style={styles.categoriesSection}>
         <View
@@ -290,6 +287,7 @@ export const SearchScreen = () => {
                 icon={item.icon || 'grid-outline'}
                 active={activeCategory === item.slug}
                 onPress={() => applyCategory(item)}
+                isPro={isMePro}
               />
             ))}
           </ScrollView>
@@ -315,22 +313,22 @@ export const SearchScreen = () => {
             contentContainerStyle={styles.subcategoriesContent}
           >
             <TouchableOpacity
-              style={[styles.subcategoryChip, !activeSubcategory && styles.subcategoryChipActive]}
+              style={[styles.subcategoryChip, !activeSubcategory && styles.subcategoryChipActive, isMePro && !activeSubcategory && styles.subcategoryChipActivePro]}
               onPress={() => {
                 setActiveSubcategory('');
                 router.setParams({ subcategory: undefined, q: query || undefined, category: activeCategory || undefined });
               }}
             >
-              <Text style={[styles.subcategoryChipText, !activeSubcategory && styles.subcategoryChipTextActive]}>Ver Todo</Text>
+              <Text style={[styles.subcategoryChipText, !activeSubcategory && styles.subcategoryChipTextActive, isMePro && !activeSubcategory && styles.subcategoryChipTextActivePro]}>Ver Todo</Text>
             </TouchableOpacity>
             {activeCategorySubs.map((sub) => (
               <TouchableOpacity
                 key={sub.id}
-                style={[styles.subcategoryChip, activeSubcategory === sub.slug && styles.subcategoryChipActive]}
+                style={[styles.subcategoryChip, activeSubcategory === sub.slug && styles.subcategoryChipActive, isMePro && activeSubcategory === sub.slug && styles.subcategoryChipActivePro]}
                 onPress={() => applySubcategory(sub)}
               >
                 {sub.icon ? <Text style={styles.subcategoryChipEmoji}>{sub.icon}</Text> : null}
-                <Text style={[styles.subcategoryChipText, activeSubcategory === sub.slug && styles.subcategoryChipTextActive]}>{sub.name}</Text>
+                <Text style={[styles.subcategoryChipText, activeSubcategory === sub.slug && styles.subcategoryChipTextActive, isMePro && activeSubcategory === sub.slug && styles.subcategoryChipTextActivePro]}>{sub.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -339,7 +337,7 @@ export const SearchScreen = () => {
 
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsCount}>{listings.length} resultados encontrados</Text>
-        <TouchableOpacity style={styles.sortBtn}>
+        <TouchableOpacity style={styles.sortBtn} onPress={() => setIsFilterVisible(true)}>
           <ArrowUpDown size={16} color={colors.primary} strokeWidth={2.2} />
           <Text style={styles.sortText}>Relevancia</Text>
         </TouchableOpacity>
@@ -366,6 +364,7 @@ export const SearchScreen = () => {
             }}
             onClear={clearFilters}
             onFilterPress={() => setIsFilterVisible(true)}
+            isPro={isMePro}
           />
           <View style={styles.nearbyRow}>
             <TouchableOpacity
@@ -385,28 +384,55 @@ export const SearchScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={() => fetchResults(true)} colors={[colors.primary]} />
           }
+          onScroll={(e) => {
+            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
+            if (isCloseToBottom && !isLoadingMore && nextUrl) {
+              fetchResults(false);
+            }
+          }}
+          scrollEventThrottle={400}
         >
           {renderHeader()}
 
           {listings.length > 0 ? (
-            <View style={styles.categorySectionsContainer}>
-              {Object.keys(listingsByCategory).map((catName) => (
-                <View key={catName} style={styles.categorySection}>
-                  <Text style={styles.categoryTitle}>{catName}</Text>
-                  <FlatList
-                    horizontal
-                    data={listingsByCategory[catName]}
-                    renderItem={({ item }) => <ProductCard product={item} numColumns={numColumns} width={180} />}
-                    keyExtractor={(item) => `cat-${catName}-${item.id}`}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalListContent}
-                    ItemSeparatorComponent={() => <View style={{ width: spacing.md }} />}
-                    onEndReached={() => fetchResults(false)}
-                    onEndReachedThreshold={0.5}
-                  />
-                </View>
-              ))}
-            </View>
+            isPhone ? (
+              <View style={styles.productsGrid}>
+                {productBands.map((band, bandIndex) => {
+                  const [topRow, bottomRow] = splitBandRows(band);
+                  return (
+                    <View key={`band-${bandIndex}`} style={styles.bandGroup}>
+                      <GestureScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.bandContent}
+                        style={styles.bandRow}
+                      >
+                        {topRow.map((item) => (
+                          <ProductCard key={`search-${item.id}`} product={item} numColumns={numColumns} width={cardWidth} />
+                        ))}
+                      </GestureScrollView>
+                      <GestureScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.bandContent}
+                        style={styles.bandRow}
+                      >
+                        {bottomRow.map((item) => (
+                          <ProductCard key={`search-${item.id}`} product={item} numColumns={numColumns} width={cardWidth} />
+                        ))}
+                      </GestureScrollView>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={[styles.productsGrid, { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }]}>
+                {listings.map((item) => (
+                  <ProductCard key={`search-${item.id}`} product={item} numColumns={numColumns} />
+                ))}
+              </View>
+            )
           ) : !isLoading ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyText}>{errorMessage || 'No encontramos anuncios con esos filtros.'}</Text>
@@ -424,9 +450,10 @@ export const SearchScreen = () => {
           onClose={() => setIsFilterVisible(false)}
           initialFilters={filters}
           onApply={(newFilters) => {
+            // Al cambiar los filtros, el useEffect se encarga de recargar los resultados
             setFilters(newFilters);
-            // fetchResults(true) will be triggered by useEffect
           }}
+          isPro={isMePro}
         />
       </View>
     </SafeAreaView>
@@ -441,6 +468,19 @@ const styles = StyleSheet.create({
   },
   rootContainer: {
     flex: 1,
+  },
+  productsGrid: {
+    paddingHorizontal: spacing.sm,
+  },
+  bandGroup: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  bandRow: {
+    // Cada fila es su propio ScrollView independiente: mover una no afecta a la otra.
+  },
+  bandContent: {
+    gap: spacing.sm,
   },
   header: {
     paddingBottom: spacing.xs,
@@ -576,6 +616,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 4,
   },
+  grid: {
+    fontWeight: '600',
+    marginLeft: 4,
+  },
   productsContainer: {
     paddingHorizontal: spacing.md,
   },
@@ -646,6 +690,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderColor: colors.primary,
   },
+  subcategoryChipActivePro: {
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderColor: '#F59E0B',
+  },
   subcategoryChipText: {
     fontSize: 13,
     color: colors.textLight,
@@ -654,6 +702,9 @@ const styles = StyleSheet.create({
   subcategoryChipTextActive: {
     color: colors.primary,
     fontWeight: '800',
+  },
+  subcategoryChipTextActivePro: {
+    color: '#92400E',
   },
   subcategoryChipEmoji: {
     marginRight: 6,

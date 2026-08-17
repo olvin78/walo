@@ -38,6 +38,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
   const location = listing?.city || listing?.location || mockProduct?.location || 'Nicaragua';
   const category = listing?.category?.name || mockProduct?.category || 'Anuncio';
   const isNew = Boolean(mockProduct?.isNew);
+  const isPromoted = Boolean(listing?.is_promoted || mockProduct?.isFeatured);
   
   const handlePress = () => {
     if (onPress) {
@@ -65,16 +66,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
   };
 
   // Calculate dynamic width
+  // Calculate dynamic width with smaller gaps (spacing.sm) for wider cards
   const contentWidth = Math.min(windowWidth, MAX_WIDTH);
-  const cardWidth = width || (contentWidth - spacing.md * (numColumns + 1)) / numColumns;
+  const cardWidth = width || (contentWidth - spacing.sm * (numColumns + 1)) / numColumns;
   
   // Responsive image height
   const isDesktop = windowWidth >= 1024;
-  const imageHeight = isDesktop ? 180 : 160;
+  const imageHeight = isDesktop ? 200 : 180;
 
   return (
     <TouchableOpacity 
-      style={[styles.container, { width: cardWidth }]} 
+      style={[
+        styles.container, 
+        { width: cardWidth },
+        isPromoted && styles.promotedContainer
+      ]} 
       activeOpacity={0.9} 
       onPress={handlePress}
     >
@@ -90,9 +96,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
             <Text style={styles.newBadgeText}>Nuevo</Text>
           </View>
         )}
-        {isListingSummary(product) && product.is_promoted && (
+        {isPromoted && (
           <View style={styles.promotedBadge}>
-            <Text style={styles.promotedBadgeText}>★ Priorizado</Text>
+            <Text style={styles.promotedBadgeText}>★ PRO</Text>
           </View>
         )}
         <TouchableOpacity 
@@ -109,10 +115,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
       </View>
       
       <View style={styles.content}>
-        <Text style={styles.price}>{formatPrice(product.price, listing?.currency)}</Text>
         {isListingSummary(product) && product.is_negotiable ? (
           <Text style={styles.negotiableText}>🤝 Precio Negociable</Text>
-        ) : null}
+        ) : (
+          <Text style={styles.price}>{formatPrice(product.price, listing?.currency)}</Text>
+        )}
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
@@ -147,6 +154,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F3F4F6',
   },
+  promotedContainer: {
+    borderColor: '#F59E0B',
+    borderWidth: 2,
+  },
   imageContainer: {
     position: 'relative',
     backgroundColor: '#F9FAFB',
@@ -174,16 +185,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
     zIndex: 1,
   },
   promotedBadgeText: {
-    color: colors.white,
+    color: '#FBBF24',
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   negotiableText: {
     color: colors.primary,
@@ -209,20 +221,20 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   content: {
-    padding: 12,
+    padding: 14,
   },
   price: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
     color: colors.text,
     marginBottom: 4,
     letterSpacing: -0.5,
   },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4B5563',
-    lineHeight: 18,
-    minHeight: 36,
+    lineHeight: 20,
+    minHeight: 40,
     marginBottom: 8,
     fontWeight: '600',
   },

@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const reloadUser = useCallback(async () => {
-    if (!getAccessToken()) {
+    if (!(await getAccessToken())) {
       setUser(null);
       return null;
     }

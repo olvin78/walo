@@ -10,7 +10,7 @@ import {
   Platform,
   TouchableWithoutFeedback
 } from 'react-native';
-import { X } from 'lucide-react-native';
+import { X, ChevronDown, ChevronUp } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 import { colors, spacing, borderRadius } from '../theme/colors';
 
@@ -19,6 +19,7 @@ type FilterModalProps = {
   onClose: () => void;
   onApply: (filters: FilterValues) => void;
   initialFilters: FilterValues;
+  isPro?: boolean;
 };
 
 export type FilterValues = {
@@ -56,12 +57,13 @@ const LOCATION_OPTIONS = [
   'RACCS',
 ];
 
-export const FilterModal = ({ visible, onClose, onApply, initialFilters }: FilterModalProps) => {
+export const FilterModal = ({ visible, onClose, onApply, initialFilters, isPro }: FilterModalProps) => {
   const [minPrice, setMinPrice] = useState(initialFilters.minPrice);
   const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice);
   const [location, setLocation] = useState(initialFilters.location);
   const [sortBy, setSortBy] = useState(initialFilters.sortBy);
   const [radius, setRadius] = useState(initialFilters.radius);
+  const [showLocationList, setShowLocationList] = useState(false);
 
   const handleReset = () => {
     setMinPrice('');
@@ -127,17 +129,38 @@ export const FilterModal = ({ visible, onClose, onApply, initialFilters }: Filte
             {/* Location */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>UBICACIÓN GENERAL</Text>
-              <View style={styles.chipsContainer}>
-                {LOCATION_OPTIONS.map((opt) => (
-                  <TouchableOpacity 
-                    key={opt}
-                    style={[styles.chip, location === opt && styles.chipActive]}
-                    onPress={() => setLocation(opt)}
-                  >
-                    <Text style={[styles.chipText, location === opt && styles.chipTextActive]}>{opt}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <TouchableOpacity 
+                style={styles.locationDropdownBtn} 
+                onPress={() => setShowLocationList(!showLocationList)}
+              >
+                <Text style={styles.locationDropdownText}>{location}</Text>
+                {showLocationList ? (
+                  <ChevronUp size={20} color={colors.textLight} />
+                ) : (
+                  <ChevronDown size={20} color={colors.textLight} />
+                )}
+              </TouchableOpacity>
+              
+              {showLocationList && (
+                <View style={styles.chipsContainer}>
+                  {LOCATION_OPTIONS.map((opt) => (
+                    <TouchableOpacity 
+                      key={opt}
+                      style={[styles.chip, location === opt && styles.chipActive]}
+                      onPress={() => {
+                        setLocation(opt);
+                        setShowLocationList(false);
+                      }}
+                    >
+                      <Text style={[
+                      styles.chipText, 
+                      location === opt && styles.chipTextActive,
+                      isPro && location === opt && styles.chipTextActivePro
+                    ]}>{opt}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* Radius Slider */}
@@ -182,7 +205,7 @@ export const FilterModal = ({ visible, onClose, onApply, initialFilters }: Filte
             <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
               <Text style={styles.resetText}>Restablecer</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>
+            <TouchableOpacity style={[styles.applyBtn, isPro && styles.applyBtnPro]} onPress={handleApply}>
               <Text style={styles.applyText}>APLICAR FILTROS</Text>
             </TouchableOpacity>
           </View>
@@ -260,10 +283,28 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
   },
+  locationDropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 50,
+    marginBottom: 12,
+  },
+  locationDropdownText: {
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '600',
+  },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 4,
   },
   chip: {
     paddingHorizontal: 16,
@@ -284,6 +325,9 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: colors.white,
+  },
+  chipTextActivePro: {
+    color: '#92400E',
   },
   slider: {
     width: '100%',
@@ -317,11 +361,17 @@ const styles = StyleSheet.create({
   radioActive: {
     borderColor: colors.primary,
   },
+  radioActivePro: {
+    borderColor: '#F59E0B',
+  },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: colors.primary,
+  },
+  radioInnerPro: {
+    backgroundColor: '#F59E0B',
   },
   radioLabel: {
     fontSize: 15,
@@ -356,6 +406,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+  applyBtnPro: {
+    backgroundColor: '#F59E0B',
+    shadowColor: '#F59E0B',
   },
   applyText: {
     color: colors.white,

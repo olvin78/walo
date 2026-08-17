@@ -15,11 +15,14 @@ from django.db.models import Q
 from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
 from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory, SystemPaymentSetting
 from .decorators import cache_public_page
+from . import paypal
+from . import stripe_client
 
 CITY_LANDINGS = {
     "boaco": "Boaco",
@@ -945,11 +948,166 @@ def user_profile(request, username):
 @login_required
 def edit_profile(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
+    profile.maybe_expire_pro()
     system_payments_enabled = SystemPaymentSetting.get_solo().enabled
+
+    # Vuelta desde PayPal tras aprobar (o cancelar) la suscripción al plan PRO.
+    paypal_subscription_id = request.GET.get('subscription_id')
+    if request.method == 'GET' and paypal_subscription_id:
+        try:
+            subscription = paypal.get_subscription(subscription_id=paypal_subscription_id)
+        except paypal.PayPalError as exc:
+            messages.error(request, str(exc))
+            return redirect('edit_profile')
+
+        if subscription.get('status') != 'ACTIVE':
+            messages.error(request, "La suscripción de PayPal no está activa.")
+            return redirect('edit_profile')
+
+        if subscription.get('custom_id') != str(request.user.id):
+            messages.error(request, "La suscripción de PayPal no corresponde a este usuario.")
+            return redirect('edit_profile')
+
+        if subscription.get('plan_id') != settings.PAYPAL_PLAN_ID:
+            messages.error(request, "El plan de la suscripción no coincide con el de Igualo PRO.")
+            return redirect('edit_profile')
+
+        next_billing_time = subscription.get('billing_info', {}).get('next_billing_time')
+        profile.is_pro = True
+        profile.paypal_subscription_id = paypal_subscription_id
+        profile.pro_activated_at = timezone.now()
+        profile.pro_current_period_end = parse_datetime(next_billing_time) if next_billing_time else None
+        profile.pro_cancel_at_period_end = False
+        profile.save(update_fields=[
+            'is_pro', 'paypal_subscription_id', 'pro_activated_at',
+            'pro_current_period_end', 'pro_cancel_at_period_end',
+        ])
+        messages.success(request, "¡Bienvenido a PRO! Has desbloqueado todas las funciones premium de Igualo.")
+        return redirect('edit_profile')
+
+    # Vuelta desde Stripe Checkout tras aprobar (o cancelar) el pago del plan PRO.
+    stripe_session_id = request.GET.get('session_id')
+    if request.method == 'GET' and stripe_session_id:
+        try:
+            session = stripe_client.retrieve_checkout_session(session_id=stripe_session_id)
+        except stripe_client.StripeError as exc:
+            messages.error(request, str(exc))
+            return redirect('edit_profile')
+
+        if session.get('payment_status') != 'paid':
+            messages.error(request, "El pago con Stripe no se completó.")
+            return redirect('edit_profile')
+
+        if session.get('client_reference_id') != str(request.user.id):
+            messages.error(request, "La sesión de Stripe no corresponde a este usuario.")
+            return redirect('edit_profile')
+
+        expected_cents = int(round(float(settings.PAYPAL_PRO_PRICE) * 100))
+        if (
+            session.get('amount_total') != expected_cents
+            or str(session.get('currency', '')).upper() != settings.PAYPAL_PRO_CURRENCY
+        ):
+            messages.error(request, "El monto pagado no coincide con el del plan PRO.")
+            return redirect('edit_profile')
+
+        subscription_id = session.get('subscription')
+        try:
+            subscription = stripe_client.retrieve_subscription(subscription_id=subscription_id)
+            period_end = stripe_client.get_current_period_end(subscription)
+        except stripe_client.StripeError as exc:
+            messages.error(request, str(exc))
+            return redirect('edit_profile')
+
+        profile.is_pro = True
+        profile.stripe_customer_id = session.get('customer')
+        profile.stripe_subscription_id = subscription_id
+        profile.pro_activated_at = timezone.now()
+        profile.pro_current_period_end = datetime.datetime.fromtimestamp(period_end, tz=datetime.timezone.utc)
+        profile.pro_cancel_at_period_end = False
+        profile.save(update_fields=[
+            'is_pro', 'stripe_customer_id', 'stripe_subscription_id',
+            'pro_activated_at', 'pro_current_period_end', 'pro_cancel_at_period_end',
+        ])
+        messages.success(request, "¡Bienvenido a PRO! Has desbloqueado todas las funciones premium de Igualo.")
+        return redirect('edit_profile')
+
     if request.method == 'POST':
+        if request.POST.get('stripe_pay') == '1' and system_payments_enabled:
+            base_url = request.build_absolute_uri(reverse('edit_profile'))
+            success_url = base_url + '?session_id={CHECKOUT_SESSION_ID}'
+            try:
+                session = stripe_client.create_subscription_checkout_session(
+                    user_id=request.user.id, success_url=success_url, cancel_url=base_url
+                )
+            except stripe_client.StripeError as exc:
+                messages.error(request, str(exc))
+                return redirect('edit_profile')
+            if not session.get('url'):
+                messages.error(request, "No se pudo iniciar el pago con Stripe.")
+                return redirect('edit_profile')
+            return redirect(session['url'])
+
+        if request.POST.get('paypal_pay') == '1' and system_payments_enabled:
+            return_url = request.build_absolute_uri(reverse('edit_profile'))
+            try:
+                subscription = paypal.create_subscription(user_id=request.user.id, return_url=return_url, cancel_url=return_url)
+            except paypal.PayPalError as exc:
+                messages.error(request, str(exc))
+                return redirect('edit_profile')
+            approve_url = next((link['href'] for link in subscription.get('links', []) if link.get('rel') == 'approve'), None)
+            if not approve_url:
+                messages.error(request, "No se pudo iniciar la suscripción con PayPal.")
+                return redirect('edit_profile')
+            return redirect(approve_url)
+
         if request.POST.get('toggle_plan') == '1' and system_payments_enabled:
-            profile.is_pro = not profile.is_pro
-            profile.save(update_fields=['is_pro'])
+            if not profile.is_pro:
+                # Pasar a PRO requiere un pago verificado con PayPal o Stripe (ver arriba).
+                messages.error(request, "Para activar el plan PRO completa el pago con PayPal o tarjeta.")
+                return redirect('edit_profile')
+
+            if profile.stripe_subscription_id:
+                try:
+                    if profile.refund_eligible():
+                        stripe_client.cancel_immediately(subscription_id=profile.stripe_subscription_id)
+                        stripe_client.refund_latest_invoice(subscription_id=profile.stripe_subscription_id)
+                        profile.is_pro = False
+                        profile.stripe_subscription_id = None
+                        profile.pro_cancel_at_period_end = False
+                        messages.success(request, "Se canceló tu suscripción y se reembolsó el cargo actual.")
+                    else:
+                        stripe_client.cancel_at_period_end(subscription_id=profile.stripe_subscription_id)
+                        profile.pro_cancel_at_period_end = True
+                        messages.success(request, "No se renovará tu suscripción. Seguirás disfrutando de PRO hasta el final del período ya pagado.")
+                except stripe_client.StripeError as exc:
+                    messages.error(request, str(exc))
+                    return redirect('edit_profile')
+                profile.save(update_fields=['is_pro', 'stripe_subscription_id', 'pro_cancel_at_period_end'])
+            elif profile.paypal_subscription_id:
+                try:
+                    if profile.refund_eligible() and profile.pro_activated_at:
+                        start_time = profile.pro_activated_at.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        end_time = timezone.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                        paypal.cancel_subscription(subscription_id=profile.paypal_subscription_id)
+                        paypal.refund_latest_subscription_payment(
+                            subscription_id=profile.paypal_subscription_id, start_time=start_time, end_time=end_time
+                        )
+                        profile.is_pro = False
+                        profile.paypal_subscription_id = None
+                        profile.pro_cancel_at_period_end = False
+                        messages.success(request, "Se canceló tu suscripción y se reembolsó el cargo actual.")
+                    else:
+                        paypal.cancel_subscription(subscription_id=profile.paypal_subscription_id)
+                        profile.pro_cancel_at_period_end = True
+                        messages.success(request, "No se renovará tu suscripción. Seguirás disfrutando de PRO hasta el final del período ya pagado.")
+                except paypal.PayPalError as exc:
+                    messages.error(request, str(exc))
+                    return redirect('edit_profile')
+                profile.save(update_fields=['is_pro', 'paypal_subscription_id', 'pro_cancel_at_period_end'])
+            else:
+                profile.is_pro = False
+                profile.save(update_fields=['is_pro'])
+                messages.success(request, "Has vuelto al plan básico y gratuito.")
             return redirect('edit_profile')
 
         avatar = request.FILES.get('avatar')

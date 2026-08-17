@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   ActivityIndicator,
   Alert,
@@ -11,22 +11,26 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
-  StatusBar
+  StatusBar,
+  Animated,
+  Easing,
+  RefreshControl
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LogIn, UserPlus, MapPin, CheckCircle2, AlertCircle, ChevronRight, LogOut, X, XCircle, Camera, User, List, MessageCircle, Bell, Pencil, KeyRound, Send, Bug } from 'lucide-react-native';
+import { LogIn, UserPlus, MapPin, CheckCircle2, AlertCircle, ChevronRight, LogOut, X, XCircle, Camera, User, List, MessageCircle, Bell, Pencil, KeyRound, Send, Bug, Sparkles } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../services/auth';
 import { getUnreadNotificationsCount, reportBug } from '../../lib/igualo-api';
-import { useFocusEffect } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
+import { ProFooter } from '../components/ProFooter';
 
 export const ProfileScreen = () => {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout, reloadUser } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Bug Report Modal State
   const [showBugModal, setShowBugModal] = useState(false);
@@ -48,12 +52,12 @@ export const ProfileScreen = () => {
   };
 
   const menuItems = [
-    { icon: User, label: 'Mi Perfil' },
-    { icon: List, label: 'Mis publicaciones' },
-    { icon: MessageCircle, label: 'Mensajes' },
-    { icon: Bell, label: 'Notificaciones', count: unreadCount },
-    { icon: Pencil, label: 'Editar mi perfil' },
-    { icon: KeyRound, label: 'Cambiar contraseña' },
+    { icon: User, label: 'Mi Perfil', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
+    { icon: List, label: 'Mis publicaciones', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)' },
+    { icon: MessageCircle, label: 'Mensajes', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
+    { icon: Bell, label: 'Notificaciones', count: unreadCount, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
+    { icon: Pencil, label: 'Editar mi perfil', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.1)' },
+    { icon: KeyRound, label: 'Cambiar contraseña', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.1)' },
   ];
 
   const handleMenuPress = (label: string) => {
@@ -137,6 +141,20 @@ export const ProfileScreen = () => {
     }, [isAuthenticated])
   );
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        reloadUser(),
+        isAuthenticated ? getUnreadNotificationsCount().then((data) => setUnreadCount(data.unread_count)) : Promise.resolve(),
+      ]);
+    } catch {
+      // no-op, keep previous data on failure
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -200,6 +218,7 @@ export const ProfileScreen = () => {
   }
 
   const profile = user.profile;
+  const isMePro = Boolean(profile?.is_pro);
   const avatar = profile?.avatar 
     ? `${profile.avatar}?t=${new Date().getMinutes()}${new Date().getSeconds()}` 
     : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60';
@@ -208,59 +227,92 @@ export const ProfileScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.profileHeader}>
-          <Image source={{ uri: avatar }} style={styles.avatar} />
-          <View style={styles.userText}>
-            <View>
-              <Text style={styles.userName}>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : `@${user.username}`}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
-              {profile?.location && (
-                <View style={styles.locationRow}>
-                  <MapPin size={12} color={colors.textLight} strokeWidth={2.2} />
-                  <Text style={styles.locationText}>{profile.location}</Text>
-                </View>
-              )}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
+        
+        {/* Premium Ambient Glow */}
+        <View style={styles.glowContainer}>
+          <View style={[styles.glowOrb1, isMePro && { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]} />
+          <View style={[styles.glowOrb2, isMePro && { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]} />
+        </View>
+
+        {/* Profile Info */}
+        <View style={styles.profileInfoContainer}>
+          <View style={[styles.avatarWrapper, isMePro && styles.avatarWrapperPro]}>
+            <Image source={{ uri: avatar }} style={styles.avatar} contentFit="cover" />
+          </View>
+          
+          <Text style={styles.userName}>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : `@${user.username}`}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
+          
+          {profile?.location && (
+            <View style={styles.locationRow}>
+              <MapPin size={12} color={colors.textLight} strokeWidth={2.5} />
+              <Text style={styles.locationText}>{profile.location}</Text>
             </View>
-            <View style={styles.badgeRow}>
-              <View style={[
+          )}
+
+          <View style={styles.badgesRow}>
+            <TouchableOpacity 
+              style={[
                 styles.verifiedBadge, 
-                !profile?.is_verified && { backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.1)' }
+                !profile?.is_verified && { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }
+              ]}
+              onPress={() => {
+                if (!profile?.is_verified) {
+                  router.push({ pathname: '/profile/edit', params: { section: 'verification' } });
+                }
+              }}
+              activeOpacity={profile?.is_verified ? 1 : 0.7}
+            >
+              {profile?.is_verified 
+                ? <CheckCircle2 size={12} color={colors.white} strokeWidth={3} />
+                : <AlertCircle size={12} color="#EF4444" strokeWidth={3} />}
+              <Text style={[
+                styles.verifiedText, 
+                !profile?.is_verified && { color: '#EF4444' }
               ]}>
-                {profile?.is_verified 
-                  ? <CheckCircle2 size={12} color={colors.primary} strokeWidth={2.4} />
-                  : <AlertCircle size={12} color={colors.error} strokeWidth={2.4} />}
-                <Text style={[
-                  styles.verifiedText, 
-                  !profile?.is_verified && { color: colors.error }
-                ]}>
-                  {profile?.is_verified ? 'Verificado' : 'Sin verificar'}
-                </Text>
+                {profile?.is_verified ? 'Verificado' : 'Sin verificar'}
+              </Text>
+            </TouchableOpacity>
+
+            {isMePro && (
+              <View style={styles.proBadgeProfile}>
+                <Text style={styles.proBadgeProfileText}>★ PRO</Text>
               </View>
-            </View>
+            )}
           </View>
         </View>
 
+        {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statNum}>{profile?.followers_count || 0}</Text>
             <Text style={styles.statLabel}>Seguidores</Text>
           </View>
-          <View style={[styles.statBox, styles.statBorder]}>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
             <Text style={styles.statNum}>{profile?.listings_count || 0}</Text>
             <Text style={styles.statLabel}>Publicaciones</Text>
           </View>
+          <View style={styles.statDivider} />
           <View style={styles.statBox}>
             <Text style={styles.statNum}>{profile?.reviews_count || 0}</Text>
             <Text style={styles.statLabel}>Opiniones</Text>
           </View>
         </View>
 
+        {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.menuItem} onPress={() => handleMenuPress(item.label)}>
-              <View style={styles.menuIconCircle}>
-                <item.icon size={20} color={colors.text} strokeWidth={2} />
+            <TouchableOpacity key={index} style={styles.menuItem} onPress={() => handleMenuPress(item.label)} activeOpacity={0.7}>
+              <View style={[styles.menuIconCircle, { backgroundColor: item.bg }]}>
+                <item.icon size={20} color={item.color} strokeWidth={2.2} />
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
               {'count' in item && (item.count as number) > 0 && (
@@ -268,16 +320,19 @@ export const ProfileScreen = () => {
                   <Text style={styles.menuBadgeText}>{item.count}</Text>
                 </View>
               )}
-              <ChevronRight size={16} color="#D1D5DB" strokeWidth={2.2} />
+              <ChevronRight size={18} color="#D1D5DB" strokeWidth={2.5} />
             </TouchableOpacity>
           ))}
+        </View>
 
-          <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={logout}> 
-            <View style={styles.menuIconCircle}>
+        {/* Logout */}
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity style={styles.menuItem} onPress={async () => { await logout(); router.replace('/welcome'); }} activeOpacity={0.7}> 
+            <View style={[styles.menuIconCircle, { backgroundColor: '#FEF2F2' }]}>
               <LogOut size={20} color={colors.error} strokeWidth={2.2} />
             </View>
-            <Text style={[styles.menuLabel, { color: colors.error }]}>Cerrar sesión</Text>
-            <ChevronRight size={16} color="#D1D5DB" strokeWidth={2.2} />
+            <Text style={[styles.menuLabel, { color: colors.error, fontWeight: '700' }]}>Cerrar sesión</Text>
+            <ChevronRight size={18} color="#D1D5DB" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
@@ -294,6 +349,8 @@ export const ProfileScreen = () => {
           </View>
           <ChevronRight size={16} color="#D97706" strokeWidth={2.2} />
         </TouchableOpacity>
+
+        <ProFooter isPro={isMePro} />
         
         <View style={{ height: spacing.xl * 3 }} />
       </ScrollView>
@@ -385,30 +442,39 @@ const styles = StyleSheet.create({
   loginBtnText: { color: colors.white, fontWeight: '900', fontSize: 16, letterSpacing: 0.3 },
   registerBtn: { marginTop: spacing.md, height: 56, alignSelf: 'stretch', borderRadius: 16, borderWidth: 2, borderColor: colors.primary, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.04)' },
   registerBtnText: { color: colors.primary, fontWeight: '900', fontSize: 16, letterSpacing: 0.3 },
-  profileHeader: { flexDirection: 'row', padding: spacing.lg, paddingTop: spacing.xl, backgroundColor: colors.white, alignItems: 'center' },
-  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: '#F3F4F6' },
-  userText: { marginLeft: spacing.lg, flex: 1, justifyContent: 'center' },
-  userName: { fontSize: 22, fontWeight: '900', color: colors.text, letterSpacing: -0.5 },
-  userEmail: { fontSize: 13, color: colors.textLight, marginTop: 1, fontWeight: '500' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  locationText: { fontSize: 12, color: colors.textLight, marginLeft: 3, fontWeight: '600' },
-  badgeRow: { flexDirection: 'row', marginTop: 10, gap: 8 },
-  proBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: colors.accent },
-  proText: { fontSize: 12, fontWeight: '900', color: colors.white, marginLeft: 4 },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.05)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.1)' },
-  verifiedText: { fontSize: 12, fontWeight: '700', color: colors.primary, marginLeft: 6 },
-  statsRow: { flexDirection: 'row', marginHorizontal: spacing.md, marginVertical: spacing.sm, paddingVertical: spacing.lg, borderRadius: 20, borderWidth: 1, borderColor: '#F3F4F6', backgroundColor: '#F9FAFB' },
+  glowContainer: { position: 'absolute', top: 0, left: 0, right: 0, height: 250, overflow: 'hidden' },
+  glowOrb1: { position: 'absolute', top: -50, left: -50, width: 250, height: 250, borderRadius: 125, backgroundColor: 'rgba(16, 185, 129, 0.15)' },
+  glowOrb2: { position: 'absolute', top: -20, right: -80, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(14, 165, 233, 0.1)' },
+  
+  profileInfoContainer: { alignItems: 'center', marginTop: 40, paddingHorizontal: 20 },
+  avatarWrapper: { width: 110, height: 110, borderRadius: 55, backgroundColor: colors.white, padding: 4, shadowColor: colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 5 },
+  avatarWrapperPro: { shadowColor: '#F59E0B', borderColor: '#F59E0B', borderWidth: 2, padding: 2 },
+  avatar: { width: '100%', height: '100%', borderRadius: 55 },
+  userName: { fontSize: 26, fontWeight: '900', color: '#0F172A', marginTop: 16, letterSpacing: -0.5 },
+  userEmail: { fontSize: 14, color: '#64748B', marginTop: 2, fontWeight: '500' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  locationText: { fontSize: 12, color: '#475569', marginLeft: 4, fontWeight: '700' },
+  badgesRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginTop: 12 },
+  verifiedText: { fontSize: 12, fontWeight: '800', color: colors.white, marginLeft: 6 },
+  proBadgeProfile: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2937', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginTop: 12 },
+  proBadgeProfileText: { color: '#FBBF24', fontSize: 12, fontWeight: '900', letterSpacing: 0.5 },
+  
+  statsRow: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: 24, paddingVertical: 20, borderRadius: 24, backgroundColor: colors.white, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 4 },
   statBox: { flex: 1, alignItems: 'center' },
-  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#E5E7EB' },
-  statNum: { fontSize: 18, fontWeight: '900', color: colors.text },
-  statLabel: { fontSize: 12, color: colors.textLight, marginTop: 2, fontWeight: '500' },
-  menuContainer: { backgroundColor: colors.white, marginTop: spacing.md, marginHorizontal: spacing.md, borderRadius: 20, borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden', padding: spacing.sm },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  menuIconCircle: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center', marginRight: 14, borderWidth: 1, borderColor: '#F3F4F6' },
-  menuLabel: { flex: 1, fontSize: 15, color: colors.text, fontWeight: '600' },
-  menuBadge: { backgroundColor: colors.error, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginRight: 8 },
-  menuBadgeText: { color: colors.white, fontSize: 11, fontWeight: 'bold' },
-  reportBtn: { flexDirection: 'row', marginTop: spacing.xl, marginHorizontal: spacing.md, paddingHorizontal: spacing.md, height: 58, borderRadius: 16, borderWidth: 1, borderColor: '#FDE68A', backgroundColor: '#FFFBEB', justifyContent: 'space-between', alignItems: 'center' },
+  statDivider: { width: 1, height: '80%', backgroundColor: '#F1F5F9', alignSelf: 'center' },
+  statNum: { fontSize: 22, fontWeight: '900', color: '#0F172A' },
+  statLabel: { fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: '600' },
+  
+  menuContainer: { backgroundColor: colors.white, marginTop: 24, marginHorizontal: spacing.lg, borderRadius: 24, padding: spacing.sm, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.03, shadowRadius: 15, elevation: 2 },
+  logoutContainer: { backgroundColor: colors.white, marginTop: 16, marginHorizontal: spacing.lg, borderRadius: 24, padding: spacing.sm, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.03, shadowRadius: 15, elevation: 2 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: spacing.sm },
+  menuIconCircle: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  menuLabel: { flex: 1, fontSize: 16, color: '#334155', fontWeight: '700' },
+  menuBadge: { backgroundColor: colors.error, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginRight: 12 },
+  menuBadgeText: { color: colors.white, fontSize: 12, fontWeight: '900' },
+  
+  reportBtn: { flexDirection: 'row', marginTop: 32, marginHorizontal: spacing.lg, paddingHorizontal: spacing.lg, height: 64, borderRadius: 20, backgroundColor: '#FFFBEB', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 4 },
   reportBtnContent: { flexDirection: 'row', alignItems: 'center' },
   reportIconCircle: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   reportBtnText: { color: '#92400E', fontWeight: '700', fontSize: 14 },

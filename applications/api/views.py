@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, Exists, OuterRef, Prefetch, Q
 from django.http import Http404
 from django.conf import settings
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -17,6 +21,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 import requests
 
+from applications.core import paypal
+from applications.core import stripe_client
 from applications.api.filters import normalize_listing_ordering, search_listing_queryset
 from applications.api.permissions import IsOwnerOrAdminOrReadOnly
 from applications.api.serializers import (
@@ -39,10 +45,12 @@ from applications.api.serializers import (
     BugReportSerializer,
     absolute_media_url,
 )
-from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, MarketingConsent, Message, Notification, Profile, ProfileReview, SearchHistory, Story
+from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, MarketingConsent, Message, Notification, Profile, ProfileReview, SearchHistory, Story, SystemPaymentSetting
 
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 def listing_queryset(include_inactive: bool = False):
@@ -112,6 +120,7 @@ def filter_listing_queryset_with_metadata(queryset, params):
 class CategoryListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = CategorySerializer
+    pagination_class = None
 
     def get_queryset(self):
         return Category.objects.annotate(
@@ -142,6 +151,15 @@ class ListingListCreateAPIView(generics.ListCreateAPIView):
                 data["main_image"] = self.request.FILES.get("main_image")
             kwargs["data"] = data
         return super().get_serializer(*args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.error("Listing create invalid payload for user %s: %s", request.user, dict(serializer.errors))
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         serializer.save()
@@ -245,11 +263,30 @@ class MeAPIView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.maybe_expire_pro()
         return Response(MeSerializer(request.user, context={"request": request}).data)
 
     def patch(self, request):
-        # Update User fields (email)
         user = request.user
+
+        if str(request.data.get("toggle_plan")) == "1":
+            if not SystemPaymentSetting.get_solo().enabled:
+                return Response({"detail": "El sistema de planes no está disponible en este momento."}, status=status.HTTP_403_FORBIDDEN)
+            profile, _ = Profile.objects.get_or_create(user=user)
+            if not profile.is_pro:
+                # Pasar a PRO requiere una suscripción verificada: ver PayPalCreateSubscriptionAPIView /
+                # PayPalConfirmSubscriptionAPIView / StripeCreateCheckoutSessionAPIView. Este endpoint
+                # solo permite cancelar el plan.
+                return Response(
+                    {"detail": "Para activar el plan PRO completa el pago con PayPal."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            profile.is_pro = False
+            profile.save(update_fields=["is_pro"])
+            return Response(MeSerializer(user, context={"request": request}).data)
+
+        # Update User fields (email)
         email = request.data.get("email")
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
@@ -295,6 +332,191 @@ class MeAPIView(APIView):
             serializer.save()
             return Response(MeSerializer(user, context={"request": request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PayPalCreateSubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not SystemPaymentSetting.get_solo().enabled:
+            return Response({"detail": "El sistema de planes no está disponible en este momento."}, status=status.HTTP_403_FORBIDDEN)
+        return_url = request.data.get("return_url")
+        if not return_url:
+            return Response({"detail": "Falta return_url."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            subscription = paypal.create_subscription(user_id=request.user.id, return_url=return_url, cancel_url=return_url)
+        except paypal.PayPalError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        approve_url = next((link["href"] for link in subscription.get("links", []) if link.get("rel") == "approve"), None)
+        return Response({"id": subscription["id"], "approve_url": approve_url})
+
+
+class PayPalConfirmSubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        subscription_id = request.data.get("subscription_id")
+        if not subscription_id:
+            return Response({"detail": "Falta subscription_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            subscription = paypal.get_subscription(subscription_id=subscription_id)
+        except paypal.PayPalError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        if subscription.get("status") != "ACTIVE":
+            return Response({"detail": "La suscripción de PayPal no está activa."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if subscription.get("custom_id") != str(request.user.id):
+            logger.warning("PayPal subscription user mismatch: sub=%s user=%s", subscription_id, request.user.id)
+            return Response({"detail": "La suscripción no corresponde a este usuario."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if subscription.get("plan_id") != settings.PAYPAL_PLAN_ID:
+            logger.warning("PayPal subscription plan mismatch: sub=%s plan=%s", subscription_id, subscription.get("plan_id"))
+            return Response({"detail": "El plan de la suscripción no coincide con el de Igualo PRO."}, status=status.HTTP_400_BAD_REQUEST)
+
+        next_billing_time = subscription.get("billing_info", {}).get("next_billing_time")
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.is_pro = True
+        profile.paypal_subscription_id = subscription_id
+        profile.pro_activated_at = timezone.now()
+        profile.pro_current_period_end = parse_datetime(next_billing_time) if next_billing_time else None
+        profile.pro_cancel_at_period_end = False
+        profile.save(update_fields=[
+            "is_pro", "paypal_subscription_id", "pro_activated_at",
+            "pro_current_period_end", "pro_cancel_at_period_end",
+        ])
+        return Response(MeSerializer(request.user, context={"request": request}).data)
+
+
+class PayPalCancelSubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        if not profile.paypal_subscription_id:
+            return Response({"detail": "No tienes una suscripción de PayPal activa."}, status=status.HTTP_400_BAD_REQUEST)
+
+        refunded = False
+        try:
+            if profile.refund_eligible() and profile.pro_activated_at:
+                start_time = profile.pro_activated_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                end_time = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+                paypal.cancel_subscription(subscription_id=profile.paypal_subscription_id)
+                paypal.refund_latest_subscription_payment(
+                    subscription_id=profile.paypal_subscription_id, start_time=start_time, end_time=end_time
+                )
+                refunded = True
+                profile.is_pro = False
+                profile.paypal_subscription_id = None
+                profile.pro_cancel_at_period_end = False
+            else:
+                paypal.cancel_subscription(subscription_id=profile.paypal_subscription_id)
+                profile.pro_cancel_at_period_end = True
+        except paypal.PayPalError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        profile.save(update_fields=["is_pro", "paypal_subscription_id", "pro_cancel_at_period_end"])
+        data = MeSerializer(request.user, context={"request": request}).data
+        data["refunded"] = refunded
+        return Response(data)
+
+
+class StripeCreateCheckoutSessionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not SystemPaymentSetting.get_solo().enabled:
+            return Response({"detail": "El sistema de planes no está disponible en este momento."}, status=status.HTTP_403_FORBIDDEN)
+        success_url = request.data.get("success_url")
+        cancel_url = request.data.get("cancel_url")
+        if not success_url or not cancel_url:
+            return Response({"detail": "Falta success_url o cancel_url."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            session = stripe_client.create_subscription_checkout_session(
+                user_id=request.user.id, success_url=success_url, cancel_url=cancel_url
+            )
+        except stripe_client.StripeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"id": session["id"], "url": session.get("url")})
+
+
+class StripeConfirmSessionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        session_id = request.data.get("session_id")
+        if not session_id:
+            return Response({"detail": "Falta session_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            session = stripe_client.retrieve_checkout_session(session_id=session_id)
+        except stripe_client.StripeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        if session.get("payment_status") != "paid":
+            return Response({"detail": "El pago no se completó."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if session.get("client_reference_id") != str(request.user.id):
+            logger.warning("Stripe session user mismatch: session=%s user=%s", session_id, request.user.id)
+            return Response({"detail": "La sesión no corresponde a este usuario."}, status=status.HTTP_400_BAD_REQUEST)
+
+        expected_cents = int(round(float(settings.PAYPAL_PRO_PRICE) * 100))
+        if (
+            session.get("amount_total") != expected_cents
+            or str(session.get("currency", "")).upper() != settings.PAYPAL_PRO_CURRENCY
+        ):
+            logger.warning("Stripe session amount mismatch: session=%s amount=%s", session_id, session.get("amount_total"))
+            return Response({"detail": "El monto pagado no coincide con el del plan PRO."}, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription_id = session.get("subscription")
+        try:
+            subscription = stripe_client.retrieve_subscription(subscription_id=subscription_id)
+            period_end = stripe_client.get_current_period_end(subscription)
+        except stripe_client.StripeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.is_pro = True
+        profile.stripe_customer_id = session.get("customer")
+        profile.stripe_subscription_id = subscription_id
+        profile.pro_activated_at = timezone.now()
+        profile.pro_current_period_end = datetime.fromtimestamp(period_end, tz=timezone.utc)
+        profile.pro_cancel_at_period_end = False
+        profile.save(update_fields=[
+            "is_pro", "stripe_customer_id", "stripe_subscription_id",
+            "pro_activated_at", "pro_current_period_end", "pro_cancel_at_period_end",
+        ])
+        return Response(MeSerializer(request.user, context={"request": request}).data)
+
+
+class StripeCancelSubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        if not profile.stripe_subscription_id:
+            return Response({"detail": "No tienes una suscripción de Stripe activa."}, status=status.HTTP_400_BAD_REQUEST)
+
+        refunded = False
+        try:
+            if profile.refund_eligible():
+                stripe_client.cancel_immediately(subscription_id=profile.stripe_subscription_id)
+                stripe_client.refund_latest_invoice(subscription_id=profile.stripe_subscription_id)
+                refunded = True
+                profile.is_pro = False
+                profile.stripe_subscription_id = None
+                profile.pro_cancel_at_period_end = False
+            else:
+                stripe_client.cancel_at_period_end(subscription_id=profile.stripe_subscription_id)
+                profile.pro_cancel_at_period_end = True
+        except stripe_client.StripeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        profile.save(update_fields=["is_pro", "stripe_subscription_id", "pro_cancel_at_period_end"])
+        data = MeSerializer(request.user, context={"request": request}).data
+        data["refunded"] = refunded
+        return Response(data)
 
 
 class ChangePasswordAPIView(APIView):
@@ -528,6 +750,7 @@ class ConversationDetailAPIView(APIView):
 
 class MessageCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def post(self, request):
         serializer = MessageSerializer(data=request.data, context={"request": request})
@@ -548,6 +771,27 @@ class MessageReadAPIView(APIView):
             message.is_read = True
             message.save(update_fields=["is_read"])
         return Response(MessageSerializer(message, context={"request": request}).data)
+
+
+class MessageViewOnceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        message = (
+            Message.objects.filter(pk=pk, conversation__participants=request.user, is_view_once=True)
+            .exclude(sender=request.user)
+            .first()
+        )
+        if not message:
+            raise Http404
+        if message.image:
+            message.image.delete(save=False)
+        if message.audio:
+            message.audio.delete(save=False)
+        if message.file:
+            message.file.delete(save=False)
+        message.delete()
+        return Response({"status": "deleted"})
 
 
 class StoryListCreateAPIView(APIView):
