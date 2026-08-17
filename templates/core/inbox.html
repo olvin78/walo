@@ -1214,11 +1214,6 @@
                 <h3 style="margin: 0; font-size: 0.95rem; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; {% if conversation.unread_count %}font-weight: 800;{% else %}font-weight: 600;{% endif %}">
                   {% if conversation.other_user %}{{ conversation.other_user.username }}{% else %}Usuario{% endif %}
                 </h3>
-                {% if conversation.listing %}
-                  <span style="font-size: 0.7rem; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">
-                    {{ conversation.listing.title }}
-                  </span>
-                {% endif %}
               </div>
 
               {# FECHA DE ÚLTIMO MENSAJE #}
