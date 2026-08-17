@@ -626,7 +626,7 @@ def inbox_view(request):
         conversation=OuterRef('pk'),
     ).exclude(sender=request.user).filter(is_read=False).order_by().values('conversation').annotate(c=Count('id')).values('c')
 
-    conversations = list(request.user.conversations.all().order_by('-updated_at').annotate(
+    conversations = list(request.user.conversations.all().order_by('-updated_at').prefetch_related('participants__profile', 'listing').annotate(
         unread_count=Subquery(unread_subquery, output_field=models.IntegerField())
     ))
     for conv in conversations:
