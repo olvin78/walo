@@ -387,6 +387,25 @@
       color: var(--text-main);
     }
 
+    .dropdown-trigger.is-pro {
+      color: #fbbf24;
+    }
+    .dropdown-trigger.is-pro:hover {
+      color: #fcd34d;
+    }
+    .nav-pro-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.12);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      color: #fbbf24;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
     .dropdown-trigger .arrow {
       font-size: 0.8rem;
       opacity: 0.6;
@@ -425,6 +444,11 @@
     .dropdown-menu a:hover {
       background: rgba(255, 255, 255, 0.05);
       color: var(--primary) !important;
+    }
+
+    .cmp-navbar-menu.is-pro .dropdown-menu a:hover {
+      background: rgba(212, 175, 55, 0.1);
+      color: #D4AF37 !important;
     }
 
     @keyframes slideDown {
@@ -657,11 +681,11 @@
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
   {% endif %}
-  <nav class="cmp-navbar">
+  <nav class="cmp-navbar{% if nav_is_pro %} is-pro{% endif %}">
     <div class="igualo-container cmp-navbar-inner">
       <a href="/" class="logo">IGUALO <span class="logo-spark">✦</span></a>
 
-      <div class="cmp-navbar-menu" id="navbar-menu">
+      <div class="cmp-navbar-menu{% if nav_is_pro %} is-pro{% endif %}" id="navbar-menu">
         <a href="{% url 'home' %}"><i data-lucide="store" class="nav-icon"></i> Inicio</a>
         <a href="{% url 'explore' %}"><i data-lucide="compass" class="nav-icon"></i> Explorar</a>
 
@@ -676,8 +700,9 @@
         <a href="/publicar/"><i data-lucide="plus-square" class="nav-icon"></i> Publicar</a>
 
         <div class="cmp-navbar-dropdown" id="config-dropdown">
-          <button class="dropdown-trigger" onclick="toggleConfigSubmenu(event)">
-            <i data-lucide="user-circle" class="nav-icon"></i> Configuraciones <span class="arrow">▾</span>
+          <button class="dropdown-trigger{% if nav_is_pro %} is-pro{% endif %}" onclick="toggleConfigSubmenu(event)">
+            <i data-lucide="user-circle" class="nav-icon"></i> Configuraciones
+            <span class="arrow">▾</span>
           </button>
           <div class="dropdown-menu" id="config-submenu">
             <a href="{% url 'user_profile' user.username %}"><i data-lucide="user" class="sub-icon"></i> Mi Perfil</a>
@@ -711,6 +736,39 @@
       </button>
     </div>
   </nav>
+
+  {% if nav_is_pro %}
+  <div class="pro-strip">
+    <span class="pro-strip-sparkle">✦</span>
+    <span>Cuenta PRO activa</span>
+    <span class="pro-strip-sparkle">✦</span>
+  </div>
+  <style>
+    .pro-strip {
+      background: linear-gradient(90deg, rgba(212,175,55,0.08), rgba(251,191,36,0.18), rgba(212,175,55,0.08));
+      border-bottom: 1px solid rgba(251,191,36,0.25);
+      color: #fbbf24;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .pro-strip-sparkle {
+      display: inline-block;
+      animation: proStripSparkle 2.4s ease-in-out infinite;
+    }
+    .pro-strip-sparkle:nth-child(3) { animation-delay: 1.2s; }
+    @keyframes proStripSparkle {
+      0%, 100% { opacity: 0.35; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+  </style>
+  {% endif %}
 
   <!-- Bug Report Modal -->
   <div id="bug-modal" class="bug-modal-overlay">
