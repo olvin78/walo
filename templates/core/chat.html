@@ -266,7 +266,14 @@
     }
     .mine .bubble-meta { color: rgba(255,255,255,0.85); }
 
-    .chat-bubble { cursor: pointer; user-select: none; -webkit-user-select: none; }
+    .chat-bubble, .chat-bubble * {
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-user-drag: none;
+        -webkit-tap-highlight-color: transparent;
+    }
     .chat-bubble.is-pressing { filter: brightness(0.92); }
 
     .chat-text--deleted {
@@ -277,71 +284,83 @@
         gap: 5px;
     }
 
-    /* LIGHTBOX DE FOTOS */
+    /* LIGHTBOX DE FOTOS AL ESTILO WHATSAPP */
     .chat-lightbox {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.9);
-        z-index: 5000;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(12px);
+        z-index: 999999 !important;
         align-items: center;
         justify-content: center;
         padding: 20px;
     }
     .chat-lightbox.is-active { display: flex; }
     .chat-lightbox img {
-        max-width: 100%;
-        max-height: 100%;
-        border-radius: 8px;
+        max-width: 92vw;
+        max-height: 88vh;
+        border-radius: 12px;
         object-fit: contain;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        transition: transform 0.2s ease;
     }
     .chat-lightbox-close {
         position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(255,255,255,0.1);
+        top: 24px;
+        right: 24px;
+        background: rgba(255, 255, 255, 0.15);
         border: none;
         color: #fff;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        font-size: 1.5rem;
+        font-size: 1.8rem;
+        backdrop-filter: blur(5px);
+        transition: 0.2s;
+        z-index: 1000000;
+    }
+    .chat-lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
     }
 
-    /* MENÚ DE ACCIONES DE MENSAJE (mantener presionado) */
+    /* MENÚ DE ACCIONES DE MENSAJE (mantener presionado / clic derecho) */
     .msg-actions-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.35);
-        backdrop-filter: blur(2px);
-        z-index: 6000;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(6px);
+        z-index: 999999 !important;
         align-items: flex-end;
         justify-content: center;
     }
     .msg-actions-overlay.is-active { display: flex; }
     .msg-actions-sheet {
-        background: #ffffff;
+        background: #1e293b;
+        color: #ffffff;
         width: 100%;
         max-width: 420px;
         border-radius: 22px 22px 0 0;
-        padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+        padding: 12px 16px calc(20px + env(safe-area-inset-bottom, 0px));
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+        gap: 6px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         animation: msgSheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .msg-actions-handle {
-        width: 36px;
+        width: 40px;
         height: 4px;
-        background: #e2e8f0;
+        background: rgba(255,255,255,0.2);
         border-radius: 999px;
-        margin: 8px auto 10px;
+        margin: 6px auto 12px;
     }
     @media (min-width: 640px) {
         .msg-actions-overlay { align-items: center; }
@@ -355,12 +374,37 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 14px 12px;
-        background: none;
+        padding: 14px 16px;
         border: none;
-        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #f1f5f9;
+        border-radius: 12px;
         font-size: 0.95rem;
         font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .msg-action-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+    .msg-action-btn--danger {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.12);
+    }
+    .msg-action-btn--danger:hover {
+        background: rgba(239, 68, 68, 0.22);
+    }
+    .msg-action-cancel {
+        margin-top: 6px;
+        padding: 14px;
+        border: none;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-muted);
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
         font-family: inherit;
         color: #1e293b;
         cursor: pointer;
@@ -607,9 +651,11 @@
                         {% endif %}
 
                         <div class="chat-bubble {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %} {% if group.is_media_group %}chat-bubble--has-image{% endif %}"
-                             data-msg-id="{{ last_msg.id }}"
+                             data-msg-id="{% for gm in group.messages %}{{ gm.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
                              data-mine="{% if first_msg.sender_id == request.user.pk %}1{% else %}0{% endif %}"
                              data-deleted="{% if last_msg.is_deleted %}1{% else %}0{% endif %}"
+                             oncontextmenu="return handleContextMenu(event, this);"
+                             style="-webkit-touch-callout: none;"
                              onmousedown="handlePressStart(event, this)" onmouseup="handlePressEnd(event, this)" onmouseleave="handlePressCancel(this)"
                              ontouchstart="handlePressStart(event, this)" ontouchend="handlePressEnd(event, this)" ontouchmove="handlePressCancel(this)">
                             
@@ -757,8 +803,11 @@
 <div class="msg-actions-overlay" id="msgActionsOverlay" onclick="closeMessageActions()">
     <div class="msg-actions-sheet" onclick="event.stopPropagation()">
         <div class="msg-actions-handle"></div>
+        <button type="button" class="msg-action-btn" id="msgActionCopyText" onclick="copyMessageText()">
+            <i data-lucide="copy"></i> Copiar texto
+        </button>
         <button type="button" class="msg-action-btn" onclick="performDeleteMessage('me')">
-            <i data-lucide="eye-off"></i> Eliminar para mí
+            <i data-lucide="trash"></i> Eliminar para mí
         </button>
         <button type="button" class="msg-action-btn msg-action-btn--danger" id="msgActionDeleteEveryone" onclick="performDeleteMessage('everyone')">
             <i data-lucide="trash-2"></i> Eliminar para todos
@@ -943,9 +992,19 @@
         document.getElementById('chatLightboxImg').src = '';
     }
 
-    // --- Mantener presionado un mensaje para eliminarlo (estilo WhatsApp) ---
+    // --- Mantener presionado / Clic derecho en mensaje (estilo WhatsApp) ---
     let pressTimer = null;
     let activePressMsgId = null;
+    let activePressEl = null;
+
+    function handleContextMenu(event, el) {
+        if (event) event.preventDefault();
+        if (el.dataset.deleted === '1') return false;
+        suppressNextClick = true;
+        if (navigator.vibrate) navigator.vibrate(25);
+        showMessageActions(el);
+        return false;
+    }
 
     function handlePressStart(event, el) {
         if (el.dataset.deleted === '1') return;
@@ -967,22 +1026,40 @@
     }
 
     function showMessageActions(el) {
+        activePressEl = el;
         activePressMsgId = el.dataset.msgId;
         const isMine = el.dataset.mine === '1';
+
+        const textEl = el.querySelector('.chat-text');
+        const copyBtn = document.getElementById('msgActionCopyText');
+        if (copyBtn) {
+            copyBtn.style.display = (textEl && textEl.innerText.trim() && !textEl.classList.contains('chat-text--deleted')) ? 'flex' : 'none';
+        }
+
         document.getElementById('msgActionDeleteEveryone').style.display = isMine ? 'flex' : 'none';
         document.getElementById('msgActionsOverlay').classList.add('is-active');
+        lucide.createIcons();
     }
     function closeMessageActions() {
         document.getElementById('msgActionsOverlay').classList.remove('is-active');
+    }
+    function copyMessageText() {
+        if (activePressEl) {
+            const textEl = activePressEl.querySelector('.chat-text');
+            if (textEl && textEl.innerText.trim()) {
+                navigator.clipboard.writeText(textEl.innerText.trim());
+            }
+        }
+        closeMessageActions();
     }
     function performDeleteMessage(scope) {
         closeMessageActions();
         if (scope === 'everyone' && !confirm('¿Eliminar este mensaje para todos?')) return;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        fetch(`/mensajes/mensaje/eliminar/${activePressMsgId}/`, {
+        fetch(`/mensajes/mensaje/eliminar/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
-            body: new URLSearchParams({ scope }),
+            body: new URLSearchParams({ scope, message_ids: activePressMsgId }),
         }).then(res => { if (res.ok) location.reload(); });
     }
 
