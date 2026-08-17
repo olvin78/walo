@@ -1672,33 +1672,66 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', initStories);
 
 // -- CHAT LOGIC --
-let touchStartX = 0; let touchMoveX = 0; let activeSwipeItem = null; let currentContextId = null;
+let touchStartX = 0, touchStartY = 0;
+let touchMoveX = 0, touchMoveY = 0;
+let activeSwipeItem = null, currentContextId = null;
+
 function handleTouchStart(e) {
   touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchMoveX = touchStartX;
+  touchMoveY = touchStartY;
   activeSwipeItem = e.currentTarget;
   activeSwipeItem.style.transition = 'none';
 }
+
 function handleTouchMove(e) {
+  if (!activeSwipeItem) return;
   touchMoveX = e.touches[0].clientX;
-  const diff = touchMoveX - touchStartX;
-  if (diff < 0 && diff > -150) {
-    activeSwipeItem.style.transform = `translateX(${diff}px)`;
+  touchMoveY = e.touches[0].clientY;
+  
+  const diffX = touchMoveX - touchStartX;
+  const diffY = touchMoveY - touchStartY;
+
+  // Si el usuario está desplazándose verticalmente (scroll), ignorar el swipe horizontal
+  if (Math.abs(diffY) > Math.abs(diffX)) {
+    return;
+  }
+
+  // Umbral mínimo de 25px para evitar disparos accidentales con toques o micro-deslizamientos
+  if (diffX < -25 && diffX > -150) {
+    const translateAmount = diffX + 25;
+    activeSwipeItem.style.transform = `translateX(${Math.min(0, translateAmount)}px)`;
     const delBtn = activeSwipeItem.parentNode.querySelector('.delete-action');
-    if (delBtn) { delBtn.style.display = 'flex'; delBtn.style.opacity = '1'; }
+    if (delBtn && diffX < -40) { 
+      delBtn.style.display = 'flex'; 
+      delBtn.style.opacity = Math.min(1, (Math.abs(diffX) - 30) / 40).toString(); 
+    }
   }
 }
+
 function handleTouchEnd(e) {
-  activeSwipeItem.style.transition = 'transform 0.3s ease';
-  const diff = touchMoveX - touchStartX;
+  if (!activeSwipeItem) return;
+  activeSwipeItem.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+  const diffX = touchMoveX - touchStartX;
   const delBtn = activeSwipeItem.parentNode.querySelector('.delete-action');
-  if (diff < -60) {
+  
+  // Requiere un deslizamiento firme e intencional (mínimo 75px hacia la izquierda)
+  if (diffX < -75) {
     activeSwipeItem.style.transform = 'translateX(-80px)';
-    if (delBtn) { delBtn.style.display = 'flex'; delBtn.style.opacity = '1'; }
+    if (delBtn) { 
+      delBtn.style.display = 'flex'; 
+      delBtn.style.opacity = '1'; 
+    }
   } else {
     activeSwipeItem.style.transform = 'translateX(0)';
     if (delBtn) {
       delBtn.style.opacity = '0';
-      setTimeout(() => { if (delBtn && activeSwipeItem.style.transform === 'translateX(0px)') delBtn.style.display = 'none'; }, 300);
+      setTimeout(() => { 
+        if (delBtn && (activeSwipeItem.style.transform === 'translateX(0px)' || activeSwipeItem.style.transform === 'translateX(0)')) {
+          delBtn.style.display = 'none'; 
+        }
+      }, 300);
     }
   }
 }
