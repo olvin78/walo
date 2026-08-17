@@ -392,6 +392,7 @@
     .msg-action-btn:hover {
         background: rgba(255, 255, 255, 0.12);
     }
+    .msg-action-btn i { width: 18px; height: 18px; color: inherit; }
     .msg-action-btn--danger {
         color: #ef4444;
         background: rgba(239, 68, 68, 0.12);
@@ -399,6 +400,7 @@
     .msg-action-btn--danger:hover {
         background: rgba(239, 68, 68, 0.22);
     }
+    .msg-action-btn--danger i { color: #ef4444; }
     .msg-action-cancel {
         margin-top: 6px;
         padding: 14px;
@@ -410,30 +412,41 @@
         font-weight: 700;
         cursor: pointer;
     }
-        font-family: inherit;
-        color: #1e293b;
+
+    /* BOTÓN CHEVRON EN BURBUJA (ESTILO WHATSAPP WEB) */
+    .chat-bubble-chevron {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        border: none;
+        color: rgba(255, 255, 255, 0.9);
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        text-align: left;
-        transition: background 0.15s;
+        opacity: 0;
+        transition: opacity 0.2s ease, background 0.2s;
+        z-index: 10;
     }
-    .msg-action-btn:hover { background: #f8fafc; }
-    .msg-action-btn i { width: 18px; height: 18px; color: #64748b; }
-    .msg-action-btn--danger { color: #dc2626; }
-    .msg-action-btn--danger i { color: #dc2626; }
-    .msg-action-cancel {
-        margin-top: 6px;
-        padding: 14px 12px;
-        border-top: 1px solid #f1f5f9;
-        background: none;
-        border-left: none;
-        border-right: none;
-        border-bottom: none;
-        font-size: 0.9rem;
-        font-weight: 600;
-        font-family: inherit;
-        color: #94a3b8;
-        text-align: center;
-        cursor: pointer;
+    .chat-bubble:hover .chat-bubble-chevron,
+    .chat-bubble.is-pressing .chat-bubble-chevron {
+        opacity: 1;
+    }
+    .chat-bubble-chevron:hover {
+        background: rgba(0, 0, 0, 0.6);
+    }
+    .chat-bubble-chevron i {
+        width: 14px;
+        height: 14px;
+    }
+    @media (max-width: 768px) {
+        .chat-bubble-chevron {
+            opacity: 0.65;
+        }
     }
 
     /* 5. MEDIA GRID (PREMIUM ADAPTIVE LOOK) */
@@ -664,6 +677,9 @@
                              onmousedown="handlePressStart(event, this)" onmouseup="handlePressEnd(event, this)" onmouseleave="handlePressCancel(this)"
                              ontouchstart="handlePressStart(event, this)" ontouchend="handlePressEnd(event, this)" ontouchmove="handlePressCancel(this)">
                             
+                            <button type="button" class="chat-bubble-chevron" onclick="event.stopPropagation(); showMessageActions(this.closest('.chat-bubble'))" title="Opciones del mensaje">
+                                <i data-lucide="chevron-down"></i>
+                            </button>
                             {# IMAGEN (GRID ADAPTATIVO: Ocultación total de vistos) #}
                             {% if group.is_media_group %}
                                 <div class="chat-bubble-media-container {% if group.messages|length > 1 %}chat-media-grid--multi{% endif %}">
@@ -1062,7 +1078,7 @@
             suppressNextClick = true;
             if (navigator.vibrate) navigator.vibrate(25);
             showMessageActions(el);
-        }, 450);
+        }, 300);
     }
     function handlePressEnd(event, el) {
         clearTimeout(pressTimer);
