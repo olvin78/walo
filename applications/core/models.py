@@ -127,7 +127,7 @@ class Listing(models.Model):
         from django.utils.safestring import mark_safe
         if self.is_negotiable or (self.price is not None and self.price == 0):
             return mark_safe('<span class="walo-badge-negotiable">🤝 Negociable</span>')
-        return f"C$ {self.price:,.2f}".replace(",", ".")
+        return f"C$ {self.price:,.2f}"
 
     @property
     def get_thumb(self):

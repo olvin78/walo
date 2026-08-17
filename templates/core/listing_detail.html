@@ -547,7 +547,7 @@
                         {% if listing.is_negotiable or listing.price == 0 %}
                         <span class="walo-badge-negotiable-detail">🤝 Precio Negociable</span>
                         {% else %}
-                        <b>C$</b> {{ listing.price|floatformat:2 }}
+                        <b>C$</b> <span class="listing-price-amount">{{ listing.price|floatformat:2 }}</span> <span class="listing-price-currency">córdobas</span>
                         {% endif %}
                     </div>
                     

@@ -126,6 +126,15 @@
 
 .listing-price-main b { color: var(--primary); font-weight: 900; margin-right: 5px; }
 
+.listing-price-currency {
+    font-size: 0.45em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
 .listing-meta-tags {
     display: flex;
     align-items: center;
