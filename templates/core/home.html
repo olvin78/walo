@@ -201,9 +201,6 @@
 
     /* Mejora de margen para categorías en móvil similar a explore */
     @media (max-width: 768px) {
-        .cmp-navbar-inner {
-            padding: 26px 0;
-        }
         .section-hero {
             padding: 160px 0 60px 0 !important;
             align-items: flex-start !important;
@@ -1099,7 +1096,7 @@
        THE ULTIMATE MOBILE POLISH (PIXEL PERFECT)
        ============================================================ */
     @media (max-width: 768px) {
-        .container, .igualo-container { padding: 0 25px; }
+        .container, div.igualo-container:not(.cmp-navbar-inner) { padding: 0 16px; }
 
         /* 1. Hero Refinement */
         .section-hero { min-height: 70vh; padding: 40px 0 80px; }

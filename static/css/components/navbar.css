@@ -16,8 +16,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 0;
+    padding: 16px 16px !important;
     position: relative;
+    box-sizing: border-box;
 }
 
 .cmp-navbar .logo {
@@ -191,7 +192,7 @@
 
 @media (max-width: 768px) {
     .cmp-navbar-inner {
-        padding: 26px 0;
+        padding: 18px 16px !important;
     }
 
     .cmp-navbar-toggle {
