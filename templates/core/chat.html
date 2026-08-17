@@ -11,14 +11,29 @@
 
 <style>
     /* 1. RESET & ESTILO GLOBAL DEL SHELL */
+    html.page-chat-shell, 
+    body.page-chat-shell { 
+        overflow: hidden !important; 
+        height: 100vh !important; 
+        height: 100dvh !important; 
+    }
+    
+    .page-chat-shell footer.footer, 
     .page-chat-shell footer.cmp-footer, 
-    .page-chat-shell .cookie-banner { display: none !important; }
+    .page-chat-shell .pro-strip, 
+    .page-chat-shell .cookie-banner { 
+        display: none !important; 
+    }
+
+    .page-chat-shell .cmp-navbar {
+        background: #0f172a !important;
+    }
     
     :root {
         --chat-navy: #0f172a;
         --chat-bg: #f3f4f6; /* Gris muy suave tipo iOS */
-        --chat-bubble-me: #22c55e;
-        --chat-bubble-me-text: #ffffff;
+        --chat-bubble-me: {% if nav_is_pro %}#D4AF37{% else %}#22c55e{% endif %};
+        --chat-bubble-me-text: {% if nav_is_pro %}#1f2937{% else %}#ffffff{% endif %};
         --chat-bubble-their: #ffffff;
         --chat-bubble-their-text: #1e293b;
         --chat-online: #10b981;
@@ -141,11 +156,11 @@
     }
 
     /* BURBUJA PROPIA (VERDE PREMIUM) */
-    .chat-bubble.mine { 
+    .chat-bubble.mine {
         background: var(--chat-bubble-me);
         color: var(--chat-bubble-me-text);
-        border-radius: 18px 18px 4px 18px; 
-        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+        border-radius: 18px 18px 4px 18px;
+        box-shadow: 0 2px 8px {% if nav_is_pro %}rgba(212, 175, 55, 0.25){% else %}rgba(34, 197, 94, 0.15){% endif %};
     }
     .chat-bubble.their { 
         background: var(--chat-bubble-their);
@@ -250,6 +265,64 @@
     }
     .mine .bubble-meta { color: rgba(255,255,255,0.85); }
 
+    .msg-delete-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        margin-left: 2px;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        opacity: 0.55;
+        color: inherit;
+        transition: opacity 0.2s;
+    }
+    .msg-delete-btn:hover { opacity: 1; }
+    .msg-delete-btn i { width: 12px; height: 12px; }
+
+    .chat-text--deleted {
+        font-style: italic;
+        opacity: 0.65;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* LIGHTBOX DE FOTOS */
+    .chat-lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 5000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .chat-lightbox.is-active { display: flex; }
+    .chat-lightbox img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 8px;
+        object-fit: contain;
+    }
+    .chat-lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.5rem;
+    }
+
     /* 5. MEDIA GRID (PREMIUM ADAPTIVE LOOK) */
     .chat-media-grid--multi {
         display: grid;
@@ -314,12 +387,12 @@
         border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         cursor: pointer;
-        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+        box-shadow: 0 4px 10px {% if nav_is_pro %}rgba(212, 175, 55, 0.4){% else %}rgba(34, 197, 94, 0.3){% endif %};
         transition: 0.3s;
     }
-    .btn-composer-send:hover { 
+    .btn-composer-send:hover {
         transform: scale(1.05);
-        background: #16a34a;
+        background: {% if nav_is_pro %}#c5a028{% else %}#16a34a{% endif %};
     }
     
     /* ESPECIAL RECORDING */
@@ -349,6 +422,10 @@
     }
     .view-once-pro:hover { background: rgba(0,0,0,0.08); border-color: var(--chat-bubble-me); }
     .view-once-title { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+    .view-once-pro.is-pro {
+        border: 2px solid #D4AF37 !important;
+    }
 
     /* AUDIO PREMIUM */
     .chat-audio-player {
@@ -472,18 +549,20 @@
                                 <div class="chat-bubble-media-container {% if group.messages|length > 1 %}chat-media-grid--multi{% endif %}">
                                     {% for m in group.messages %}
                                         {# Determinamos si debe ocultarse totalmente #}
-                                        {% if m.is_view_once and m.sender_id == request.user.pk and m.viewed_by_sender %}
+                                        {% if m.is_deleted %}
+                                            {# Se muestra como "Mensaje eliminado" en el bloque de texto #}
+                                        {% elif m.is_view_once and m.sender_id == request.user.pk and m.viewed_by_sender %}
                                             {# No renderizar nada #}
                                         {% elif m.is_view_once and m.sender_id != request.user.pk and m.viewed_by_receiver %}
                                             {# No renderizar nada #}
                                         {% else %}
                                             {% if m.is_view_once %}
-                                                <div class="view-once-pro" onclick="openViewOnce('{{ m.image.url }}', {{ m.id }})">
+                                                <div class="view-once-pro{% if nav_is_pro %} is-pro{% endif %}" onclick="openViewOnce('{{ m.image.url }}', {{ m.id }})">
                                                     <i data-lucide="eye-off" style="width: 28px; color: #fff;"></i>
                                                     <span class="view-once-title" style="color:#fff;">Foto</span>
                                                 </div>
                                             {% else %}
-                                                <img src="{{ m.image.url }}" alt="Media" onclick="window.open(this.src)" 
+                                                <img src="{{ m.image.url }}" alt="Media" onclick="openImageLightbox(this.src)"
                                                      class="{% if group.messages|length == 3 and forloop.first %}grid-span-full{% endif %}">
                                             {% endif %}
                                         {% endif %}
@@ -493,7 +572,12 @@
 
                             {# CONTENIDO DE TEXTO / CAPTION #}
                             {% for m in group.messages %}
-                                {% if m.text or m.audio %}
+                                {% if m.is_deleted %}
+                                    <div class="chat-bubble-caption">
+                                        <div class="chat-text chat-text--deleted"><i data-lucide="ban" style="width:14px; vertical-align:-2px;"></i> Mensaje eliminado</div>
+                                        <div class="bubble-meta">{{ m.created_at|date:"H:i" }}</div>
+                                    </div>
+                                {% elif m.text or m.audio %}
                                     <div class="chat-bubble-caption">
                                         {# AUDIO #}
                                         {% if m.audio %}
@@ -520,10 +604,13 @@
                                             {{ m.created_at|date:"H:i" }}
                                             {% if m.sender_id == request.user.pk %}
                                                 {% if m.is_read %}
-                                                    <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: #22c55e;"></i>
+                                                    <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: {% if nav_is_pro %}#D4AF37{% else %}#22c55e{% endif %};"></i>
                                                 {% else %}
                                                     <i data-lucide="check" style="width: 12px; margin-left: 2px; color: rgba(255,255,255,0.5);"></i>
                                                 {% endif %}
+                                                <button type="button" class="msg-delete-btn" onclick="deleteMessage({{ m.id }}, event)" title="Eliminar mensaje">
+                                                    <i data-lucide="trash-2"></i>
+                                                </button>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -536,10 +623,13 @@
                                                     {{ m.created_at|date:"H:i" }}
                                                     {% if m.sender_id == request.user.pk %}
                                                         {% if m.is_read %}
-                                                            <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: #22c55e;"></i>
+                                                            <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: {% if nav_is_pro %}#D4AF37{% else %}#22c55e{% endif %};"></i>
                                                         {% else %}
                                                             <i data-lucide="check" style="width: 12px; margin-left: 2px; color: rgba(255,255,255,0.5);"></i>
                                                         {% endif %}
+                                                        <button type="button" class="msg-delete-btn" onclick="deleteMessage({{ m.id }}, event)" title="Eliminar mensaje">
+                                                            <i data-lucide="trash-2"></i>
+                                                        </button>
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -596,10 +686,16 @@
     </footer>
 </div>
 
+<div class="chat-lightbox" id="chatLightbox" onclick="closeImageLightbox()">
+    <button type="button" class="chat-lightbox-close" onclick="closeImageLightbox()">&times;</button>
+    <img id="chatLightboxImg" src="" alt="Foto" onclick="event.stopPropagation()">
+</div>
+
 <script>
     // Variables globales para polling
     window.CONVERSATION_ID = {{ conversation.id }};
     window.CURRENT_USER_ID = {{ request.user.id }};
+    window.NAV_IS_PRO = {% if nav_is_pro %}true{% else %}false{% endif %};
 
     // Inicializar Iconos
     lucide.createIcons();
@@ -753,8 +849,32 @@
         window.open(url, '_blank');
         fetch(`/mensajes/visto/${msgId}/`).then(res => {
             if (res.ok) {
-                location.reload(); 
+                location.reload();
             }
+        });
+    }
+
+    // --- Lightbox de fotos (se agrandan en la misma página) ---
+    function openImageLightbox(src) {
+        const lightbox = document.getElementById('chatLightbox');
+        document.getElementById('chatLightboxImg').src = src;
+        lightbox.classList.add('is-active');
+    }
+    function closeImageLightbox() {
+        document.getElementById('chatLightbox').classList.remove('is-active');
+        document.getElementById('chatLightboxImg').src = '';
+    }
+
+    // --- Eliminar mensaje propio ---
+    function deleteMessage(msgId, event) {
+        if (event) event.stopPropagation();
+        if (!confirm('¿Eliminar este mensaje?')) return;
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch(`/mensajes/mensaje/eliminar/${msgId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+        }).then(res => {
+            if (res.ok) location.reload();
         });
     }
 
@@ -786,7 +906,7 @@
                         const meta = wrapper.querySelector('.bubble-meta i');
                         if (meta) {
                             meta.setAttribute('data-lucide', 'check-check');
-                            meta.style.color = '#22c55e';
+                            meta.style.color = window.NAV_IS_PRO ? '#D4AF37' : '#22c55e';
                         }
                     });
                     lucide.createIcons();
@@ -803,7 +923,7 @@
 
         let content = '';
         if (m.image) {
-            content += `<div class="chat-bubble-media-container"><img src="${m.image}" alt="Media" onclick="window.open(this.src)"></div>`;
+            content += `<div class="chat-bubble-media-container"><img src="${m.image}" alt="Media" onclick="openImageLightbox(this.src)"></div>`;
         }
         if (m.text) {
             content += `<div class="chat-text">${m.text.replace(/\n/g, '<br>')}</div>`;
