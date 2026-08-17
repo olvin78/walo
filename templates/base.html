@@ -697,11 +697,11 @@
           {% endif %}
         </a>
         <a href="{% url 'favorites' %}"><i data-lucide="heart" class="nav-icon"></i> Favoritos</a>
-        <a href="/publicar/"><i data-lucide="plus-square" class="nav-icon"></i> Publicar</a>
+        <a href="/publicar/"><i data-lucide="plus-circle" class="nav-icon"></i> Publicar</a>
 
         <div class="cmp-navbar-dropdown" id="config-dropdown">
           <button class="dropdown-trigger{% if nav_is_pro %} is-pro{% endif %}" onclick="toggleConfigSubmenu(event)">
-            <i data-lucide="user-circle" class="nav-icon"></i> Configuraciones
+            <i data-lucide="settings" class="nav-icon"></i> Configuraciones
             <span class="arrow">▾</span>
           </button>
           <div class="dropdown-menu" id="config-submenu">
