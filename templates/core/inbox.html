@@ -1222,13 +1222,11 @@
 
             {# SUBTEXTO CON PREVIO DE MENSAJE Y UNREAD BADGE #}
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              {% with last_msg=conversation.messages.last %}
+              {% with last_msg=conversation.last_valid_message %}
                 {% if last_msg %}
                   <p style="{% if conversation.unread_count %}color: #f1f5f9; font-weight: 600;{% else %}color: #8e9bb0;{% endif %} font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; flex: 1;">
                     {% if last_msg.sender == request.user %}<span style="color: #3b82f6; font-weight: 600;">Tú: </span>{% endif %}
-                    {% if last_msg.is_deleted %}
-                      <span style="color: #64748b; font-style: italic;">🚫 Mensaje eliminado</span>
-                    {% elif last_msg.image %}
+                    {% if last_msg.image %}
                       <span>📷 Foto</span>
                     {% elif last_msg.audio %}
                       <span>🎤 Nota de voz</span>

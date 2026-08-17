@@ -631,6 +631,7 @@ def inbox_view(request):
     ))
     for conv in conversations:
         conv.other_user = conv.participants.exclude(id=request.user.id).first()
+        conv.last_valid_message = conv.messages.exclude(is_deleted=True).exclude(deleted_for=request.user).last()
     
     # Obtener historias activas de las últimas 24h
     time_threshold = timezone.now() - datetime.timedelta(hours=24)
