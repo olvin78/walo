@@ -48,7 +48,7 @@ index, follow
 {% block content %}
 <div class="igualo-container">
   <!-- Cabecera de Exploración Minimalista -->
-  <header class="explore-header-pro">
+  <header class="explore-header-pro{% if nav_is_pro %} is-pro{% endif %}">
     <div class="header-main-search">
       <div class="search-label">🔍 Descubre lo mejor de Nicaragua</div>
       <form action="{% url 'explore' %}" method="GET" class="search-box-explore" id="exploreForm">
@@ -279,6 +279,42 @@ index, follow
     .btn-search-icon:hover {
       transform: scale(0.96);
       opacity: 0.9;
+    }
+
+    /* Detalles dorados cuando el usuario es PRO */
+    .explore-header-pro.is-pro .search-label { color: #D4AF37; }
+    .explore-header-pro.is-pro .input-focus-group:focus-within { border-color: #D4AF37; }
+    .explore-header-pro.is-pro .btn-search-icon { background: #D4AF37; }
+    .explore-header-pro.is-pro .btn-near-me:hover {
+      background: rgba(212, 175, 55, 0.1);
+      border-color: #D4AF37;
+      color: #D4AF37;
+    }
+    .explore-header-pro.is-pro .story-btn:hover .story-circle-pro,
+    .explore-header-pro.is-pro .story-btn.active .story-circle-pro {
+      border-color: #D4AF37;
+      background: rgba(212, 175, 55, 0.12);
+      box-shadow: 0 12px 28px rgba(212, 175, 55, 0.2), 0 0 0 1px rgba(212, 175, 55, 0.18);
+    }
+    .explore-header-pro.is-pro .filter-panel-v4 { border-color: rgba(212, 175, 55, 0.35); }
+    .explore-header-pro.is-pro .filter-input-pro:focus,
+    .explore-header-pro.is-pro select.filter-input-pro:focus {
+      border-color: #D4AF37;
+      background-color: rgba(212, 175, 55, 0.06);
+      box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.12);
+    }
+    .explore-header-pro.is-pro .btn-toggle-filters {
+      background: rgba(212, 175, 55, 0.1);
+      color: #D4AF37;
+      border-color: rgba(212, 175, 55, 0.35);
+    }
+    .explore-header-pro.is-pro .btn-toggle-filters:hover {
+      background: #D4AF37;
+      color: #000;
+    }
+    .explore-header-pro.is-pro .btn-apply-v4 { background: #D4AF37; }
+    .explore-header-pro.is-pro .btn-apply-v4:hover {
+      box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
     }
 
     /* CATEGORIES BAR (HORIZONTAL SCROLL) */
@@ -1059,6 +1095,42 @@ index, follow
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* MINIMAL COMPACT FOOTER (INBOX STYLE) */
+    footer.footer {
+      background: #070b14 !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+      padding: 40px 20px 30px !important;
+      margin-top: 50px !important;
+    }
+    footer.footer .footer-column,
+    footer.footer .footer-bottom,
+    footer.footer .footer-links { 
+      display: none !important; 
+    }
+    footer.footer .footer-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      padding: 0 !important;
+      margin-bottom: 0 !important;
+      gap: 12px !important;
+    }
+    footer.footer .footer-brand {
+      text-align: center !important;
+      margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+    footer.footer .footer-brand p {
+      display: block !important;
+      font-size: 0.85rem !important;
+      color: var(--text-muted) !important;
+      text-align: center !important;
+      max-width: 340px !important;
     }
   </style>
 
