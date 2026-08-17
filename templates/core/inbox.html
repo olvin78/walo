@@ -1169,11 +1169,11 @@
   <div class="inbox-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
     {% for conversation in conversations %}
       <div class="conversation-wrapper" id="conv-{{ conversation.id }}" 
-           style="position: relative; overflow: hidden; border-radius: 16px; background: transparent;">
+           style="position: relative; overflow: hidden; border-radius: 16px; background: #dc2626;">
         
         {# BOTÓN DE ELIMINAR DESLIZABLE #}
         <div class="delete-action" onclick="confirmDelete({{ conversation.id }})"
-             style="position: absolute; right: 0; top: 0; bottom: 0; width: 90px; background: #dc2626; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; z-index: 1; border-radius: 0 16px 16px 0;">
+             style="position: absolute; right: 0; top: 0; bottom: 0; width: 90px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; z-index: 1;">
           Eliminar
         </div>
 
@@ -1183,42 +1183,36 @@
            ontouchstart="handleTouchStart(event)"
            ontouchmove="handleTouchMove(event)"
            ontouchend="handleTouchEnd(event)"
-           style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(25px) saturate(190%); -webkit-backdrop-filter: blur(25px) saturate(190%); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.35); border-radius: 16px; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none; position: relative; z-index: 2;">
+           style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.1), 0 4px 20px rgba(0, 0, 0, 0.35); border-radius: 16px; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none; position: relative; z-index: 2;">
           
-          {# AVATAR DEL OTRO USUARIO CON ANILLO DE CRISTAL LÍQUIDO Y MINI THUMBNAIL #}
-          {% for participant in conversation.participants.all %}
-            {% if participant != request.user %}
-              <div class="conv-avatar-container" style="position: relative; flex-shrink: 0; width: 48px; height: 48px;">
-                <div style="width: 48px; height: 48px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-                  <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #1e293b; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #f8fafc; font-size: 1.1rem;">
-                    {% if participant.profile.avatar %}
-                      <img src="{{ participant.profile.avatar.url }}" style="width: 100%; height: 100%; object-fit: cover;">
-                    {% else %}
-                      {{ participant.username|slice:":1"|upper }}
-                    {% endif %}
-                  </div>
-                </div>
-
-                {# MINI THUMBNAIL DEL PRODUCTO EN LA ESQUINA #}
-                {% if conversation.listing.image %}
-                  <div style="position: absolute; bottom: -2px; right: -2px; width: 22px; height: 22px; border-radius: 6px; overflow: hidden; border: 2px solid #0f172a; background: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">
-                    <img src="{{ conversation.listing.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
-                  </div>
+          {# ÚNICO AVATAR DEL OTRO USUARIO #}
+          <div class="conv-avatar-container" style="position: relative; flex-shrink: 0; width: 48px; height: 48px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+              <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #1e293b; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #f8fafc; font-size: 1.1rem;">
+                {% if conversation.other_user and conversation.other_user.profile.avatar %}
+                  <img src="{{ conversation.other_user.profile.avatar.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% elif conversation.other_user %}
+                  {{ conversation.other_user.username|slice:":1"|upper }}
+                {% else %}
+                  👤
                 {% endif %}
               </div>
-            {% endif %}
-          {% empty %}
-            <div class="conv-avatar-container" style="position: relative; flex-shrink: 0; width: 48px; height: 48px;">
-              <div style="width: 48px; height: 48px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #94a3b8;">📦</div>
             </div>
-          {% endfor %}
+
+            {# MINI THUMBNAIL DEL PRODUCTO EN LA ESQUINA DEL AVATAR #}
+            {% if conversation.listing.image %}
+              <div style="position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 5px; overflow: hidden; border: 2px solid #0f172a; background: #1e293b; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+                <img src="{{ conversation.listing.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+            {% endif %}
+          </div>
 
           {# INFORMACIÓN DEL CHAT Y MENSAJE #}
           <div class="conv-info" style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
                 <h3 style="margin: 0; font-size: 0.95rem; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; {% if conversation.unread_count %}font-weight: 800;{% else %}font-weight: 600;{% endif %}">
-                  {% for participant in conversation.participants.all %}{% if participant != request.user %}{{ participant.username }}{% endif %}{% endfor %}
+                  {% if conversation.other_user %}{{ conversation.other_user.username }}{% else %}Usuario{% endif %}
                 </h3>
                 {% if conversation.listing %}
                   <span style="font-size: 0.7rem; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">
