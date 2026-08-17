@@ -7,15 +7,14 @@
 <style>
   .pro-strip { display: none !important; }
   
-  /* Footer minimalista en Mensajes: totalmente integrado sin barra negra */
+  /* Footer elegante en Mensajes */
   footer.footer {
-    background: transparent !important;
-    border-top: none !important;
-    padding: 30px 0 50px !important;
-    margin-top: 40px !important;
-    box-shadow: none !important;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, #070b14 100%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 35px 0 45px !important;
+    margin-top: 50px !important;
+    box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.4) !important;
   }
-  footer.footer .footer-brand p,
   footer.footer .footer-column,
   footer.footer .footer-bottom,
   footer.footer .footer-links { 
@@ -30,11 +29,14 @@
   footer.footer .footer-brand {
     text-align: center !important;
     margin: 0 !important;
-    opacity: 0.6;
-    transition: opacity 0.3s ease;
   }
-  footer.footer .footer-brand:hover {
-    opacity: 1;
+  footer.footer .footer-brand p {
+    display: block !important;
+    font-size: 0.82rem !important;
+    color: var(--text-muted) !important;
+    margin-top: 8px !important;
+    letter-spacing: 0.3px;
+    opacity: 0.8;
   }
 </style>
 {% endblock %}
