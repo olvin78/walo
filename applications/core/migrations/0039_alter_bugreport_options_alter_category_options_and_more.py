@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0038_alter_bugreport_options_alter_category_options_and_more'),
+        ('core', '0057_story_expires_at_is_active_text'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
