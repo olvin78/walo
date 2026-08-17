@@ -227,6 +227,9 @@ class Conversation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def get_other_user(self, user):
+        return self.participants.exclude(id=user.id).first()
+
     def __str__(self):
         return f"Chat sobre {self.listing.title if self.listing else 'Consulta'}"
 
@@ -241,6 +244,8 @@ class Message(models.Model):
     is_view_once = models.BooleanField(default=False)
     viewed_by_sender = models.BooleanField(default=False)
     viewed_by_receiver = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    deleted_for = models.ManyToManyField(User, blank=True, related_name='messages_deleted_for_me')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
