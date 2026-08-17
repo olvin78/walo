@@ -225,8 +225,8 @@ SOCIALACCOUNT_PROVIDERS = {
             "access_type": "online",
         },
         "APP": {
-            "client_id": "REPLACED_GOOGLE_OAUTH_CLIENT_ID",
-            "secret": "REPLACED_GOOGLE_OAUTH_CLIENT_SECRET",
+            "client_id": env("GOOGLE_OAUTH_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_OAUTH_CLIENT_SECRET", default=""),
             "key": ""
         }
     }
