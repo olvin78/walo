@@ -1025,6 +1025,17 @@ def delete_message(request):
         if message.sender_id != request.user.id:
             return JsonResponse({"error": "No autorizado"}, status=403)
 
+    if scope == 'wipe' or scope == 'erase_completely':
+        for message in messages:
+            if message.image:
+                message.image.delete(save=False)
+            if message.audio:
+                message.audio.delete(save=False)
+            if message.file:
+                message.file.delete(save=False)
+            message.delete()
+        return JsonResponse({"status": "erased_completely", "message_ids": message_ids})
+
     for message in messages:
         if message.image:
             message.image.delete(save=False)

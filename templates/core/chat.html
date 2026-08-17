@@ -834,7 +834,10 @@
             <i data-lucide="trash"></i> Eliminar para mí
         </button>
         <button type="button" class="msg-action-btn msg-action-btn--danger" id="msgActionDeleteEveryone" onclick="performDeleteMessage('everyone')">
-            <i data-lucide="trash-2"></i> Eliminar para todos
+            <i data-lucide="trash-2"></i> Eliminar para todos (con aviso)
+        </button>
+        <button type="button" class="msg-action-btn" id="msgActionDeleteWipe" onclick="performDeleteMessage('wipe')">
+            <i data-lucide="sparkles" style="color: #fbbf24;"></i> Eliminar sin dejar huella <span style="margin-left: 6px; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; background: linear-gradient(135deg, #d4af37, #f59e0b); color: #fff; font-weight: 700;">✦ PRO</span>
         </button>
         <button type="button" class="msg-action-cancel" onclick="closeMessageActions()">Cancelar</button>
     </div>
@@ -872,8 +875,31 @@
                     {% endif %}
                 {% endfor %}
             {% empty %}
-                <div style="text-align: center; color: #94a3b8; padding: 20px; font-size: 0.85rem;">No tienes otros chats activos</div>
             {% endfor %}
+
+            {% if my_followers %}
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin: 10px 0 4px;">Seguidores</div>
+                {% for f in my_followers %}
+                    <label class="forward-chat-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            {% if f.profile.avatar %}
+                                <img src="{{ f.profile.avatar.url }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #94a3b8; font-size: 0.85rem;">{{ f.username|slice:":1"|upper }}</div>
+                            {% endif %}
+                            <div>
+                                <div class="chat-name" style="font-weight: 600; font-size: 0.9rem; color: #f8fafc;">{{ f.username }}</div>
+                                <div style="font-size: 0.75rem; color: #94a3b8;">Te sigue</div>
+                            </div>
+                        </div>
+                        <input type="checkbox" class="forward-checkbox-user" value="{{ f.id }}" style="width: 18px; height: 18px; accent-color: #22c55e;" onchange="updateForwardButton()">
+                    </label>
+                {% endfor %}
+            {% endif %}
+
+            {% if not user_conversations and not my_followers %}
+                <div style="text-align: center; color: #94a3b8; padding: 20px; font-size: 0.85rem;">No tienes otros chats ni seguidores todavía</div>
+            {% endif %}
         </div>
 
         <button type="button" id="btnExecuteForward" onclick="performForwardMessage()" disabled style="margin-top: 12px; width: 100%; padding: 14px; background: #22c55e; color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; opacity: 0.5; transition: 0.2s;">
@@ -1104,10 +1130,14 @@
             copyBtn.style.display = (textEl && textEl.innerText.trim() && !isDeleted && !textEl.classList.contains('chat-text--deleted')) ? 'flex' : 'none';
         }
 
-        // 'Eliminar para todos' es una característica exclusiva para usuarios PRO
+        // 'Eliminar para todos' y 'Eliminar sin dejar huella' son características para usuarios PRO
         const deleteEveryoneBtn = document.getElementById('msgActionDeleteEveryone');
         if (deleteEveryoneBtn) {
             deleteEveryoneBtn.style.display = (isMine && !isDeleted && window.NAV_IS_PRO) ? 'flex' : 'none';
+        }
+        const deleteWipeBtn = document.getElementById('msgActionDeleteWipe');
+        if (deleteWipeBtn) {
+            deleteWipeBtn.style.display = (isMine && !isDeleted && window.NAV_IS_PRO) ? 'flex' : 'none';
         }
 
         document.getElementById('msgActionsOverlay').classList.add('is-active');
@@ -1131,7 +1161,7 @@
         closeMessageActions();
         const modal = document.getElementById('forwardModalOverlay');
         if (modal) {
-            document.querySelectorAll('.forward-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.forward-checkbox, .forward-checkbox-user').forEach(cb => cb.checked = false);
             updateForwardButton();
             modal.classList.add('is-active');
         }
@@ -1141,7 +1171,7 @@
         if (modal) modal.classList.remove('is-active');
     }
     function updateForwardButton() {
-        const selected = document.querySelectorAll('.forward-checkbox:checked');
+        const selected = document.querySelectorAll('.forward-checkbox:checked, .forward-checkbox-user:checked');
         const btn = document.getElementById('btnExecuteForward');
         if (btn) {
             if (selected.length > 0) {
@@ -1163,8 +1193,9 @@
         });
     }
     function performForwardMessage() {
-        const selected = Array.from(document.querySelectorAll('.forward-checkbox:checked')).map(cb => cb.value);
-        if (selected.length === 0 || !activePressMsgId) return;
+        const selectedConvs = Array.from(document.querySelectorAll('.forward-checkbox:checked')).map(cb => cb.value);
+        const selectedUsers = Array.from(document.querySelectorAll('.forward-checkbox-user:checked')).map(cb => cb.value);
+        if ((selectedConvs.length === 0 && selectedUsers.length === 0) || !activePressMsgId) return;
 
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const btn = document.getElementById('btnExecuteForward');
@@ -1176,7 +1207,8 @@
             headers: { 'X-CSRFToken': csrftoken },
             body: new URLSearchParams({
                 message_ids: activePressMsgId,
-                target_conversation_ids: selected.join(',')
+                target_conversation_ids: selectedConvs.join(','),
+                target_user_ids: selectedUsers.join(',')
             }),
         }).then(res => res.json()).then(data => {
             closeForwardModal();
@@ -1192,13 +1224,23 @@
     }
     function performDeleteMessage(scope) {
         closeMessageActions();
-        if (scope === 'everyone' && !confirm('¿Eliminar este mensaje para todos?')) return;
+        let promptMsg = '¿Eliminar este mensaje para ti?';
+        if (scope === 'everyone') promptMsg = '¿Eliminar este mensaje para todos (dejará el aviso de eliminado)?';
+        if (scope === 'wipe') promptMsg = '✦ ¿Eliminar sin dejar huella? Este mensaje se borrará por completo para todos sin mostrar ningún aviso de "Mensaje eliminado".';
+        
+        if (!confirm(promptMsg)) return;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         fetch(`/mensajes/mensaje/eliminar/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
             body: new URLSearchParams({ scope, message_ids: activePressMsgId }),
-        }).then(res => { if (res.ok) location.reload(); });
+        }).then(res => res.json()).then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                location.reload();
+            }
+        });
     }
 
     // --- Polling estilo WhatsApp (recibir mensajes nuevos + ticks de leído) ---
