@@ -834,10 +834,7 @@
             <i data-lucide="trash"></i> Eliminar para mí
         </button>
         <button type="button" class="msg-action-btn msg-action-btn--danger" id="msgActionDeleteEveryone" onclick="performDeleteMessage('everyone')">
-            <i data-lucide="trash-2"></i> Eliminar para todos (con aviso)
-        </button>
-        <button type="button" class="msg-action-btn" id="msgActionDeleteWipe" onclick="performDeleteMessage('wipe')">
-            <i data-lucide="sparkles" style="color: #fbbf24;"></i> Eliminar sin dejar huella <span style="margin-left: 6px; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; background: linear-gradient(135deg, #d4af37, #f59e0b); color: #fff; font-weight: 700;">✦ PRO</span>
+            <i data-lucide="trash-2"></i> Eliminar para todos
         </button>
         <button type="button" class="msg-action-cancel" onclick="closeMessageActions()">Cancelar</button>
     </div>
@@ -1130,14 +1127,9 @@
             copyBtn.style.display = (textEl && textEl.innerText.trim() && !isDeleted && !textEl.classList.contains('chat-text--deleted')) ? 'flex' : 'none';
         }
 
-        // 'Eliminar para todos' y 'Eliminar sin dejar huella' son características para usuarios PRO
         const deleteEveryoneBtn = document.getElementById('msgActionDeleteEveryone');
         if (deleteEveryoneBtn) {
-            deleteEveryoneBtn.style.display = (isMine && !isDeleted && window.NAV_IS_PRO) ? 'flex' : 'none';
-        }
-        const deleteWipeBtn = document.getElementById('msgActionDeleteWipe');
-        if (deleteWipeBtn) {
-            deleteWipeBtn.style.display = (isMine && !isDeleted && window.NAV_IS_PRO) ? 'flex' : 'none';
+            deleteEveryoneBtn.style.display = (isMine && !isDeleted) ? 'flex' : 'none';
         }
 
         document.getElementById('msgActionsOverlay').classList.add('is-active');
@@ -1224,11 +1216,8 @@
     }
     function performDeleteMessage(scope) {
         closeMessageActions();
-        let promptMsg = '¿Eliminar este mensaje para ti?';
-        if (scope === 'everyone') promptMsg = '¿Eliminar este mensaje para todos (dejará el aviso de eliminado)?';
-        if (scope === 'wipe') promptMsg = '✦ ¿Eliminar sin dejar huella? Este mensaje se borrará por completo para todos sin mostrar ningún aviso de "Mensaje eliminado".';
-        
-        if (!confirm(promptMsg)) return;
+        if (!activePressMsgId) return;
+
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         fetch(`/mensajes/mensaje/eliminar/`, {
             method: 'POST',
@@ -1240,6 +1229,8 @@
             } else {
                 location.reload();
             }
+        }).catch(() => {
+            location.reload();
         });
     }
 

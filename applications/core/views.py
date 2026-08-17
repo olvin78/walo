@@ -1017,24 +1017,12 @@ def delete_message(request):
             message.deleted_for.add(request.user)
         return JsonResponse({"status": "deleted_for_me", "message_ids": message_ids})
 
-    user_is_pro = getattr(getattr(request.user, 'profile', None), 'is_pro', False)
-    if not user_is_pro:
-        return JsonResponse({"error": "La función Eliminar para todos es exclusiva de usuarios PRO"}, status=403)
-
+    # Para todos: requiere ser el remitente
     for message in messages:
         if message.sender_id != request.user.id:
             return JsonResponse({"error": "No autorizado"}, status=403)
 
-    if scope == 'wipe' or scope == 'erase_completely':
-        for message in messages:
-            if message.image:
-                message.image.delete(save=False)
-            if message.audio:
-                message.audio.delete(save=False)
-            if message.file:
-                message.file.delete(save=False)
-            message.delete()
-        return JsonResponse({"status": "erased_completely", "message_ids": message_ids})
+    user_is_pro = getattr(getattr(request.user, 'profile', None), 'is_pro', False)
 
     for message in messages:
         if message.image:
@@ -1043,12 +1031,18 @@ def delete_message(request):
             message.audio.delete(save=False)
         if message.file:
             message.file.delete(save=False)
-        message.is_deleted = True
-        message.text = ''
-        message.image = None
-        message.audio = None
-        message.file = None
-        message.save(update_fields=['is_deleted', 'text', 'image', 'audio', 'file'])
+
+        if user_is_pro or scope == 'wipe':
+            # Usuario PRO: borrado físico completo sin dejar huella
+            message.delete()
+        else:
+            # Usuario Estándar: conserva la huella "Mensaje eliminado"
+            message.is_deleted = True
+            message.text = ''
+            message.image = None
+            message.audio = None
+            message.file = None
+            message.save(update_fields=['is_deleted', 'text', 'image', 'audio', 'file'])
 
     return JsonResponse({"status": "deleted", "message_ids": message_ids})
 
