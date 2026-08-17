@@ -3,11 +3,17 @@
 
 {% block title %}Mensajes | Igualo{% endblock %}
 
+{% block extra_head %}
+<style>
+  .pro-strip { display: none !important; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="igualo-container" style="padding: 40px 0;">
+<div class="igualo-container" style="padding: 15px 0 30px;">
   
   <!-- Sistema de Historias (Igualo Pro Editor) -->
-  <section class="section-stories" style="margin-bottom: 30px;">
+  <section class="section-stories" style="margin-bottom: 20px;">
     <div class="stories-container" style="display: flex; gap: 15px; overflow-x: auto; padding: 10px 0;">
       
       <!-- Botón Añadir -->
