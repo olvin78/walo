@@ -1164,14 +1164,14 @@
     }
   </script>
 
-  <div class="inbox-list" style="margin-top: 6px; display: flex; flex-direction: column; gap: 0;">
+  <div class="inbox-list" style="margin-top: 5px; display: flex; flex-direction: column; gap: 0;">
     {% for conversation in conversations %}
       <div class="conversation-wrapper" id="conv-{{ conversation.id }}" 
-           style="position: relative; overflow: hidden; background: #070b14; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+           style="position: relative; overflow: hidden; background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
         
-        {# BOTÓN DE ELIMINAR DESLIZABLE (SÓLO SE REVELA AL DESLIZAR HACIA LA IZQUIERDA) #}
+        {# BOTÓN DE ELIMINAR DESLIZABLE (SÓLO APARECE AL DESLIZAR) #}
         <div class="delete-action" onclick="confirmDelete({{ conversation.id }})"
-             style="position: absolute; right: 10px; top: 8px; bottom: 8px; width: 75px; background: linear-gradient(135deg, #ef4444, #dc2626); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 0.8rem; border-radius: 12px; cursor: pointer; z-index: 1; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);">
+             style="position: absolute; right: 8px; top: 8px; bottom: 8px; width: 75px; background: #dc2626; display: none; opacity: 0; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 0.8rem; border-radius: 12px; cursor: pointer; z-index: 1; transition: opacity 0.2s ease;">
           Eliminar
         </div>
 
@@ -1181,7 +1181,7 @@
            ontouchstart="handleTouchStart(event)"
            ontouchmove="handleTouchMove(event)"
            ontouchend="handleTouchEnd(event)"
-           style="display: flex; align-items: center; gap: 14px; padding: 14px 12px; background: #070b14; border: none; box-shadow: none; border-radius: 0; transition: background 0.15s ease; text-decoration: none; position: relative; z-index: 2; width: 100%;">
+           style="display: flex; align-items: center; gap: 14px; padding: 14px 10px; background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: none; box-shadow: none; border-radius: 0; transition: background 0.15s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none; position: relative; z-index: 2; width: 100%;">
           
           {# AVATAR DEL USUARIO / PRODUCTO (PRO MAX STYLE) #}
           <div class="conv-avatar-container" style="position: relative; flex-shrink: 0; width: 50px; height: 50px;">
@@ -1673,9 +1673,35 @@ document.addEventListener('DOMContentLoaded', initStories);
 
 // -- CHAT LOGIC --
 let touchStartX = 0; let touchMoveX = 0; let activeSwipeItem = null; let currentContextId = null;
-function handleTouchStart(e) { touchStartX = e.touches[0].clientX; activeSwipeItem = e.currentTarget; activeSwipeItem.style.transition = 'none'; }
-function handleTouchMove(e) { touchMoveX = e.touches[0].clientX; const diff = touchMoveX - touchStartX; if (diff < 0 && diff > -150) activeSwipeItem.style.transform = `translateX(${diff}px)`; }
-function handleTouchEnd(e) { activeSwipeItem.style.transition = 'transform 0.3s ease'; const diff = touchMoveX - touchStartX; activeSwipeItem.style.transform = (diff < -80) ? 'translateX(-80px)' : 'translateX(0)'; }
+function handleTouchStart(e) {
+  touchStartX = e.touches[0].clientX;
+  activeSwipeItem = e.currentTarget;
+  activeSwipeItem.style.transition = 'none';
+}
+function handleTouchMove(e) {
+  touchMoveX = e.touches[0].clientX;
+  const diff = touchMoveX - touchStartX;
+  if (diff < 0 && diff > -150) {
+    activeSwipeItem.style.transform = `translateX(${diff}px)`;
+    const delBtn = activeSwipeItem.parentNode.querySelector('.delete-action');
+    if (delBtn) { delBtn.style.display = 'flex'; delBtn.style.opacity = '1'; }
+  }
+}
+function handleTouchEnd(e) {
+  activeSwipeItem.style.transition = 'transform 0.3s ease';
+  const diff = touchMoveX - touchStartX;
+  const delBtn = activeSwipeItem.parentNode.querySelector('.delete-action');
+  if (diff < -60) {
+    activeSwipeItem.style.transform = 'translateX(-80px)';
+    if (delBtn) { delBtn.style.display = 'flex'; delBtn.style.opacity = '1'; }
+  } else {
+    activeSwipeItem.style.transform = 'translateX(0)';
+    if (delBtn) {
+      delBtn.style.opacity = '0';
+      setTimeout(() => { if (delBtn && activeSwipeItem.style.transform === 'translateX(0px)') delBtn.style.display = 'none'; }, 300);
+    }
+  }
+}
 function handleContextMenu(e, id) {
     e.preventDefault();
     currentContextId = id;
