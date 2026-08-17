@@ -7,7 +7,14 @@
 <style>
   .pro-strip { display: none !important; }
   
-  /* Footer minimalista en Mensajes: solo logo IGUALO */
+  /* Footer minimalista en Mensajes: totalmente integrado sin barra negra */
+  footer.footer {
+    background: transparent !important;
+    border-top: none !important;
+    padding: 30px 0 50px !important;
+    margin-top: 40px !important;
+    box-shadow: none !important;
+  }
   footer.footer .footer-brand p,
   footer.footer .footer-column,
   footer.footer .footer-bottom,
@@ -18,21 +25,22 @@
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    padding: 10px 0 !important;
+    padding: 0 !important;
   }
   footer.footer .footer-brand {
     text-align: center !important;
     margin: 0 !important;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
   }
-  footer.footer {
-    padding: 20px 0 !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  footer.footer .footer-brand:hover {
+    opacity: 1;
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="igualo-container" style="padding: 0 0 30px; margin-top: -10px;">
+<div class="igualo-container" style="padding: 0 0 30px; margin-top: -10px; min-height: calc(100vh - 220px);">
   
   <!-- Sistema de Historias (Igualo Pro Editor) -->
   <section class="section-stories" style="margin-bottom: 16px;">
