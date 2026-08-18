@@ -47,4 +47,4 @@ Disallow: /
 User-agent: ChatGPT-User
 Disallow: /
 
-Sitemap: https://www.igualo.com/sitemap.xml
+Sitemap: https://igualo.com/sitemap.xml

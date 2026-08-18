@@ -251,7 +251,7 @@
                     <p>Vender</p>
                 </a>
                 {% for cat in categories %}
-                <a href="{% url 'explore' %}?category={{ cat.slug }}" class="story-btn">
+                <a href="{% url 'category_detail' cat.slug %}" class="story-btn">
                     <div class="story-circle-pro"><i data-category-icon="{{ cat.icon }}"></i></div>
                     <p>{{ cat.name }}</p>
                 </a>
@@ -600,6 +600,116 @@
                         </div>
                         <div class="city-info-pro">
                             <h3>Matagalpa</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'boaco' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Boaco</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'carazo' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Carazo</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'chinandega' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Chinandega</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'chontales' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Chontales</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'jinotega' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Jinotega</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'madriz' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Madriz</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'nueva-segovia' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Nueva Segovia</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'rivas' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Rivas</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'rio-san-juan' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Río San Juan</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'raccn' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Costa Caribe Norte</h3>
+                        </div>
+                        <span class="city-explore-label">Explorar</span>
+                    </a>
+
+                    <a href="{% url 'city_landing' 'raccs' %}" class="city-card-pro">
+                        <div class="city-icon-wrapper">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="city-info-pro">
+                            <h3>Costa Caribe Sur</h3>
                         </div>
                         <span class="city-explore-label">Explorar</span>
                     </a>

@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Category, Subcategory, Listing, Profile, ProfileReview, BugReport, SearchHistory, SystemPaymentSetting, ListingReport
+from .models import (
+    Category, Subcategory, Listing, Profile, ProfileReview, BugReport,
+    SearchHistory, SystemPaymentSetting, ListingReport,
+    Department, City, Brand, Model,
+)
 from django.utils.safestring import mark_safe
 
 admin.site.site_header = "Administración de IGUALO"
@@ -39,14 +43,62 @@ class SubcategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "order")
+    prepopulated_fields = {"slug": ("name",)}
+    search_fields = ("name", "slug")
+    ordering = ("order",)
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "department", "is_active")
+    list_filter = ("department", "is_active")
+    search_fields = ("name", "slug", "department__name")
+    autocomplete_fields = ("department",)
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "order", "is_active")
+    prepopulated_fields = {"slug": ("name",)}
+    search_fields = ("name",)
+    ordering = ("name",)
+
+
+@admin.register(Model)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ("name", "brand", "category", "slug", "is_active")
+    list_filter = ("brand", "category", "is_active")
+    search_fields = ("name", "brand__name")
+    autocomplete_fields = ("brand", "category")
+    prepopulated_fields = {"slug": ("name",)}
+
+
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "price", "category", "subcategory", "is_active", "is_featured_paid", "location", "user", "created_at")
-    list_editable = ("is_active",)
-    list_filter = ("is_active", "is_featured_paid", "category", "subcategory", "location", "created_at")
-    search_fields = ("title", "description", "location")
-    autocomplete_fields = ("category", "subcategory", "user")
+    list_display = ("id", "title", "price", "category", "subcategory", "status", "condition", "brand", "model", "year", "city", "is_active", "user", "created_at")
+    list_editable = ("status",)
+    list_filter = ("status", "condition", "is_featured_paid", "category", "subcategory", "brand", "model", "year", "department", "city", "created_at")
+    search_fields = ("title", "description", "address_text")
+    autocomplete_fields = ("category", "subcategory", "brand", "model", "department", "city", "user")
+    readonly_fields = ("is_active", "location")
     date_hierarchy = "created_at"
+    actions = ("mark_active", "mark_paused", "mark_sold")
+
+    @admin.action(description="Marcar como activo")
+    def mark_active(self, request, queryset):
+        queryset.update(status="active")
+
+    @admin.action(description="Marcar como pausado")
+    def mark_paused(self, request, queryset):
+        queryset.update(status="paused")
+
+    @admin.action(description="Marcar como vendido")
+    def mark_sold(self, request, queryset):
+        queryset.update(status="sold")
 
 
 @admin.register(Profile)

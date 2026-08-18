@@ -1,6 +1,5 @@
 import json
 import math
-import re
 import os
 import unicodedata
 import requests
@@ -19,96 +18,11 @@ from django.utils.dateparse import parse_datetime
 import datetime
 from django.db import models
 from django.views.decorators.csrf import csrf_exempt
-from .models import Listing, Category, Subcategory, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory, SystemPaymentSetting
+from .models import Listing, Category, Subcategory, Department, department_listings_q, Review, Profile, Conversation, Message, Story, ProfileReview, BugReport, MarketingConsent, ListingImage, SearchHistory, SystemPaymentSetting
 from .decorators import cache_public_page
+from .search import search_listings
 from . import paypal
 from . import stripe_client
-
-CITY_LANDINGS = {
-    "boaco": "Boaco",
-    "carazo": "Carazo",
-    "chinandega": "Chinandega",
-    "chontales": "Chontales",
-    "esteli": "Estelí",
-    "granada": "Granada",
-    "jinotega": "Jinotega",
-    "leon": "León",
-    "madriz": "Madriz",
-    "managua": "Managua",
-    "masaya": "Masaya",
-    "matagalpa": "Matagalpa",
-    "nueva-segovia": "Nueva Segovia",
-    "rivas": "Rivas",
-    "rio-san-juan": "Río San Juan",
-    "raccn": "Costa Caribe Norte",
-    "raccs": "Costa Caribe Sur",
-}
-
-
-def get_city_name_or_404(city_slug: str) -> str:
-    city_name = CITY_LANDINGS.get(city_slug)
-    if not city_name:
-        raise Http404
-    return city_name
-
-def normalize_search_token(value: str) -> str:
-    value = value.strip().lower()
-    return "".join(
-        ch for ch in unicodedata.normalize("NFD", value)
-        if unicodedata.category(ch) != "Mn"
-    )
-
-def build_search_query(query: str) -> Q:
-    if not query:
-        return Q()
-
-    synonyms = {
-        "movil": ["móvil", "telefono", "teléfono", "celular", "smartphone"],
-        "telefono": ["teléfono", "movil", "móvil", "celular", "smartphone"],
-        "celular": ["movil", "móvil", "telefono", "teléfono", "smartphone"],
-        "comida": ["comidas", "alimentos", "food", "restaurante", "delivery", "desayuno", "almuerzo", "cena", "merienda", "plato", "platos"],
-        "comidas": ["comida", "alimentos", "food", "restaurante", "delivery", "desayuno", "almuerzo", "cena", "merienda", "plato", "platos"],
-        "plato": ["platos", "comida", "desayuno", "almuerzo", "cena", "merienda"],
-        "platos": ["plato", "comida", "desayuno", "almuerzo", "cena", "merienda"],
-        "desayuno": ["comida", "plato", "platos", "merienda"],
-        "almuerzo": ["comida", "plato", "platos"],
-        "cena": ["comida", "plato", "platos"],
-        "coche": ["carro", "auto", "vehiculo", "vehículo"],
-        "carro": ["coche", "auto", "vehiculo", "vehículo"],
-        "auto": ["coche", "carro", "vehiculo", "vehículo"],
-        "ropa": ["moda", "camisa", "pantalon", "pantalón"],
-    }
-
-    words = [w for w in re.split(r"\s+", query.strip().lower()) if w]
-    if not words:
-        return Q()
-
-    search_q = Q()
-    for word in words:
-        word_tokens = {word, normalize_search_token(word)}
-        for extra in synonyms.get(word, []):
-            word_tokens.add(extra)
-            word_tokens.add(normalize_search_token(extra))
-        
-        word_q = Q()
-        for token in word_tokens:
-            word_q |= (
-                Q(title__icontains=token)
-                | Q(description__icontains=token)
-                | Q(category__name__icontains=token)
-                | Q(category__keywords__icontains=token)
-                | Q(subcategory__name__icontains=token)
-                | Q(subcategory__keywords__icontains=token)
-                | Q(location__icontains=token)
-            )
-        
-        # INTERSECCIÓN DE TÉRMINOS (Debe contener todas las palabras de la búsqueda)
-        if not search_q:
-            search_q = word_q
-        else:
-            search_q &= word_q
-
-    return search_q
 
 @cache_public_page(timeout=settings.CACHE_HOME_TTL, vary_on_query=True)
 def home(request):
@@ -118,12 +32,15 @@ def home(request):
     from django.db.models import Q
     query = request.GET.get('q', '')
     search_results = None
-    
-    if query:
-        search_q = build_search_query(query)
-        search_results = Listing.objects.select_related('user', 'user__profile').filter(search_q).filter(is_active=True).order_by('-created_at')[:4]
 
-    categories = Category.objects.all()[:6]
+    if query:
+        base_qs = Listing.objects.select_related('user', 'user__profile').filter(is_active=True)
+        search_results = search_listings(base_qs, query)[:4]
+
+    # 3D: solo categorías con inventario ACTIVE real, enlazadas a su hub canónico.
+    categories = Category.objects.filter(
+        listings__status=Listing.STATUS_ACTIVE
+    ).distinct().order_by('order', 'name')
     latest_listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True).order_by('-created_at')[:4]
 
     context = {
@@ -156,9 +73,8 @@ def explore(request):
     listings = Listing.objects.select_related('user', 'user__profile').filter(is_active=True)
 
     if query:
-        search_q = build_search_query(query)
-        listings = listings.filter(search_q)
-    
+        listings = search_listings(listings, query)
+
     current_category = None
     parent_category = None
     current_subcategory = None
@@ -189,7 +105,7 @@ def explore(request):
     if max_price:
         listings = listings.filter(price__lte=max_price)
     if location_filter:
-        listings = listings.filter(location__icontains=location_filter)
+        listings = listings.filter(address_text__icontains=location_filter)
 
     # Filtrado por Distancia (Matemática Haversine)
     if user_lat and user_lng and radius and radius != '0':
@@ -222,9 +138,14 @@ def explore(request):
     elif sort == 'price_desc':
         listings = listings.order_by('-price')
     elif sort == 'distance' and user_lat and user_lng:
-        # La ordenación por distancia se manejaría mejor con GeoDjango, 
+        # La ordenación por distancia se manejaría mejor con GeoDjango,
         # pero para esta versión el filtro de radio ya resuelve la necesidad.
         listings = listings.order_by('-created_at')
+    elif query:
+        # Búsqueda activa con orden por defecto ("Más recientes"): se
+        # respeta el ranking de relevancia ya aplicado por search_listings()
+        # (relevance -> created_at -> id) en vez de forzar cronológico.
+        pass
     else:
         listings = listings.order_by('-created_at')
 
@@ -406,34 +327,36 @@ def get_search_recommendations(query, current_category=None, user=None):
 
 @cache_public_page(timeout=settings.CACHE_CITY_TTL)
 def city_landing(request, city_slug):
-    city_name = get_city_name_or_404(city_slug)
-    # NOTE: location is free text. We match by substring for this phase.
-    listings = Listing.objects.filter(is_active=True, location__icontains=city_name).order_by("-created_at")
+    department = get_object_or_404(Department, slug=city_slug)
+    listings = Listing.objects.filter(status=Listing.STATUS_ACTIVE).filter(department_listings_q(department)).order_by("-created_at")
     has_results = listings.exists()
+    # 3D: categorías con inventario ACTIVE real dentro de este departamento
+    # (mismo filtro geográfico que "listings", nunca todas las categorías).
+    department_categories = Category.objects.filter(
+        id__in=listings.values_list("category_id", flat=True)
+    ).order_by("order", "name")
     context = {
         "city_slug": city_slug,
-        "city_name": city_name,
+        "city_name": department.name,
         "category": None,
         "listings": listings,
         "has_results": has_results,
+        "department_categories": department_categories,
     }
     return render(request, "core/city_landing.html", context)
 
 
 @cache_public_page(timeout=settings.CACHE_CITY_TTL)
 def city_category_landing(request, city_slug, category_slug):
-    city_name = get_city_name_or_404(city_slug)
+    department = get_object_or_404(Department, slug=city_slug)
     category = get_object_or_404(Category, slug=category_slug)
-    # NOTE: location is free text. We match by substring for this phase.
-    listings = Listing.objects.filter(
-        is_active=True,
-        location__icontains=city_name,
-        category=category,
+    listings = Listing.objects.filter(status=Listing.STATUS_ACTIVE).filter(
+        department_listings_q(department), category=category,
     ).order_by("-created_at")
     has_results = listings.exists()
     context = {
         "city_slug": city_slug,
-        "city_name": city_name,
+        "city_name": department.name,
         "category": category,
         "listings": listings,
         "has_results": has_results,
@@ -556,17 +479,19 @@ def create_listing(request):
 @cache_public_page(timeout=settings.CACHE_CATEGORY_TTL)
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
-    listings = category.listings.filter(is_active=True).order_by("-created_at")
-    context = {"category": category, "listings": listings}
+    listings = category.listings.filter(status=Listing.STATUS_ACTIVE).order_by("-created_at")
+    has_results = listings.exists()
+    context = {"category": category, "listings": listings, "has_results": has_results}
     return render(request, "core/category_detail.html", context)
 
 @cache_public_page(timeout=settings.CACHE_LISTING_TTL)
 def listing_detail_slug(request, listing_id, slug):
     listing = get_object_or_404(Listing, id=listing_id)
-    
-    # Si el anuncio no está activo, solo el dueño puede verlo
-    if not listing.is_active and listing.user != request.user:
-        raise Http404("No se encontró el anuncio o no está disponible actualmente.")
+
+    # Pausados/Expirados: solo el dueño (o staff). Vendidos: visibles (200 + noindex).
+    if listing.status in (Listing.STATUS_PAUSED, Listing.STATUS_EXPIRED):
+        if listing.user != request.user and not request.user.is_staff:
+            raise Http404("No se encontró el anuncio o no está disponible actualmente.")
 
     if slug != listing.slug:
         return redirect(listing.get_absolute_url(), permanent=True)
@@ -596,9 +521,10 @@ def listing_detail_slug(request, listing_id, slug):
 
 def listing_detail(request, listing_id):
     listing = get_object_or_404(Listing, id=listing_id)
-    
-    if not listing.is_active and listing.user != request.user:
-        raise Http404("No se encontró el anuncio o no está disponible actualmente.")
+
+    if listing.status in (Listing.STATUS_PAUSED, Listing.STATUS_EXPIRED):
+        if listing.user != request.user and not request.user.is_staff:
+            raise Http404("No se encontró el anuncio o no está disponible actualmente.")
 
     return redirect(listing.get_absolute_url(), permanent=True)
 
@@ -1092,7 +1018,6 @@ def delete_conversation(request, conversation_id):
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error', 'message': 'No autorizado'}, status=403)
 
-@login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     Profile.objects.get_or_create(user=profile_user)
@@ -1562,7 +1487,7 @@ def edit_listing(request, listing_id):
             listing.category = category
             listing.subcategory = subcategory
             listing.location = location
-            listing.is_active = is_active
+            listing.status = Listing.STATUS_ACTIVE if is_active else Listing.STATUS_PAUSED
             listing.payment_methods = payment_methods
             if system_payments_enabled and publish_mode == 'promoted':
                 listing.is_featured_paid = True

@@ -181,6 +181,7 @@ class ListingSummarySerializer(serializers.ModelSerializer):
     seller = PublicSellerSerializer(source="user", read_only=True)
     main_image = serializers.SerializerMethodField()
     is_promoted = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
@@ -221,12 +222,19 @@ class ListingSummarySerializer(serializers.ModelSerializer):
         return absolute_media_url(request, image)
 
     def get_city(self, obj):
+        if obj.city_id:
+            return obj.city.name
         city, _ = split_location(obj.location)
         return city
 
     def get_department(self, obj):
+        if obj.department_id:
+            return obj.department.name
         _, department = split_location(obj.location)
         return department
+
+    def get_location(self, obj):
+        return obj.location
 
     def get_currency(self, obj):
         return "NIO"
@@ -299,6 +307,7 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     is_active = serializers.BooleanField(required=False, default=None, allow_null=True)
+    location = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Listing
@@ -311,6 +320,7 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             "subcategory",
             "location",
             "is_active",
+            "status",
             "is_negotiable",
             "payment_methods",
             "latitude",
@@ -366,8 +376,9 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         images = validated_data.pop("images", [])
         main_image = validated_data.pop("main_image", None)
 
-        if validated_data.get("is_active") is None:
-            validated_data.pop("is_active", None)
+        is_active = validated_data.pop("is_active", None)
+        if "status" not in validated_data and is_active is not None:
+            validated_data["status"] = Listing.STATUS_ACTIVE if is_active else Listing.STATUS_PAUSED
 
         if not main_image and images:
             main_image = images[0]
@@ -384,8 +395,9 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         images = validated_data.pop("images", [])
         main_image = validated_data.pop("main_image", None)
         deleted_images = validated_data.pop("deleted_images", [])
-        if validated_data.get("is_active") is None:
-            validated_data.pop("is_active", None)
+        is_active = validated_data.pop("is_active", None)
+        if is_active is not None and "status" not in validated_data:
+            validated_data["status"] = Listing.STATUS_ACTIVE if is_active else Listing.STATUS_PAUSED
 
         # 1. Handle Deletions
         if deleted_images:

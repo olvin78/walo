@@ -16,7 +16,7 @@ if env_file.exists():
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
-PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="https://www.igualo.com")
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="https://igualo.com")
 GOOGLE_TAG_MANAGER_ID = env("GOOGLE_TAG_MANAGER_ID", default="").strip()
 
 PAYPAL_MODE = env("PAYPAL_MODE", default="sandbox")
@@ -31,6 +31,11 @@ PAYPAL_PRO_CURRENCY = env("PAYPAL_PRO_CURRENCY", default="USD")
 
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
 
+# El dominio canónico es igualo.com (sin www, ver PUBLIC_BASE_URL / Site.domain).
+# www.igualo.com se mantiene aquí a propósito: si queda tráfico entrante a la
+# versión con www (enlaces viejos, marcadores), Django debe poder servirlo en
+# vez de devolver 400/403 — el canonical de cada página sigue apuntando a
+# igualo.com de todas formas, así que no genera contenido duplicado indexable.
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
     default=["localhost", "127.0.0.1", "igualo.com", "www.igualo.com"],
@@ -62,6 +67,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "django.contrib.sitemaps",
+    "django.contrib.postgres",
     "corsheaders",
     "allauth",
     "allauth.account",

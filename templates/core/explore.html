@@ -14,7 +14,7 @@
 {% block canonical %}{{ site_url }}{% url 'explore' %}{% endblock %}
 
 {% block robots %}
-{% if query or min_price or max_price or loc or radius or current_subcategory %}
+{% if query or min_price or max_price or loc or radius or current_category or current_subcategory or sort == 'price_asc' or sort == 'price_desc' %}
 noindex, follow
 {% else %}
 index, follow

@@ -73,6 +73,52 @@
 }
 </script>
 {% endif %}
+<style>
+  /* Chips de categorías con inventario en este departamento (3D) — mismo
+     patrón visual que home.html / explore.html, sin arquitectura nueva. */
+  .stories-scroll {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 10px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .story-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    min-width: 76px;
+    flex-shrink: 0;
+  }
+  .story-circle-pro {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  .story-btn:hover .story-circle-pro {
+    border-color: var(--primary);
+    background: rgba(34, 197, 94, 0.1);
+  }
+  .story-btn p {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    max-width: 76px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -89,6 +135,19 @@
       {% endif %}
     </p>
   </section>
+
+  {% if not category and department_categories %}
+  <section class="section-header" style="margin-bottom: 20px;">
+    <div class="stories-scroll">
+      {% for cat in department_categories %}
+      <a href="{% url 'city_category_landing' city_slug cat.slug %}" class="story-btn">
+        <div class="story-circle-pro"><i data-category-icon="{{ cat.icon }}"></i></div>
+        <p>{{ cat.name }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <section class="section-products">
     <div class="products-grid">
@@ -128,4 +187,23 @@
     </div>
   </section>
 </div>
+
+{% if not category and department_categories %}
+<script src="{% static 'js/category-icons.js' %}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const iconMap = window.CATEGORY_ICON_MAP || {};
+        document.querySelectorAll('[data-category-icon]').forEach(el => {
+            const emoji = el.getAttribute('data-category-icon');
+            const iconName = iconMap[emoji] || 'tag';
+            el.setAttribute('data-lucide', iconName);
+            el.style.width = '20px';
+            el.style.height = '20px';
+        });
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}

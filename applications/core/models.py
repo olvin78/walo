@@ -1,6 +1,10 @@
 from datetime import timedelta
 
+from django.contrib.postgres.indexes import GinIndex
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.urls import reverse
@@ -78,7 +82,98 @@ class Subcategory(models.Model):
     def __str__(self):
         return f"{self.category.name} - {self.name}"
 
+class Department(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="nombre")
+    slug = models.SlugField(unique=True)
+    order = models.PositiveIntegerField(default=100, verbose_name="orden")
+
+    class Meta:
+        verbose_name = "Departamento"
+        verbose_name_plural = "Departamentos"
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("city_landing", kwargs={"city_slug": self.slug})
+
+
+class City(models.Model):
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="cities", verbose_name="departamento")
+    name = models.CharField(max_length=100, verbose_name="nombre")
+    slug = models.SlugField(unique=True)
+    is_active = models.BooleanField(default=True, verbose_name="activo")
+
+    class Meta:
+        verbose_name = "Municipio"
+        verbose_name_plural = "Municipios"
+        ordering = ["name"]
+        unique_together = ("department", "name")
+
+    def __str__(self):
+        return f"{self.name}, {self.department.name}"
+
+
+class Brand(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="nombre")
+    slug = models.SlugField(unique=True)
+    is_active = models.BooleanField(default=True, verbose_name="activo")
+    order = models.PositiveIntegerField(default=100, verbose_name="orden")
+
+    class Meta:
+        verbose_name = "Marca"
+        verbose_name_plural = "Marcas"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Model(models.Model):
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name="models", verbose_name="marca")
+    name = models.CharField(max_length=120, verbose_name="nombre")
+    slug = models.SlugField()
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="models", verbose_name="categoría")
+    is_active = models.BooleanField(default=True, verbose_name="activo")
+
+    class Meta:
+        verbose_name = "Modelo"
+        verbose_name_plural = "Modelos"
+        ordering = ["brand__name", "name"]
+        unique_together = (("brand", "name"), ("brand", "slug"))
+
+    def __str__(self):
+        return f"{self.brand.name} {self.name}"
+
+
+def department_listings_q(department):
+    """
+    QuerySet Q para anuncios de un departamento. Fase transitoria: incluye los
+    anuncios aún no geocodificados cuyo texto de dirección contiene el nombre.
+    """
+    from django.db.models import Q
+    return Q(department=department) | Q(department__isnull=True, address_text__icontains=department.name)
+
 class Listing(models.Model):
+    STATUS_ACTIVE = "active"
+    STATUS_PAUSED = "paused"
+    STATUS_SOLD = "sold"
+    STATUS_EXPIRED = "expired"
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, "Activo"),
+        (STATUS_PAUSED, "Pausado"),
+        (STATUS_SOLD, "Vendido"),
+        (STATUS_EXPIRED, "Expirado"),
+    ]
+
+    CONDITION_NEW = "new"
+    CONDITION_USED = "used"
+    CONDITION_CHOICES = [
+        (CONDITION_NEW, "Nuevo"),
+        (CONDITION_USED, "Usado"),
+    ]
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -86,22 +181,58 @@ class Listing(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='listings')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='listings')
     slug = models.SlugField(blank=True)
-    location = models.CharField(max_length=100, default='Nicaragua')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE, verbose_name="estado")
+    condition = models.CharField(max_length=12, choices=CONDITION_CHOICES, blank=True, null=True, verbose_name="condición")
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name="listings", verbose_name="marca")
+    model = models.ForeignKey(Model, on_delete=models.SET_NULL, null=True, blank=True, related_name="listings", verbose_name="modelo")
+    year = models.PositiveSmallIntegerField(blank=True, null=True, validators=[MinValueValidator(1950)], verbose_name="año")
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="listings", verbose_name="departamento")
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True, related_name="listings", verbose_name="municipio")
+    address_text = models.CharField(max_length=100, blank=True, default="", verbose_name="dirección")
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='listings/', null=True, blank=True)
     payment_methods = models.CharField(max_length=200, default='Efectivo')
-    is_active = models.BooleanField(default=True, verbose_name="activo", help_text="¿Está el anuncio visible al público?")
+    is_active = models.BooleanField(default=True, verbose_name="activo", help_text="¿Está el anuncio visible al público? (sincronizado desde status)")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado el")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     favorites = models.ManyToManyField(User, related_name='favorite_listings', blank=True)
     is_featured_paid = models.BooleanField(default=False, verbose_name="destacado", help_text="¿Anuncio destacado/priorizado?")
 
+    @property
+    def location(self):
+        return self.address_text or "Nicaragua"
+
+    @location.setter
+    def location(self, value):
+        self.address_text = value or ""
+
     def get_absolute_url(self):
         return reverse('listing_detail', kwargs={'listing_id': self.pk, 'slug': self.slug})
 
+    def clean(self):
+        if self.model_id and self.brand_id and self.model.brand_id != self.brand_id:
+            raise ValidationError({"model": "El modelo seleccionado no pertenece a la marca."})
+        if self.city_id and self.department_id and self.city.department_id != self.department_id:
+            raise ValidationError({"city": "El municipio seleccionado no pertenece al departamento."})
+        if self.year:
+            current_year = timezone.now().year
+            if self.year < 1950 or self.year > current_year + 1:
+                raise ValidationError({"year": f"El año debe estar entre 1950 y {current_year + 1}."})
+
     def save(self, *args, **kwargs):
+        # Coherencia estructural: derivar brand/category/department desde model/city
+        if self.model_id and self.model and self.model.brand_id and self.brand_id != self.model.brand_id:
+            self.brand = self.model.brand
+        if self.model_id and self.model and self.model.category_id and self.category_id != self.model.category_id:
+            self.category = self.model.category
+        if self.city_id and self.city and self.department_id != self.city.department_id:
+            self.department = self.city.department
+
+        # is_active queda derivado/sincronizado desde status (compatibilidad)
+        self.is_active = self.status == self.STATUS_ACTIVE
+
         is_new_image = False
         if self.pk:
             old_listing = Listing.objects.filter(pk=self.pk).first()
@@ -114,9 +245,9 @@ class Listing(models.Model):
         if not self.slug:
             base = slugify(self.title or "anuncio")
             self.slug = base or "anuncio"
-        
+
         super().save(*args, **kwargs)
-        
+
         # Procesar imágenes después de guardar para tener la ruta física
         if is_new_image and self.image:
             from .utils import process_image
@@ -161,6 +292,30 @@ class Listing(models.Model):
     class Meta:
         verbose_name = "Anuncio"
         verbose_name_plural = "Anuncios"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(status__in=["active", "paused", "sold", "expired"]),
+                name="listing_status_valid",
+            ),
+            models.CheckConstraint(
+                condition=Q(condition__isnull=True) | Q(condition__in=["new", "used"]),
+                name="listing_condition_valid",
+            ),
+            models.CheckConstraint(
+                condition=Q(year__isnull=True) | Q(year__gte=1950, year__lte=2100),
+                name="listing_year_range",
+            ),
+        ]
+        indexes = [
+            GinIndex(fields=["title"], name="listing_title_trgm_idx", opclasses=["gin_trgm_ops"]),
+            models.Index(fields=["created_at"], name="listing_active_created_idx", condition=Q(status="active")),
+            models.Index(fields=["status", "category", "created_at"], name="listing_status_cat_created_idx"),
+            models.Index(fields=["status", "city", "category", "created_at"], name="listing_status_city_cat_idx"),
+            models.Index(fields=["status", "brand", "created_at"], name="listing_status_brand_idx"),
+            models.Index(fields=["status", "model", "created_at"], name="listing_status_model_idx"),
+            models.Index(fields=["status", "city", "model", "created_at"], name="listing_status_city_model_idx"),
+            models.Index(fields=["status", "department", "created_at"], name="listing_status_dept_idx"),
+        ]
 
     @property
     def is_promoted(self):

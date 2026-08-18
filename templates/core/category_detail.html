@@ -10,6 +10,7 @@
 {% block canonical %}{{ site_url }}{% url 'category_detail' category.slug %}{% endblock %}
 {% block og_url %}{{ site_url }}{% url 'category_detail' category.slug %}{% endblock %}
 {% block og_image %}{% if category.image %}{{ site_url }}{{ category.image.url }}{% else %}{{ site_url }}{% static 'img/hero_bg.png' %}{% endif %}{% endblock %}
+{% block robots %}{% if has_results %}index, follow{% else %}noindex, follow{% endif %}{% endblock %}
 
 {% block extra_head %}
 <script type="application/ld+json">

@@ -99,7 +99,7 @@ def filter_listing_queryset_with_metadata(queryset, params):
             queryset = queryset.filter(Q(subcategory__slug=subcategory_value) | Q(subcategory__name__iexact=subcategory_value))
 
     if location and location != 'Todo Nicaragua':
-        queryset = queryset.filter(location__icontains=location)
+        queryset = queryset.filter(address_text__icontains=location)
 
     if min_price:
         try:
@@ -114,7 +114,18 @@ def filter_listing_queryset_with_metadata(queryset, params):
             pass
 
     queryset, exact_matches = search_listing_queryset(queryset, query)
-    return queryset.order_by(ordering), exact_matches
+
+    sort = params.get("sort") or params.get("ordering")
+    if query and query.strip():
+        if sort == "price_asc":
+            queryset = queryset.order_by("price")
+        elif sort == "price_desc":
+            queryset = queryset.order_by("-price")
+        # Con sort "newest" (o ausente) se respeta el ranking de relevancia
+        # que ya aplicó search_listing_queryset (relevance -> created_at -> id).
+    else:
+        queryset = queryset.order_by(ordering)
+    return queryset, exact_matches
 
 
 class CategoryListAPIView(generics.ListAPIView):

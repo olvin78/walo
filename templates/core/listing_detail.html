@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static l10n %}
 
 {% block title %}{{ listing.title }} en {{ listing.location }}, Nicaragua | IGUALO{% endblock %}
 {% block meta_description %}Comprá {{ listing.title }} en {{ listing.location }} al mejor precio. Anuncio publicado en IGUALO, el marketplace de confianza en Nicaragua.{% endblock %}
@@ -13,9 +13,37 @@
 {% block twitter_description %}Disponible ahora: {{ listing.title }} en {{ listing.location }}. Mirá fotos y contactá al vendedor en IGUALO Nicaragua.{% endblock %}
 {% block twitter_image %}{% if listing.image %}{{ site_url }}{{ listing.get_large }}{% else %}{{ site_url }}{% static 'img/igualo_hero_bg_nicaragua.png' %}{% endif %}{% endblock %}
 
+{% block robots %}{% if listing.status == 'sold' %}noindex, follow{% else %}index, follow{% endif %}{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/pages/detail.css' %}">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Inicio",
+      "item": "{{ site_url }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ listing.category.name|escapejs }}",
+      "item": "{{ site_url }}{% url 'category_detail' listing.category.slug %}"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ listing.title|escapejs }}",
+      "item": "{{ site_url }}{{ listing.get_absolute_url }}"
+    }
+  ]
+}
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org/",
@@ -28,10 +56,6 @@
     {% endfor %}
   ],
   "description": "{{ listing.description|striptags|truncatechars:160|escapejs }}",
-  "brand": {
-    "@type": "Brand",
-    "name": "IGUALO"
-  },
   "seller": {
     "@type": "Person",
     "name": "{{ listing.user.get_full_name|default:listing.user.username|escapejs }}",
@@ -41,14 +65,18 @@
     "@type": "AggregateRating",
     "ratingValue": "{{ review_avg|default:listing.reviews.count|floatformat:1 }}",
     "reviewCount": "{{ listing.reviews.count }}"
+  }{% endif %}{% if listing.condition %},
+  "itemCondition": "{% if listing.condition == 'new' %}https://schema.org/NewCondition{% else %}https://schema.org/UsedCondition{% endif %}"{% endif %}{% if listing.brand_id %},
+  "brand": {
+    "@type": "Brand",
+    "name": "{{ listing.brand.name|escapejs }}"
   }{% endif %},
   "offers": {
     "@type": "Offer",
     "url": "{{ site_url }}{{ listing.get_absolute_url }}",
     "priceCurrency": "NIO",
-    "price": "{{ listing.price }}",
-    "availability": "{% if listing.is_active %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
-    "itemCondition": "https://schema.org/UsedCondition",
+    "price": "{{ listing.price|unlocalize }}",
+    "availability": "{% if listing.status == 'sold' %}https://schema.org/SoldOut{% elif listing.is_active %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
     "priceValidUntil": "{{ price_valid_until }}"
   }
 }
@@ -552,7 +580,9 @@
                     </div>
                     
                     <div class="listing-meta-tags">
-                        {% if listing.is_active %}
+                        {% if listing.status == 'sold' %}
+                        <span class="status-badge sold">Vendido</span>
+                        {% elif listing.is_active %}
                         <span class="status-badge available">Disponible</span>
                         {% endif %}
                         <div class="location-box">

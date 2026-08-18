@@ -24,6 +24,6 @@ def tracking(request):
         "system_payments_enabled": system_payments_enabled,
         "unread_messages": unread_messages,
         "nav_is_pro": is_pro,
-        "site_url": getattr(settings, "PUBLIC_BASE_URL", "https://www.igualo.com").rstrip("/"),
+        "site_url": getattr(settings, "PUBLIC_BASE_URL", "https://igualo.com").rstrip("/"),
         "site_name": "IGUALO",
     }
