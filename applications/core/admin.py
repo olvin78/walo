@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from .models import (
     Category, Subcategory, Listing, Profile, ProfileReview, BugReport,
     SearchHistory, SystemPaymentSetting, ListingReport,
-    Department, City, Brand, Model,
+    Department, City, Brand, Model, Conversation, Message,
 )
 from django.utils.safestring import mark_safe
 
@@ -198,3 +198,79 @@ class ListingReportAdmin(admin.ModelAdmin):
     list_filter = ("reason", "created_at")
     search_fields = ("listing__title", "user__username", "description")
     readonly_fields = ("listing", "user", "reason", "description", "created_at")
+
+
+class MessageInline(admin.TabularInline):
+    model = Message
+    extra = 0
+    fields = ('sender', 'short_text', 'is_read', 'created_at')
+    readonly_fields = ('sender', 'short_text', 'is_read', 'created_at')
+    can_delete = False
+    max_num = 0
+
+    @admin.display(description="Mensaje")
+    def short_text(self, obj):
+        if obj.is_deleted:
+            return "(eliminado)"
+        if obj.text:
+            return obj.text[:80]
+        if obj.image:
+            return "🖼️ imagen"
+        if obj.audio:
+            return "🎤 audio"
+        if obj.file:
+            return "📎 archivo"
+        return "-"
+
+
+@admin.register(Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'listing_link', 'participants_display', 'message_count', 'last_message_at', 'updated_at')
+    search_fields = ('listing__title', 'participants__username', 'participants__email', 'messages__text')
+    list_filter = ('created_at', 'updated_at')
+    date_hierarchy = 'updated_at'
+    inlines = [MessageInline]
+
+    @admin.display(description="Anuncio")
+    def listing_link(self, obj):
+        return obj.listing.title if obj.listing else "(consulta directa)"
+
+    @admin.display(description="Participantes")
+    def participants_display(self, obj):
+        return ", ".join(u.username for u in obj.participants.all()[:4])
+
+    @admin.display(description="Mensajes")
+    def message_count(self, obj):
+        return obj.messages.count()
+
+    @admin.display(description="Último mensaje", ordering='updated_at')
+    def last_message_at(self, obj):
+        last = obj.messages.order_by('-created_at').first()
+        return last.created_at if last else None
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'sender', 'conversation_info', 'short_text', 'is_read', 'created_at')
+    list_filter = ('is_read', 'is_deleted', 'created_at')
+    search_fields = ('text', 'sender__username', 'conversation__participants__username')
+    date_hierarchy = 'created_at'
+
+    @admin.display(description="Mensaje")
+    def short_text(self, obj):
+        if obj.text:
+            return obj.text[:80]
+        if obj.image:
+            return "🖼️ imagen"
+        if obj.audio:
+            return "🎤 audio"
+        if obj.file:
+            return "📎 archivo"
+        return "-"
+
+    @admin.display(description="Conversación")
+    def conversation_info(self, obj):
+        others = obj.conversation.participants.exclude(id=obj.sender.id)
+        other = others.first()
+        listing = obj.conversation.listing.title if obj.conversation.listing else "consulta"
+        return f"con {other.username if other else '?'} · {listing}"
