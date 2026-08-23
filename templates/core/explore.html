@@ -740,6 +740,25 @@ index, follow
       }
     }
 
+    /* GLOBAL CAROUSEL FOR "SELECCIONADO PARA TI" */
+    .carousel-mobile-v4 {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 15px;
+      gap: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .carousel-mobile-v4::-webkit-scrollbar {
+      display: none;
+    }
+    .carousel-mobile-v4 > .product-card {
+      flex: 0 0 auto !important;
+      width: 280px; /* Fixed width on desktop */
+      scroll-snap-align: start;
+    }
+
     @media (max-width: 768px) {
       .stories-scroll {
         justify-content: flex-start;
@@ -855,21 +874,8 @@ index, follow
         grid-template-columns: repeat(2, 1fr) !important;
       }
       
-      .carousel-mobile-v4 {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        scroll-snap-type: x mandatory;
-        padding-bottom: 15px;
-        gap: 12px;
-        -webkit-overflow-scrolling: touch;
-      }
-      .carousel-mobile-v4::-webkit-scrollbar {
-        display: none;
-      }
       .carousel-mobile-v4 > .product-card {
-        flex: 0 0 80% !important;
-        scroll-snap-align: start;
+        width: 80%; /* Takes 80% on mobile */
         max-width: 320px;
       }
 
@@ -1186,34 +1192,6 @@ index, follow
                   <span class="star-icon">★</span>
               </div>
               {% endif %}
-              {% if listing.image %}
-              <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
-              {% else %}
-              <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
-              {% endif %}
-            </div>
-            <div class="product-info" style="padding: 15px;">
-              <div class="product-price" style="font-size: 1.1rem;">{{ listing.display_price }}</div>
-              <div class="product-title" style="font-size: 0.9rem; -webkit-line-clamp: 1;">{{ listing.title }}</div>
-            </div>
-          </a>
-          <!-- DUMMY DUPLICATE 1 PARA VER EL DISEÑO -->
-          <a href="{{ listing.get_absolute_url }}" class="product-card" style="border-radius: 18px;">
-            <div class="product-img-wrapper">
-              {% if listing.image %}
-              <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
-              {% else %}
-              <img src="{% static 'img/hero_bg.png' %}" alt="Sin imagen" class="product-img" loading="lazy">
-              {% endif %}
-            </div>
-            <div class="product-info" style="padding: 15px;">
-              <div class="product-price" style="font-size: 1.1rem;">{{ listing.display_price }}</div>
-              <div class="product-title" style="font-size: 0.9rem; -webkit-line-clamp: 1;">{{ listing.title }}</div>
-            </div>
-          </a>
-          <!-- DUMMY DUPLICATE 2 PARA VER EL DISEÑO -->
-          <a href="{{ listing.get_absolute_url }}" class="product-card" style="border-radius: 18px;">
-            <div class="product-img-wrapper">
               {% if listing.image %}
               <img src="{{ listing.get_thumb }}" alt="{{ listing.title }}" class="product-img" loading="lazy" decoding="async" width="400" height="400">
               {% else %}
