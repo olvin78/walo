@@ -678,10 +678,18 @@
   {% load system_alert_tags %}
   {% get_system_alert as system_alert %}
   {% if system_alert %}
-  <div id="sys-alert-bar" style="position:sticky;top:0;z-index:9999;width:100%;text-align:center;padding:14px 48px 14px 20px;font-size:0.95rem;background:linear-gradient(90deg,#16a34a,#0d9488,#2563eb);color:#fff;border-bottom:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 18px rgba(13,148,136,0.45);">
-    <strong style="display:inline-block;font-weight:900;font-size:1.05rem;text-transform:uppercase;letter-spacing:0.5px;text-shadow:0 1px 3px rgba(0,0,0,0.35);">🚧 {{ system_alert.title }}</strong>
-    <span style="font-weight:600;margin-left:8px;">— {{ system_alert.message }}</span>
-    <button onclick="var b=document.getElementById('sys-alert-bar');b.remove();try{sessionStorage.setItem('sys_alert_closed','1')}catch(e){}" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;cursor:pointer;font-size:0.9rem;padding:6px 10px;border-radius:50%;">✕</button>
+  <div id="sys-alert-bar" style="position:sticky; top:0; z-index:9999; width:100%; display:flex; justify-content:center; align-items:center; padding:12px 45px 12px 20px; background: rgba(18, 18, 20, 0.75); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06);">
+    <div style="width: 100%; max-width: 900px; text-align: left; line-height: 1.5;">
+      <strong style="font-weight:600; font-size:0.85rem; letter-spacing: 0.3px; color: #fff; margin-right: 6px;">
+        {{ system_alert.title }}
+      </strong>
+      <span style="font-size:0.85rem; font-weight:400; color: rgba(255,255,255,0.65);">
+        {{ system_alert.message }}
+      </span>
+    </div>
+    <button onclick="var b=document.getElementById('sys-alert-bar');b.remove();try{sessionStorage.setItem('sys_alert_closed','1')}catch(e){}" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background: transparent; border: none; color: rgba(255,255,255,0.4); cursor:pointer; padding: 8px; display:flex; align-items:center; justify-content:center; transition: color 0.2s ease;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
   </div>
   <script>try{if(sessionStorage.getItem('sys_alert_closed')==='1'){document.getElementById('sys-alert-bar').remove()}}catch(e){}</script>
   {% endif %}
