@@ -228,6 +228,7 @@ class MessageInline(admin.TabularInline):
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
     list_display = ('id', 'listing_link', 'participants_display', 'message_count', 'last_message_at', 'view_chat_button')
+    list_display_links = ('listing_link',)
     search_fields = ('listing__title', 'participants__username', 'participants__email', 'messages__text')
     list_filter = ('created_at', 'updated_at')
     date_hierarchy = 'updated_at'
@@ -239,7 +240,7 @@ class ConversationAdmin(admin.ModelAdmin):
 
     @admin.display(description="Participantes")
     def participants_display(self, obj):
-        return ", ".join(u.username for u in obj.participants.all()[:4])
+        return ", ".join(f"{u.username} (id {u.pk})" for u in obj.participants.all()[:4])
 
     @admin.display(description="Mensajes")
     def message_count(self, obj):
