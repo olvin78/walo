@@ -1,0 +1,99 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .igualo-alert-banner {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 12px 20px 0;
+        padding: 16px 22px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(59, 130, 246, 0.10));
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        box-shadow: 0 4px 24px rgba(34, 197, 94, 0.15);
+        position: relative;
+        overflow: hidden;
+        animation: igualoBannerIn 0.5s ease;
+    }
+    .igualo-alert-banner::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #22c55e, #3b82f6);
+    }
+    .igualo-alert-banner .banner-icon {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        background: rgba(34, 197, 94, 0.18);
+        border-radius: 50%;
+    }
+    .igualo-alert-banner .banner-text strong {
+        display: block;
+        font-size: 0.95rem;
+        color: #16a34a;
+        margin-bottom: 2px;
+    }
+    .igualo-alert-banner .banner-text p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--body-quiet-color, #666);
+        line-height: 1.45;
+    }
+    .igualo-alert-banner .banner-close {
+        position: absolute;
+        top: 10px; right: 14px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        color: var(--body-quiet-color, #999);
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    .igualo-alert-banner .banner-close:hover {
+        background: rgba(0, 0, 0, 0.06);
+        color: #333;
+    }
+    @keyframes igualoBannerIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div class="igualo-alert-banner" id="igualoBanner">
+    <div class="banner-icon">🚧</div>
+    <div class="banner-text">
+        <strong>Estamos mejorando Igualo ✨</strong>
+        <p>La plataforma está recibiendo nuevas funciones y ajustes en estos momentos.
+        Si notas algo distinto o algún comportamiento raro, es parte de las mejoras — todo sigue funcionando con normalidad.</p>
+    </div>
+    <button class="banner-close" onclick="cerrarBannerIgualo()" title="Ocultar aviso">✕</button>
+</div>
+<script>
+    function cerrarBannerIgualo() {
+        document.getElementById('igualoBanner').style.display = 'none';
+        try { sessionStorage.setItem('igualo_banner_cerrado', '1'); } catch(e) {}
+    }
+    try {
+        if (sessionStorage.getItem('igualo_banner_cerrado') === '1') {
+            var b = document.getElementById('igualoBanner');
+            if (b) b.style.display = 'none';
+        }
+    } catch(e) {}
+</script>
+{{ block.super }}
+{% endblock %}
