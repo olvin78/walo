@@ -22,6 +22,7 @@ import { POPULAR_SEARCHES } from '../data/mockData';
 import { SearchBar } from '../components/SearchBar';
 import { CategoryPill } from '../components/CategoryPill';
 import { ProductCard } from '../components/ProductCard';
+import { SystemAlertBar } from '../components/SystemAlertBar';
 import { getCategories, searchListings, type Category, type ListingSummary, type Subcategory } from '../../lib/igualo-api';
 import { FilterModal, type FilterValues } from '../components/FilterModal';
 import * as Location from 'expo-location';
@@ -353,6 +354,7 @@ export const SearchScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
+      <SystemAlertBar />
       
       <View style={[styles.rootContainer, { maxWidth: MAX_WIDTH, alignSelf: 'center', width: '100%' }]}>
         <View style={styles.header}>

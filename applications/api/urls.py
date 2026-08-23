@@ -2,6 +2,7 @@ from django.urls import path
 
 from applications.api.views import (
     CategoryListAPIView,
+    SystemAlertListAPIView,
     ChangePasswordAPIView,
     ConversationDetailAPIView,
     ConversationListCreateAPIView,
@@ -43,6 +44,7 @@ from applications.api.views import (
 
 urlpatterns = [
     path("categories/", CategoryListAPIView.as_view(), name="api-categories"),
+    path("system-alerts/", SystemAlertListAPIView.as_view(), name="api-system-alerts"),
     path("listings/", ListingListCreateAPIView.as_view(), name="api-listings"),
     path("listings/<int:pk>/", ListingDetailAPIView.as_view(), name="api-listing-detail"),
     path("listings/<int:pk>/favorite/", FavoriteToggleAPIView.as_view(), name="api-listing-favorite"),

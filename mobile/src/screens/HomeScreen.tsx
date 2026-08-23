@@ -22,6 +22,7 @@ import { SearchBar } from '../components/SearchBar';
 import { CategoryPill } from '../components/CategoryPill';
 import { ProductCard } from '../components/ProductCard';
 import { SectionHeader } from '../components/SectionHeader';
+import { SystemAlertBar } from '../components/SystemAlertBar';
 import { useAuth } from '../services/auth';
 import { getConversations, type Conversation } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
@@ -219,6 +220,7 @@ export const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
+      <SystemAlertBar />
       
       <View style={[styles.rootContainer, { maxWidth: MAX_WIDTH, alignSelf: 'center', width: '100%' }]}>
         

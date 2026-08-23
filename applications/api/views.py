@@ -43,9 +43,10 @@ from applications.api.serializers import (
     StorySerializer,
     ListingReportSerializer,
     BugReportSerializer,
+    SystemAlertSerializer,
     absolute_media_url,
 )
-from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, MarketingConsent, Message, Notification, Profile, ProfileReview, SearchHistory, Story, SystemPaymentSetting
+from applications.core.models import BugReport, Category, Conversation, Listing, ListingImage, MarketingConsent, Message, Notification, Profile, ProfileReview, SearchHistory, Story, SystemPaymentSetting, SystemAlert
 
 
 User = get_user_model()
@@ -1008,3 +1009,21 @@ class BugReportCreateAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()
+
+
+class SystemAlertListAPIView(generics.ListAPIView):
+    """Alertas activas del sistema para mostrar en la app."""
+    permission_classes = [AllowAny]
+    serializer_class = SystemAlertSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return SystemAlert.objects.filter(active=True).order_by("order", "name")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        data = [
+            {"id": a.id, "title": a.title, "message": a.message}
+            for a in queryset
+        ]
+        return Response(data)

@@ -739,3 +739,9 @@ class BugReportSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = request.user if request and request.user.is_authenticated else None
         return BugReport.objects.create(user=user, **validated_data)
+
+
+class SystemAlertSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    message = serializers.CharField()

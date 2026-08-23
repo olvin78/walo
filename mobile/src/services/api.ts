@@ -772,3 +772,18 @@ export function reportBug(description: string, screenshot?: { uri: string; name?
     body: formData,
   });
 }
+
+export interface SystemAlert {
+  id: number;
+  title: string;
+  message: string;
+}
+
+export async function getSystemAlerts() {
+  try {
+    const alerts = await apiRequest<SystemAlert[]>('/system-alerts/');
+    return Array.isArray(alerts) ? alerts : [];
+  } catch {
+    return [];
+  }
+}
