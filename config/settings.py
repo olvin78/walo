@@ -127,6 +127,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.tracking",
+                "config.context_processors.system_alert",
             ],
         },
     }

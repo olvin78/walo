@@ -6,7 +6,7 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from .models import (
     Category, Subcategory, Listing, Profile, ProfileReview, BugReport,
     SearchHistory, SystemPaymentSetting, ListingReport,
-    Department, City, Brand, Model, Conversation, Message,
+    Department, City, Brand, Model, Conversation, Message, SystemAlert,
 )
 from django.utils.safestring import mark_safe
 
@@ -186,6 +186,29 @@ class SystemPaymentSettingAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+@admin.register(SystemAlert)
+class SystemAlertAdmin(admin.ModelAdmin):
+    list_display = ("alert_status", "title", "updated_at")
+    fields = ("active", "title", "message")
+    list_display_links = ("title",)
+
+    @admin.display(description="Estado")
+    def alert_status(self, obj):
+        if obj.active:
+            return mark_safe(
+                '<span style="background:#22c55e;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">🟢 Alerta ENCENDIDA</span>'
+            )
+        return mark_safe(
+            '<span style="background:#6b7280;color:#fff;padding:4px 12px;border-radius:20px;font-weight:700;">⚪ Alerta apagada</span>'
+        )
+
+    def has_add_permission(self, request):
+        return not SystemAlert.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(SearchHistory)
 class SearchHistoryAdmin(admin.ModelAdmin):

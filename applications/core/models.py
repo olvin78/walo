@@ -629,6 +629,40 @@ class SystemPaymentSetting(models.Model):
         obj, _ = cls.objects.get_or_create(pk=1, defaults={"enabled": False})
         return obj
 
+
+class SystemAlert(models.Model):
+    active = models.BooleanField(
+        default=True,
+        verbose_name="Alerta activa",
+        help_text="Enciende o apaga el aviso de mejoras en el panel de administración.",
+    )
+    title = models.CharField(
+        max_length=120,
+        default="Estamos mejorando Igualo ✨",
+        verbose_name="Título del aviso",
+    )
+    message = models.TextField(
+        default="La plataforma está recibiendo nuevas funciones y ajustes en estos momentos. Si notas algo distinto o algún comportamiento raro, es parte de las mejoras — todo sigue funcionando con normalidad.",
+        verbose_name="Mensaje",
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado el")
+
+    class Meta:
+        verbose_name = "Alerta del sistema"
+        verbose_name_plural = "Alertas del sistema"
+
+    def __str__(self):
+        return "Alerta del sistema"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
 class SearchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_history')
     query = models.CharField(max_length=255)

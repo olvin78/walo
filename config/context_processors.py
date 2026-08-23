@@ -1,5 +1,14 @@
 from django.conf import settings
-from applications.core.models import SystemPaymentSetting, Message
+from applications.core.models import SystemPaymentSetting, Message, SystemAlert
+
+
+def system_alert(request):
+    """Expose the admin-configurable system alert to templates."""
+    alert = SystemAlert.get_solo()
+    return {
+        "system_alert": alert if alert.active else None,
+        "system_alert_active": alert.active,
+    }
 
 
 def tracking(request):
