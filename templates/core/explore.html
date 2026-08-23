@@ -852,6 +852,7 @@ index, follow
 
       .products-grid {
         gap: 12px;
+        grid-template-columns: repeat(2, 1fr) !important;
       }
 
       .product-info {
@@ -1315,6 +1316,26 @@ index, follow
       {% endif %}
         {% endfor %}
       </div>
+
+      {% if has_results %}
+      <div class="ver-mas-section" style="text-align: center; margin: 60px auto 30px; max-width: 640px; padding: 0 20px;">
+        <div style="height: 1px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.12), transparent); margin-bottom: 28px;"></div>
+        <p style="color: rgba(255,255,255,0.45); font-size: 1rem; line-height: 1.6; margin-bottom: 24px;">
+          Cada hora se publican y renuevan cientos de anuncios en toda Nicaragua.<br>
+          Actualiza para descubrir más productos cerca de ti.
+        </p>
+        <button onclick="location.href = location.pathname + location.search + (location.search ? '&' : '?') + 'ref=' + Date.now();"
+          style="display: inline-flex; align-items: center; gap: 10px; background: var(--primary); color: #000; border: none; padding: 14px 36px; border-radius: 14px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);"
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 30px rgba(34, 197, 94, 0.4)';"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(34, 197, 94, 0.25)';">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          Ver más anuncios
+        </button>
+      </div>
+      {% endif %}
   </section>
 </div>
 

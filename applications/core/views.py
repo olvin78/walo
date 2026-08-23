@@ -149,6 +149,11 @@ def explore(request):
     else:
         listings = listings.order_by('-created_at')
 
+    # Botón "Ver más": reordena los anuncios aleatoriamente para que
+    # cada visita muestre una combinación distinta.
+    if request.GET.get('ref'):
+        listings = listings.order_by('?')
+
     # Obtener categorías principales respetando el orden manual definido en el admin
     all_categories = Category.objects.annotate(num_listings=Count('listings')).order_by('order', '-num_listings')
     
