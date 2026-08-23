@@ -3,11 +3,13 @@ from applications.core.models import SystemPaymentSetting, Message, SystemAlert
 
 
 def system_alert(request):
-    """Expose the admin-configurable system alert to templates."""
-    alert = SystemAlert.get_solo()
+    """Expose active system alerts to templates."""
+    try:
+        alerts = list(SystemAlert.objects.filter(active=True))
+    except Exception:
+        alerts = []
     return {
-        "system_alert": alert if alert.active else None,
-        "system_alert_active": alert.active,
+        "system_alerts": alerts,
     }
 
 

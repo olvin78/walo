@@ -189,25 +189,20 @@ class SystemPaymentSettingAdmin(admin.ModelAdmin):
 
 @admin.register(SystemAlert)
 class SystemAlertAdmin(admin.ModelAdmin):
-    list_display = ("alert_status", "title", "updated_at")
-    fields = ("active", "title", "message")
-    list_display_links = ("title",)
+    list_display = ("alert_status", "name", "title", "order", "updated_at")
+    list_editable = ("order",)
+    fields = ("name", "active", "title", "message", "order")
+    list_display_links = ("name",)
 
     @admin.display(description="Estado")
     def alert_status(self, obj):
         if obj.active:
             return mark_safe(
-                '<span style="background:#22c55e;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">🟢 Alerta ENCENDIDA</span>'
+                '<span style="background:#22c55e;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">🟢 ENCENDIDA</span>'
             )
         return mark_safe(
-            '<span style="background:#6b7280;color:#fff;padding:4px 12px;border-radius:20px;font-weight:700;">⚪ Alerta apagada</span>'
+            '<span style="background:#6b7280;color:#fff;padding:4px 12px;border-radius:20px;font-weight:700;">⚪ apagada</span>'
         )
-
-    def has_add_permission(self, request):
-        return not SystemAlert.objects.exists()
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(SearchHistory)

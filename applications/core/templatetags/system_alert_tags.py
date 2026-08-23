@@ -4,12 +4,12 @@ register = template.Library()
 
 
 @register.simple_tag
-def get_system_alert():
-    """Devuelve la alerta activa del sistema o None si está apagada."""
+def get_system_alerts():
+    """Devuelve las alertas activas del sistema ordenadas."""
     from applications.core.models import SystemAlert
 
     try:
-        alert = SystemAlert.get_solo()
+        return list(SystemAlert.objects.filter(active=True))
     except Exception:
-        return None
-    return alert if alert.active else None
+        return []
+
