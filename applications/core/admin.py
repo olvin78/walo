@@ -251,7 +251,7 @@ class ConversationAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'sender', 'conversation_info', 'short_text', 'is_read', 'created_at')
+    list_display = ('sender', 'id', 'conversation_info', 'short_text', 'is_read', 'created_at')
     list_filter = ('is_read', 'is_deleted', 'created_at')
     search_fields = ('text', 'sender__username', 'conversation__participants__username')
     date_hierarchy = 'created_at'
