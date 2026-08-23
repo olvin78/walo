@@ -53,6 +53,18 @@ window.CATEGORY_ICON_MAP = {
     // Libros
     '🏛️': 'landmark', '🤔': 'brain', '📖': 'book-open', '🔬': 'microscope', '🧒': 'smile', '📓': 'notebook',
 
+    // Seguros
+    '🛡️': 'shield', '🚘': 'car-front', '🏡': 'house', '🩺': 'stethoscope',
+    '❤️': 'heart', '✈️': 'plane', '📄': 'file-check',
+
+    // Empleo
+    '⏰': 'clock', '🌐': 'globe', '🎓': 'graduation-cap', '📋': 'clipboard-list', '🛒': 'shopping-cart',
+    '🍎': 'apple', '🚛': 'truck', '👮': 'shield', '🍽️': 'utensils', '🗄️': 'archive',
+    '📞': 'phone-call', '🧮': 'calculator', '⚖️': 'scale', '💇': 'scissors', '🌾': 'wheat',
+
+    // Formación / Cursos
+    '🗣️': 'languages', '➗': 'calculator', '🎵': 'music', '📝': 'pencil',
+
     // Otros
     '🧰': 'toolbox',
 };

@@ -24,6 +24,7 @@ export const CATEGORIES: Category[] = [
   { id: '6', name: 'Servicios', icon: 'construct-outline' },
   { id: '7', name: 'Inmuebles', icon: 'business-outline' },
   { id: '8', name: 'Libros', icon: 'book-outline' },
+  { id: '10', name: 'Seguros', icon: 'shield-outline' },
   { id: '9', name: 'Otros', icon: 'grid-outline' },
 ];
 
