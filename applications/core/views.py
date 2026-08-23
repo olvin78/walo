@@ -634,7 +634,10 @@ def delete_story(request, story_id):
 @login_required
 def chat_view(request, conversation_id):
     conversation = get_object_or_404(Conversation, id=conversation_id)
-    if request.user not in conversation.participants.all():
+    # Modo vista previa para staff desde el panel de administración:
+    # permite ver el chat real sin marcar mensajes como leídos ni dejar rastro.
+    admin_preview = request.GET.get('preview') == '1' and request.user.is_staff
+    if not admin_preview and request.user not in conversation.participants.all():
         return redirect('home')
     
     if request.method == 'POST':
@@ -721,12 +724,14 @@ def chat_view(request, conversation_id):
 
     other_user = conversation.participants.exclude(id=request.user.id).first()
 
-    # Marcar como leídos los mensajes entrantes al abrir el chat (estilo WhatsApp)
-    Message.objects.filter(
-        conversation=conversation,
-        sender=other_user,
-        is_read=False,
-    ).update(is_read=True)
+    # Marcar como leídos los mensajes entrantes al abrir el chat (estilo WhatsApp).
+    # En vista previa de administrador NO se marca nada como leído.
+    if not admin_preview:
+        Message.objects.filter(
+            conversation=conversation,
+            sender=other_user,
+            is_read=False,
+        ).update(is_read=True)
 
     user_conversations = request.user.conversations.exclude(id=conversation_id).order_by('-updated_at')
     existing_chat_user_ids = {
@@ -746,6 +751,9 @@ def chat_view(request, conversation_id):
         'other_user': other_user,
         'user_conversations': user_conversations,
         'my_followers': my_followers,
+        'admin_preview': admin_preview,
+        # En vista previa, el admin ve el chat desde la perspectiva del primer participante
+        'viewer_id': conversation.participants.first().id if admin_preview else None,
     })
 
 @csrf_exempt

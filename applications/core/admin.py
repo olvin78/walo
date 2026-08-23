@@ -233,42 +233,6 @@ class ConversationAdmin(admin.ModelAdmin):
     date_hierarchy = 'updated_at'
     inlines = [MessageInline]
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path(
-                '<int:conversation_id>/ver-conversacion/',
-                self.admin_site.admin_view(self.conversation_transcript_view),
-                name='core_conversation_transcript',
-            ),
-        ]
-        return custom + urls
-
-    def conversation_transcript_view(self, request, conversation_id):
-        from django.shortcuts import get_object_or_404, render
-        conversation = get_object_or_404(
-            Conversation.objects.prefetch_related('participants', 'messages__sender'),
-            pk=conversation_id,
-        )
-        messages = [
-            m for m in conversation.messages.all().order_by('created_at')
-            if not m.is_deleted and not (m.is_view_once and (m.viewed_by_sender or m.viewed_by_receiver))
-        ]
-        for m in messages:
-            if m.is_view_once:
-                m.text = "(mensaje de vista única, ya no disponible)"
-                m.image = None
-                m.audio = None
-                m.file = None
-        context = dict(
-            self.admin_site.each_context(request),
-            title=f"Conversación #{conversation.pk}",
-            conversation=conversation,
-            messages=messages,
-            opts=self.model._meta,
-        )
-        return render(request, 'admin/conversation_transcript.html', context)
-
     @admin.display(description="Anuncio")
     def listing_link(self, obj):
         return obj.listing.title if obj.listing else "(consulta directa)"
@@ -288,9 +252,9 @@ class ConversationAdmin(admin.ModelAdmin):
 
     @admin.display(description="Chat")
     def view_chat_button(self, obj):
-        url = reverse('admin:core_conversation_transcript', args=[obj.pk])
+        url = reverse('chat_detail', args=[obj.pk]) + '?preview=1'
         return mark_safe(
-            f'<a class="button" href="{url}" style="background:#2563eb;color:#fff;border:none;'
+            f'<a class="button" href="{url}" target="_blank" rel="noopener" style="background:#2563eb;color:#fff;border:none;'
             f'padding:6px 12px;border-radius:6px;font-weight:600;">👁 Ver conversación</a>'
         )
 

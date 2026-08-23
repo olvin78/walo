@@ -612,6 +612,7 @@
 {% endblock %}
 
 {% block content %}
+{% with viewer_id=viewer_id|default:request.user.pk %}
 <div class="chat-shell">
     <!-- TOPBAR -->
     <header class="chat-topbar">
@@ -655,10 +656,10 @@
                         📣 {{ first_msg.text }}
                     </div>
                 {% else %}
-                    <div class="chat-bubble-wrapper {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %}" id="msg-{{ first_msg.id }}">
+                    <div class="chat-bubble-wrapper {% if first_msg.sender_id == viewer_id %}mine{% else %}their{% endif %}" id="msg-{{ first_msg.id }}">
                         
                         {# AVATAR DEL OTRO USUARIO #}
-                        {% if first_msg.sender_id != request.user.pk %}
+                        {% if first_msg.sender_id != viewer_id %}
                             <div class="chat-message-avatar">
                                 {% if other_user.profile.avatar %}
                                     <img src="{{ other_user.profile.avatar.url }}" alt="U">
@@ -668,9 +669,9 @@
                             </div>
                         {% endif %}
 
-                        <div class="chat-bubble {% if first_msg.sender_id == request.user.pk %}mine{% else %}their{% endif %} {% if group.is_media_group %}chat-bubble--has-image{% endif %}"
+                        <div class="chat-bubble {% if first_msg.sender_id == viewer_id %}mine{% else %}their{% endif %} {% if group.is_media_group %}chat-bubble--has-image{% endif %}"
                              data-msg-id="{% for gm in group.messages %}{{ gm.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
-                             data-mine="{% if first_msg.sender_id == request.user.pk %}1{% else %}0{% endif %}"
+                             data-mine="{% if first_msg.sender_id == viewer_id %}1{% else %}0{% endif %}"
                              data-deleted="{% if last_msg.is_deleted %}1{% else %}0{% endif %}"
                              oncontextmenu="return handleContextMenu(event, this);"
                              style="-webkit-touch-callout: none;"
@@ -687,9 +688,9 @@
                                         {# Determinamos si debe ocultarse totalmente #}
                                         {% if m.is_deleted %}
                                             {# Se muestra como "Mensaje eliminado" en el bloque de texto #}
-                                        {% elif m.is_view_once and m.sender_id == request.user.pk and m.viewed_by_sender %}
+                                        {% elif m.is_view_once and m.sender_id == viewer_id and m.viewed_by_sender %}
                                             {# No renderizar nada #}
-                                        {% elif m.is_view_once and m.sender_id != request.user.pk and m.viewed_by_receiver %}
+                                        {% elif m.is_view_once and m.sender_id != viewer_id and m.viewed_by_receiver %}
                                             {# No renderizar nada #}
                                         {% else %}
                                             {% if m.is_view_once %}
@@ -738,7 +739,7 @@
 
                                         <div class="bubble-meta">
                                             {{ m.created_at|date:"H:i" }}
-                                            {% if m.sender_id == request.user.pk %}
+                                            {% if m.sender_id == viewer_id %}
                                                 {% if m.is_read %}
                                                     <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: {% if nav_is_pro %}#D4AF37{% else %}#22c55e{% endif %};"></i>
                                                 {% else %}
@@ -754,7 +755,7 @@
                                             <div class="chat-bubble-caption" style="padding-top: 0;">
                                                 <div class="bubble-meta">
                                                     {{ m.created_at|date:"H:i" }}
-                                                    {% if m.sender_id == request.user.pk %}
+                                                    {% if m.sender_id == viewer_id %}
                                                         {% if m.is_read %}
                                                             <i data-lucide="check-check" style="width: 12px; margin-left: 2px; color: {% if nav_is_pro %}#D4AF37{% else %}#22c55e{% endif %};"></i>
                                                         {% else %}
@@ -854,7 +855,7 @@
         <div id="forwardChatsList" style="overflow-y: auto; max-height: 300px; display: flex; flex-direction: column; gap: 6px;">
             {% for c in user_conversations %}
                 {% for p in c.participants.all %}
-                    {% if p.id != request.user.id %}
+                    {% if p.id != viewer_id %}
                         <label class="forward-chat-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 12px; cursor: pointer;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 {% if p.profile.avatar %}
@@ -908,7 +909,7 @@
 <script>
     // Variables globales para polling
     window.CONVERSATION_ID = {{ conversation.id }};
-    window.CURRENT_USER_ID = {{ request.user.id }};
+    window.CURRENT_USER_ID = {{ viewer_id }};
     window.NAV_IS_PRO = {% if nav_is_pro %}true{% else %}false{% endif %};
 
     // Inicializar Iconos
@@ -1306,4 +1307,26 @@
     setTimeout(scrollToBottom, 150);
 
 </script>
+{% endwith %}
+{% if admin_preview %}
+<style>
+    .msg-action-btn, .chat-composer, .chat-bubble-wrapper .msg-menu,
+    #rec-btn-v4, .view-once-overlay { display: none !important; }
+    .admin-preview-bar {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+        background: #1e293b; color: #fff; padding: 8px 16px;
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: 0.85rem; box-shadow: 0 2px 10px rgba(0,0,0,.3);
+    }
+    .admin-preview-bar a {
+        background: #ef4444; color: #fff; text-decoration: none;
+        padding: 6px 14px; border-radius: 8px; font-weight: 700;
+    }
+    body { padding-top: 40px !important; }
+</style>
+<div class="admin-preview-bar">
+    <span>👁 <strong>Vista previa de administrador</strong> — nadie recibe notificaci&oacute;n ni se marca nada como le&iacute;do</span>
+    <a href="/admin/core/conversation/">✕ Liberar chat</a>
+</div>
+{% endif %}
 {% endblock %}
