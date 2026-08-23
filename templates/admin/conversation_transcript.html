@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="max-width: 900px;">
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px;">
+    <p style="margin:4px 0;"><strong>Anuncio:</strong> {{ conversation.listing.title|default:"(consulta directa)" }}</p>
+    <p style="margin:4px 0;"><strong>Participantes:</strong> {% for u in conversation.participants.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+    <p style="margin:4px 0;"><strong>Creada:</strong> {{ conversation.created_at }} · <strong>Última actividad:</strong> {{ conversation.updated_at }}</p>
+    <p style="margin:4px 0;color:#6b7280;">Mostrando {{ messages|length }} mensajes. Los eliminados y los de vista única no se muestran.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for m in messages %}
+    <div style="align-self:{% if forloop.first %}stretch{% else %}flex-start{% endif %};width:100%;background:{% cycle '#ffffff' '#eff6ff' %};border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;">
+      <div style="font-weight:700;color:#1d4ed8;margin-bottom:4px;">{{ m.sender.username }}
+        <span style="font-weight:400;color:#9ca3af;font-size:11px;">· {{ m.created_at }}</span>
+        {% if m.is_read %}<span style="color:#22c55e;font-size:11px;">✓ leído</span>{% else %}<span style="color:#9ca3af;font-size:11px;">no leído</span>{% endif %}
+      </div>
+      <div style="white-space:pre-wrap;">{{ m.text|default:"" }}</div>
+      {% if m.image %}<div style="margin-top:8px;"><img src="{{ m.image.url }}" style="max-width:320px;border-radius:8px;border:1px solid #e5e7eb;" /></div>{% endif %}
+      {% if m.audio %}<div style="margin-top:8px;"><audio controls src="{{ m.audio.url }}"></audio></div>{% endif %}
+      {% if m.file %}<div style="margin-top:8px;"><a href="{{ m.file.url }}">📎 {{ m.file.name }}</a></div>{% endif %}
+    </div>
+    {% empty %}
+    <p>No hay mensajes visibles en esta conversación.</p>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:20px;">
+    <a class="button" href="{% url 'admin:core_conversation_changelist' %}">← Volver a conversaciones</a>
+  </div>
+</div>
+{% endblock %}
