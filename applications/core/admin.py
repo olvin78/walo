@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from .models import (
     Category, Subcategory, Listing, Profile, ProfileReview, BugReport,
     SearchHistory, SystemPaymentSetting, ListingReport,
@@ -9,6 +11,15 @@ from django.utils.safestring import mark_safe
 admin.site.site_header = "Administración de IGUALO"
 admin.site.site_title = "IGUALO Admin"
 admin.site.index_title = "Panel de administración"
+
+User = get_user_model()
+admin.site.unregister(User)
+
+
+@admin.register(User)
+class UserAdmin(DjangoUserAdmin):
+    list_display = DjangoUserAdmin.list_display + ("date_joined",)
+    list_filter = DjangoUserAdmin.list_filter + ("date_joined",)
 
 
 @admin.register(BugReport)
@@ -103,15 +114,20 @@ class ListingAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "show_verification_photo", "is_verified", "es_pro", "phone", "location")
+    list_display = ("user", "show_verification_photo", "is_verified", "es_pro", "phone", "location", "fecha_registro")
     list_filter = ("is_verified", "is_pro", "location")
     list_editable = ("is_verified",)
     search_fields = ("user__username", "phone", "location")
     readonly_fields = ("show_details_verification_photo",)
+    list_select_related = ("user",)
 
     @admin.display(boolean=True, description="Usuario Pro")
     def es_pro(self, obj):
         return obj.is_pro
+
+    @admin.display(description="Fecha de registro", ordering="user__date_joined")
+    def fecha_registro(self, obj):
+        return obj.user.date_joined
 
     def show_verification_photo(self, obj):
         if obj.verification_photo:
