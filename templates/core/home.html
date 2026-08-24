@@ -343,7 +343,10 @@
         <div class="igualo-container">
             <div class="feed-header">
                 <h2>Recién llegados a Igualo</h2>
-                <a href="{% url 'explore' %}" class="link-pro">Ver todo el mercado →</a>
+                <a href="{% url 'explore' %}" class="btn-explore-cta btn-sell-cta">
+                    Ver todo el mercado
+                    <i data-lucide="arrow-right"></i>
+                </a>
             </div>
             <div class="feed-grid-pro feed-carousel-mobile">
                 {% for list in latest_listings %}
@@ -374,9 +377,7 @@
             </div>
             <div style="text-align: center; margin-top: 50px;">
                 <a href="{% if user.is_authenticated %}/publicar/{% else %}{% url 'account_signup' %}{% endif %}" 
-                   style="display: inline-flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); padding: 14px 36px; border-radius: 100px; font-weight: 600; color: #fff; font-size: 1.05rem; text-decoration: none; transition: all 0.3s ease;" 
-                   onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.transform='translateY(-2px)';" 
-                   onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)';">
+                   class="btn-sell-cta">
                     <i data-lucide="plus" style="width: 20px; height: 20px; opacity: 0.8;"></i>
                     Comienza a vender
                 </a>
@@ -1057,6 +1058,76 @@
     .section-feed { padding: 80px 0; }
     .feed-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
     .feed-grid-pro { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+    .btn-explore-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff;
+        color: #000;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 14px 28px;
+        border-radius: 999px;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: transform 0.3s, box-shadow 0.3s;
+        box-shadow: 0 4px 24px rgba(255,255,255,0.10);
+    }
+    .btn-explore-cta:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(255,255,255,0.22); }
+    .btn-explore-cta i { width: 17px; height: 17px; transition: transform 0.3s; }
+    .btn-explore-cta:hover i { transform: translateX(4px); }
+
+    /* Botón "Comienza a vender" con efecto insinuante */
+    .btn-sell-cta {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(100deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05));
+        border: 1.5px solid rgba(255, 255, 255, 0.28);
+        padding: 15px 38px;
+        border-radius: 100px;
+        font-weight: 700;
+        color: #fff;
+        font-size: 1.05rem;
+        text-decoration: none;
+        transition: background 0.3s ease;
+        overflow: hidden;
+        animation: sell-glow-cycle 2.6s ease-in-out infinite;
+    }
+    .btn-sell-cta::before {
+        content: "";
+        position: absolute;
+        top: -20%;
+        left: -80%;
+        width: 55%;
+        height: 140%;
+        background: linear-gradient(115deg, transparent, rgba(255,255,255,0.85) 50%, transparent);
+        transform: skewX(-22deg);
+        animation: sell-shine-sweep 2.4s ease-in-out infinite;
+        pointer-events: none;
+    }
+    .btn-sell-cta i {
+        animation: sell-icon-dance 1.2s ease-in-out infinite;
+    }
+    @keyframes sell-glow-cycle {
+        0%   { box-shadow: 0 0 22px rgba(255,255,255,0.30), 0 0 50px rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.45); }
+        50%  { box-shadow: 0 0 28px rgba(129,140,248,0.45), 0 0 60px rgba(129,140,248,0.18); border-color: rgba(165,180,252,0.75); }
+        100% { box-shadow: 0 0 22px rgba(255,255,255,0.30), 0 0 50px rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.45); }
+    }
+    @keyframes sell-shine-sweep {
+        0% { left: -80%; }
+        60%, 100% { left: 150%; }
+    }
+    @keyframes sell-icon-dance {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        30%      { transform: translateY(-4px) rotate(-8deg); }
+        60%      { transform: translateY(1px) rotate(6deg); }
+    }
+    .btn-sell-cta:hover {
+        background: linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0.10));
+        transform: scale(1.05);
+    }
     
     @media (max-width: 768px) {
         .feed-header {
@@ -1275,8 +1346,15 @@
         .card-body-pro { padding: 15px; }
         .card-price { font-size: 1.2rem; }
 
-        /* Carrusel horizontal "Recién llegados" en móvil */
-        .feed-carousel-mobile {
+        /* Botón "Ver todo el mercado" en móvil */
+        .feed-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 18px;
+        }
+        .btn-explore-cta { width: 100%; justify-content: center; }
+
+        /* Carrusel horizontal "Recién llegados" en móvil */        .feed-carousel-mobile {
             display: flex;
             grid-template-columns: none;
             overflow-x: auto;
