@@ -866,8 +866,9 @@
     let customConfetti;
     let ribbonShape;
     let fairyDustInterval;
-    const mobileCelebration = window.matchMedia('(max-width: 767px)').matches ||
-        /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const appleCelebration = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    const mobileCelebration = window.matchMedia('(max-width: 767px)').matches || appleCelebration;
 
     function spawnSparkle() {
         const container = document.getElementById('celebration-mascot');
@@ -938,8 +939,18 @@
         
         overlay.style.display = 'flex';
         
-        // GSAP Overlay Fade In (faster)
-        gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" });
+        if (appleCelebration) {
+            // Safari/iOS: keep the celebration static to avoid canvas/3D rendering glitches.
+            overlay.style.opacity = '1';
+            card.style.opacity = '1';
+            card.style.transform = 'none';
+            mascot.style.opacity = '1';
+            mascot.style.transform = 'none';
+            shadow.style.opacity = '0.6';
+            shadow.style.transform = 'translateX(-50%)';
+        } else {
+            // GSAP Overlay Fade In (faster)
+            gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" });
         
         // GSAP Card Bounce In (faster & snappier)
         gsap.fromTo(card, 
@@ -1036,12 +1047,13 @@
         }, 0);
 
         // Fade in and scale the shadow in sync with the entry
-        entryTimeline.to(shadow, {
+            entryTimeline.to(shadow, {
             opacity: 0.6,
             scale: 1.0,
             duration: 0.95,
             ease: "back.out(1.3)"
-        }, 0);
+            }, 0);
+        }
         
         // Configure social sharing links dynamically
         const shareUrl = encodeURIComponent(window.location.href);
@@ -1069,6 +1081,7 @@
     }
 
     function triggerConfettiBurst() {
+        if (appleCelebration) return;
         if (mobileCelebration) {
             spawnMobileConfetti();
             return;
