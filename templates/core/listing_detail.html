@@ -482,6 +482,36 @@
     transform: translateX(-50%) translateY(0);
     opacity: 1;
 }
+
+.mobile-confetti-particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 12px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 6;
+    animation: mobileConfettiBurst 900ms cubic-bezier(.2, .75, .25, 1) forwards;
+}
+
+@keyframes mobileConfettiBurst {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.4) rotate(0deg); }
+    12% { opacity: .95; }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--burst-x)), calc(-50% + var(--burst-y))) rotate(var(--burst-rotate));
+    }
+}
+
+@media (max-width: 767px) {
+    #celebration-canvas { display: none !important; }
+    .celebration-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(10, 14, 20, .97);
+    }
+}
 </style>
 
 <!-- Success Celebration Overlay -->
@@ -836,6 +866,8 @@
     let customConfetti;
     let ribbonShape;
     let fairyDustInterval;
+    const mobileCelebration = window.matchMedia('(max-width: 767px)').matches ||
+        /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     function spawnSparkle() {
         const container = document.getElementById('celebration-mascot');
@@ -892,7 +924,7 @@
         }
         
         // Initialize custom confetti on the background canvas if not done yet
-        if (!customConfetti && canvas) {
+        if (!mobileCelebration && !customConfetti && canvas) {
             customConfetti = confetti.create(canvas, {
                 resize: true,
                 useWorker: true
@@ -987,8 +1019,10 @@
         });
 
         // Start generating fairy dust sparkles immediately to trail behind the coin during its entry spiral
-        if (fairyDustInterval) clearInterval(fairyDustInterval);
-        fairyDustInterval = setInterval(spawnSparkle, 80); // slightly faster rate (80ms) for denser trail
+        if (!mobileCelebration) {
+            if (fairyDustInterval) clearInterval(fairyDustInterval);
+            fairyDustInterval = setInterval(spawnSparkle, 110);
+        }
 
         entryTimeline.to(mascot, {
             opacity: 1,
@@ -1035,6 +1069,10 @@
     }
 
     function triggerConfettiBurst() {
+        if (mobileCelebration) {
+            spawnMobileConfetti();
+            return;
+        }
         if (!customConfetti) return;
 
         // Clean confetti list (no stars/brillitos, just squares, circles, and serpentina ribbons)
@@ -1067,6 +1105,23 @@
         }, 150);
     }
 
+    function spawnMobileConfetti() {
+        const overlay = document.getElementById('celebration-overlay');
+        const colors = ['#22c55e', '#60a5fa', '#facc15', '#f472b6'];
+        for (let i = 0; i < 22; i += 1) {
+            const particle = document.createElement('span');
+            const angle = (Math.PI * 2 * i) / 22;
+            const distance = 90 + Math.random() * 150;
+            particle.className = 'mobile-confetti-particle';
+            particle.style.background = colors[i % colors.length];
+            particle.style.setProperty('--burst-x', `${Math.cos(angle) * distance}px`);
+            particle.style.setProperty('--burst-y', `${Math.sin(angle) * distance}px`);
+            particle.style.setProperty('--burst-rotate', `${Math.round(Math.random() * 360)}deg`);
+            overlay.appendChild(particle);
+            window.setTimeout(() => particle.remove(), 1000);
+        }
+    }
+
     function closeCelebration() {
         const overlay = document.getElementById('celebration-overlay');
         const card = document.getElementById('celebration-card');
@@ -1079,6 +1134,7 @@
         
         // Remove any remaining sparkles
         document.querySelectorAll('.fairy-dust-sparkle').forEach(el => el.remove());
+        document.querySelectorAll('.mobile-confetti-particle').forEach(el => el.remove());
         
         gsap.to(card, { scale: 0.8, opacity: 0, y: 30, duration: 0.25, ease: "power2.in" });
         gsap.to(overlay, { opacity: 0, duration: 0.25, delay: 0.05, ease: "power2.in", onComplete: () => {
