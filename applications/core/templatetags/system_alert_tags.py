@@ -1,6 +1,22 @@
+import re
+
 from django import template
 
 register = template.Library()
+
+
+@register.filter
+def format_phone(value):
+    """Format Nicaraguan mobile numbers without changing the stored value."""
+    raw = str(value or '').strip()
+    digits = re.sub(r'\D', '', raw)
+
+    if len(digits) == 11 and digits.startswith('505'):
+        local = digits[3:]
+        return f'+505 - {local[:4]}-{local[4:]}'
+    if len(digits) == 8:
+        return f'{digits[:4]}-{digits[4:]}'
+    return raw
 
 
 def _visible(alerts):
