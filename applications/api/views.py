@@ -1018,10 +1018,12 @@ class SystemAlertListAPIView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        # "Navidad" es un modal exclusivo de la web, no se muestra en la app.
+        # "Navidad" y "Verificacion" son modales exclusivos de la web, no se muestran en la app.
         return [
             a
-            for a in SystemAlert.objects.filter(active=True).exclude(name="Navidad").order_by("order", "name")
+            for a in SystemAlert.objects.filter(active=True)
+            .exclude(name__in=["Navidad", "Verificacion"])
+            .order_by("order", "name")
             if a.visible_now
         ]
 

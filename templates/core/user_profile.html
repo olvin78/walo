@@ -43,6 +43,10 @@
                 
                 <div class="fluid-meta">
                     <span class="fluid-loc">📍 {{ profile_user.profile.location|default:"Nicaragua" }}</span>
+                    {% if profile_user.profile.phone %}
+                        <span class="fluid-sep">•</span>
+                        <span class="fluid-phone">📱 {{ profile_user.profile.phone }}</span>
+                    {% endif %}
                     <span class="fluid-sep">•</span>
                     <span class="fluid-date">Miembro desde {{ profile_user.date_joined|date:"Y" }}</span>
                 </div>

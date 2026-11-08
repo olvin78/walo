@@ -81,10 +81,12 @@
                             <label>Ubicación actual</label>
                             <div class="input-with-action">
                                 <input type="text" name="location" id="locationInput" value="{{ profile.location }}"
-                                    placeholder="Ej: Managua, Nicaragua">
+                                    placeholder="Ej: Managua, Nicaragua"
+                                    onkeydown="if(event.key==='Enter'){event.preventDefault();searchLocation();}">
                                 <button type="button" onclick="searchLocation()" class="search-btn">Buscar en
                                     mapa</button>
                             </div>
+                            <div id="searchStatus" class="search-status" aria-live="polite"></div>
                         </div>
 
                         <!-- Mapa Interactivo Pro -->
@@ -623,12 +625,84 @@
         font-size: 0.9rem;
         background: #12141a;
         z-index: 500;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .map-fallback a {
+        color: #60a5fa;
+        font-weight: 600;
+    }
+    .map-fallback small {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Overlay "Cargando mapa…" mientras llega la primera tesela */
+    .map-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 0.9rem;
+        background: #12141a;
+        z-index: 500;
+        animation: mapPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes mapPulse {
+        0%, 100% { opacity: 0.55; }
+        50% { opacity: 1; }
+    }
+
+    /* Estado del buscador de ubicación */
+    .search-status {
+        margin-top: 6px;
+        font-size: 0.82rem;
+        min-height: 1.1em;
+        color: rgba(255, 255, 255, 0.55);
+    }
+    .search-status.ok { color: #4ade80; }
+    .search-status.err { color: #f87171; }
+
+    /* Toggle Mapa / Satélite */
+    .map-style-toggle {
+        display: flex;
+        background: rgba(18, 20, 26, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    }
+    .map-style-toggle button {
+        border: 0;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.65);
+        padding: 6px 11px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.15s, color 0.15s;
+    }
+    .map-style-toggle button.active {
+        background: #2563eb;
+        color: #fff;
+    }
+    .map-style-toggle button:not(.active):hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
     }
 
     /* Fondo oscuro del contenedor Leaflet (evita el recuadro blanco) */
     .fluid-map .leaflet-container {
         background: #12141a;
         font-family: inherit;
+    }
+    .fluid-map .leaflet-control-attribution {
+        padding: 1px 5px;
+        font-size: 9px;
+        opacity: 0.72;
+        background: rgba(18, 20, 26, 0.65);
     }
 
     /* Footer */
@@ -1206,7 +1280,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        if (systemPaymentsEnabled && window.location.hash === '#tab-plan') {
+        if (window.location.hash === '#tab-verify') {
+            activateTab('verify');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const verifyBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => btn.textContent.includes('Verificación'));
+            if (verifyBtn) verifyBtn.classList.add('active');
+        } else if (systemPaymentsEnabled && window.location.hash === '#tab-plan') {
             activateTab('plan');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             const planBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => btn.textContent.includes('Mi plan'));
@@ -1237,28 +1316,93 @@
     if (typeof L === 'undefined') {
         mapNotice('No se pudo cargar el mapa. Recarga la página.');
     } else {
-        map = L.map('profileMap', { maxZoom: 14, minZoom: 7 }).setView([initialLat, initialLng], 11);
+        map = L.map('profileMap', {
+            maxZoom: 18,
+            minZoom: 7,
+            attributionControl: true
+        }).setView([initialLat, initialLng], 13);
+        map.attributionControl.setPrefix(false);
 
-        const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CartoDB &copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 14
+        // Satélite: foto real Esri + capa de etiquetas (calles/lugares) encima.
+        const satelliteBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri, Earthstar Geographics', maxZoom: 18
         });
-        const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap', maxZoom: 19
+        const satelliteLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri', maxZoom: 18
         });
 
-        // Si las teselas de CartoDB no cargan, cambia a OpenStreetMap
-        let cartoErrors = 0;
-        let usingFallback = false;
-        carto.on('tileerror', function () {
-            if (usingFallback) return;
-            cartoErrors += 1;
-            if (cartoErrors >= 3) {
-                usingFallback = true;
-                map.removeLayer(carto);
-                osm.addTo(map);
+        let generation = 0;
+        let tileLoaded = false;
+        let errorsOnCurrent = 0;
+        let watchdog = null;
+
+        function clearMapOverlays() {
+            mapEl.querySelectorAll('.map-loading, .map-fallback').forEach(el => el.remove());
+        }
+
+        function showMapError() {
+            clearMapOverlays();
+            if (mapEl.querySelector('.map-fallback')) return;
+            const div = document.createElement('div');
+            div.className = 'map-fallback';
+            div.innerHTML = 'No se pudieron cargar las teselas del mapa.<br>' +
+                '<a href="https://www.openstreetmap.org/#map=13/' + initialLat + '/' + initialLng + '" target="_blank" rel="noopener">Abrir esta ubicación en OpenStreetMap ↗</a>' +
+                '<small>Si usas adblock o una red bloqueada, desactívalo para ver el mapa.</small>';
+            mapEl.appendChild(div);
+        }
+
+        function startChain(layers, gen) {
+            function tryAt(i) {
+                const layer = layers[i];
+                layer.on('tileload', function () {
+                    if (gen !== generation || tileLoaded) return;
+                    tileLoaded = true;
+                    if (watchdog) clearTimeout(watchdog);
+                    clearMapOverlays();
+                });
+                layer.on('tileerror', function () {
+                    if (gen !== generation || tileLoaded) return;
+                    errorsOnCurrent += 1;
+                    if (errorsOnCurrent >= 3 && i < layers.length - 1) {
+                        map.removeLayer(layer);
+                        errorsOnCurrent = 0;
+                        tryAt(i + 1);
+                    }
+                });
+                layer.addTo(map);
             }
-        });
-        carto.addTo(map);
+            tryAt(0);
+        }
+
+        function activateSatellite() {
+            generation += 1;
+            const gen = generation;
+            tileLoaded = false;
+            errorsOnCurrent = 0;
+            if (watchdog) clearTimeout(watchdog);
+
+            // Quitar todas las capas de teselas anteriores
+            const toRemove = [];
+            map.eachLayer(l => { if (l instanceof L.TileLayer) toRemove.push(l); });
+            toRemove.forEach(l => map.removeLayer(l));
+
+            clearMapOverlays();
+            const loadingEl = document.createElement('div');
+            loadingEl.className = 'map-loading';
+            loadingEl.textContent = 'Cargando satélite…';
+            mapEl.appendChild(loadingEl);
+
+            startChain([satelliteBase], gen);
+            satelliteLabels.addTo(map); // encima de la foto
+
+            // Si en 8s no llega ninguna tesela → overlay de error (cubre todo el mapa)
+            watchdog = setTimeout(function () {
+                if (gen === generation && !tileLoaded) showMapError();
+            }, 8000);
+
+        }
+
+        activateSatellite();
 
         marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
         marker.on('dragend', () => updateInputs(marker.getLatLng().lat, marker.getLatLng().lng));
@@ -1271,18 +1415,53 @@
     }
 
     async function searchLocation() {
-        const query = document.getElementById('locationInput').value;
-        if (!query || !map) return;
+        const input = document.getElementById('locationInput');
+        const status = document.getElementById('searchStatus');
+        const btn = document.querySelector('.search-btn');
+        const query = input.value.trim();
+        if (!query) return;
+        if (!map || !marker) {
+            status.textContent = 'El mapa no está disponible en este momento.';
+            status.className = 'search-status err';
+            return;
+        }
         const fullQuery = query.toLowerCase().includes('nicaragua') ? query : query + ", Nicaragua";
+        status.textContent = 'Buscando…';
+        status.className = 'search-status';
+        btn.disabled = true;
         try {
-            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&countrycodes=ni&limit=1`);
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(fullQuery)}&countrycodes=ni&limit=10`);
             const d = await r.json();
             if (d && d.length > 0) {
-                const lat = parseFloat(d[0].lat); const lon = parseFloat(d[0].lon);
-                map.setView([lat, lon], 13); marker.setLatLng([lat, lon]); updateInputs(lat, lon);
-                document.getElementById('locationInput').value = d[0].display_name.split(',')[0] + ", " + (d[0].address.country || "Nicaragua");
+                // Nominatim suele devolver primero el departamento o municipio.
+                // Para una ciudad, priorizamos city/town/village y no el límite administrativo.
+                const cityTypes = ['city', 'town', 'village', 'hamlet'];
+                const result = d
+                    .map((item, index) => {
+                        const address = item.address || {};
+                        const isCity = cityTypes.includes(item.addresstype) ||
+                            cityTypes.some(type => address[type]);
+                        return { item, score: (isCity ? 100 : 0) + (item.importance || 0) - index * 0.001 };
+                    })
+                    .sort((a, b) => b.score - a.score)[0].item;
+                const lat = parseFloat(result.lat); const lon = parseFloat(result.lon);
+                map.flyTo([lat, lon], 16, { duration: 1.2 });
+                marker.setLatLng([lat, lon]);
+                updateInputs(lat, lon);
+                input.value = result.display_name.split(',')[0] + ', ' + ((result.address && result.address.country) || 'Nicaragua');
+                status.textContent = 'Encontrado: ' + result.display_name;
+                status.className = 'search-status ok';
+            } else {
+                status.textContent = 'No encontramos «' + query + '» en Nicaragua. Prueba con otro nombre.';
+                status.className = 'search-status err';
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            status.textContent = 'No se pudo contactar con el buscador. Revisa tu conexión o desactiva el bloqueador.';
+            status.className = 'search-status err';
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     // Image Previews
