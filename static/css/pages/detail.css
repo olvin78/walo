@@ -85,6 +85,10 @@ body.image-viewer-open {
     -webkit-backdrop-filter: blur(8px);
 }
 
+.image-viewer[hidden] {
+    display: none !important;
+}
+
 .image-viewer.is-open {
     display: flex;
 }

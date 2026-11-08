@@ -16,7 +16,7 @@
 {% block robots %}{% if listing.status == 'sold' %}noindex, follow{% else %}index, follow{% endif %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/pages/detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/detail.css' %}?v=lightbox-2">
 <script src="https://unpkg.com/lucide@latest"></script>
 <script type="application/ld+json">
 {
@@ -567,14 +567,6 @@
                 </section>
             </div>
 
-            <div class="image-viewer" id="image-viewer" aria-hidden="true">
-                <button class="image-viewer-close" type="button" aria-label="Cerrar imagen">&times;</button>
-                <button class="image-viewer-nav image-viewer-prev" type="button" aria-label="Imagen anterior">&#10094;</button>
-                <img id="image-viewer-image" src="" alt="">
-                <button class="image-viewer-nav image-viewer-next" type="button" aria-label="Imagen siguiente">&#10095;</button>
-                <div class="image-viewer-counter" id="image-viewer-counter"></div>
-            </div>
-
             <!-- COLUMNA DERECHA: INFO Y ACCIONES -->
             <div class="detail-right-col">
                 <section class="igualo-info-section">
@@ -642,6 +634,14 @@
             </div>
         </div>
 
+        <div class="image-viewer" id="image-viewer" aria-hidden="true" hidden>
+            <button class="image-viewer-close" type="button" aria-label="Cerrar imagen">&times;</button>
+            <button class="image-viewer-nav image-viewer-prev" type="button" aria-label="Imagen anterior">&#10094;</button>
+            <img id="image-viewer-image" src="" alt="">
+            <button class="image-viewer-nav image-viewer-next" type="button" aria-label="Imagen siguiente">&#10095;</button>
+            <div class="image-viewer-counter" id="image-viewer-counter"></div>
+        </div>
+
         <!-- VENDEDOR (BLOQUE LIMPIO) -->
         <div class="info-block-clean d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
@@ -689,6 +689,7 @@
         imageViewerCounter.textContent = galleryImages.length > 1
             ? `${viewerIdx + 1} / ${galleryImages.length}`
             : '';
+        imageViewer.hidden = false;
         imageViewer.classList.add('is-open');
         imageViewer.setAttribute('aria-hidden', 'false');
         document.body.classList.add('image-viewer-open');
@@ -697,6 +698,7 @@
     function closeImageViewer() {
         imageViewer.classList.remove('is-open');
         imageViewer.setAttribute('aria-hidden', 'true');
+        imageViewer.hidden = true;
         document.body.classList.remove('image-viewer-open');
         imageViewerImage.src = '';
     }
