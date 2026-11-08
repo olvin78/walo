@@ -542,7 +542,8 @@
                                 <span class="star-icon">★</span>
                             </div>
                             {% endif %}
-                            <img src="{% if listing.image %}{{ listing.get_large }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}" 
+                            <img src="{% if listing.image %}{{ listing.get_large }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}"
+                                 data-full-image="{% if listing.image %}{{ listing.image.url }}{% else %}{% static 'img/hero_bg.png' %}{% endif %}"
                                  alt="{{ listing.title }}" 
                                  fetchpriority="high"
                                  decoding="async">
@@ -550,7 +551,8 @@
                         {% for extra_img in listing.images.all %}
                             {% if listing.image and extra_img.image.url != listing.image.url %}
                             <div class="gallery-slide">
-                                <img src="{{ extra_img.get_medium }}" 
+                                <img src="{{ extra_img.get_medium }}"
+                                     data-full-image="{{ extra_img.image.url }}"
                                      alt="{{ listing.title }} - Foto {{ forloop.counter }}"
                                      loading="lazy"
                                      decoding="async">
@@ -563,6 +565,14 @@
                     <div class="gallery-dots-nav" id="main-dots"></div>
                     {% endif %}
                 </section>
+            </div>
+
+            <div class="image-viewer" id="image-viewer" aria-hidden="true">
+                <button class="image-viewer-close" type="button" aria-label="Cerrar imagen">&times;</button>
+                <button class="image-viewer-nav image-viewer-prev" type="button" aria-label="Imagen anterior">&#10094;</button>
+                <img id="image-viewer-image" src="" alt="">
+                <button class="image-viewer-nav image-viewer-next" type="button" aria-label="Imagen siguiente">&#10095;</button>
+                <div class="image-viewer-counter" id="image-viewer-counter"></div>
             </div>
 
             <!-- COLUMNA DERECHA: INFO Y ACCIONES -->
@@ -664,6 +674,63 @@
     const track = document.getElementById('main-track');
     const slides = document.querySelectorAll('.gallery-slide');
     const dotsContainer = document.getElementById('main-dots');
+    const galleryImages = Array.from(document.querySelectorAll('.gallery-slide img'));
+    const imageViewer = document.getElementById('image-viewer');
+    const imageViewerImage = document.getElementById('image-viewer-image');
+    const imageViewerCounter = document.getElementById('image-viewer-counter');
+    let viewerIdx = 0;
+
+    function openImageViewer(index) {
+        viewerIdx = index;
+        const source = galleryImages[viewerIdx];
+        if (!source) return;
+        imageViewerImage.src = source.dataset.fullImage || source.src;
+        imageViewerImage.alt = source.alt;
+        imageViewerCounter.textContent = galleryImages.length > 1
+            ? `${viewerIdx + 1} / ${galleryImages.length}`
+            : '';
+        imageViewer.classList.add('is-open');
+        imageViewer.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('image-viewer-open');
+    }
+
+    function closeImageViewer() {
+        imageViewer.classList.remove('is-open');
+        imageViewer.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('image-viewer-open');
+        imageViewerImage.src = '';
+    }
+
+    function moveViewer(step) {
+        if (galleryImages.length < 2) return;
+        viewerIdx = (viewerIdx + step + galleryImages.length) % galleryImages.length;
+        openImageViewer(viewerIdx);
+    }
+
+    galleryImages.forEach((image, index) => {
+        image.classList.add('is-expandable');
+        image.addEventListener('click', () => openImageViewer(index));
+        image.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openImageViewer(index);
+            }
+        });
+        image.tabIndex = 0;
+    });
+
+    imageViewer.addEventListener('click', event => {
+        if (event.target === imageViewer) closeImageViewer();
+    });
+    imageViewer.querySelector('.image-viewer-close').addEventListener('click', closeImageViewer);
+    imageViewer.querySelector('.image-viewer-prev').addEventListener('click', () => moveViewer(-1));
+    imageViewer.querySelector('.image-viewer-next').addEventListener('click', () => moveViewer(1));
+    document.addEventListener('keydown', event => {
+        if (!imageViewer.classList.contains('is-open')) return;
+        if (event.key === 'Escape') closeImageViewer();
+        if (event.key === 'ArrowLeft') moveViewer(-1);
+        if (event.key === 'ArrowRight') moveViewer(1);
+    });
 
     if (slides.length > 1 && dotsContainer) {
         slides.forEach((_, i) => {
