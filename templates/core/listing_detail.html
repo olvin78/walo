@@ -642,6 +642,26 @@
             <div class="image-viewer-counter" id="image-viewer-counter"></div>
         </div>
 
+        <div class="offer-modal" id="offer-modal" aria-hidden="true" hidden>
+            <div class="offer-modal-card" role="dialog" aria-modal="true" aria-labelledby="offer-modal-title">
+                <button class="offer-modal-close" type="button" onclick="closeOfferModal()" aria-label="Cerrar">&times;</button>
+                <p class="offer-modal-eyebrow">Negociación directa</p>
+                <h2 id="offer-modal-title">Haz una oferta</h2>
+                <p class="offer-modal-help">Envía un precio al vendedor y agrega una nota si lo deseas.</p>
+                <form method="post" action="{% url 'make_offer' listing.id %}">
+                    {% csrf_token %}
+                    <label for="offer-amount">Tu oferta</label>
+                    <div class="offer-amount-field">
+                        <span>C$</span>
+                        <input id="offer-amount" name="amount" type="number" min="1" step="0.01" value="{% if listing.price %}{{ listing.price|floatformat:0 }}{% endif %}" required>
+                    </div>
+                    <label for="offer-message">Mensaje (opcional)</label>
+                    <textarea id="offer-message" name="message" rows="3" placeholder="Ej.: Puedo pasar a recogerlo hoy."></textarea>
+                    <button class="offer-submit" type="submit">Enviar oferta</button>
+                </form>
+            </div>
+        </div>
+
         <!-- VENDEDOR (BLOQUE LIMPIO) -->
         <div class="info-block-clean d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
@@ -764,6 +784,29 @@
 
     function nextSlide() { if (currentIdx < slides.length - 1) goToSlide(currentIdx + 1); }
     function prevSlide() { if (currentIdx > 0) goToSlide(currentIdx - 1); }
+
+    const offerModal = document.getElementById('offer-modal');
+
+    function openOfferModal() {
+        offerModal.hidden = false;
+        offerModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('offer-modal-open');
+        document.getElementById('offer-amount').focus();
+    }
+
+    function closeOfferModal() {
+        offerModal.hidden = true;
+        offerModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('offer-modal-open');
+    }
+
+    offerModal.addEventListener('click', event => {
+        if (event.target === offerModal) closeOfferModal();
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !offerModal.hidden) closeOfferModal();
+    });
 
     function toggleFav(btn, id) {
         fetch(`/favoritos/toggle/${id}/`).then(r => r.json()).then(d => {

@@ -258,6 +258,15 @@
         box-shadow: 0 4px 12px rgba(157, 23, 77, 0.08);
         font-size: 0.88rem;
     }
+    .offer-sender-link {
+        display: inline-block;
+        margin: 2px 0 7px;
+        color: #831843;
+        font-size: 0.8rem;
+        font-weight: 900;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
 
     .bubble-meta {
         font-size: 0.65rem;
@@ -653,6 +662,10 @@
                 {% if "HE HECHO UNA OFERTA" in first_msg.text %}
                     <div class="chat-bubble--offer">
                         <div style="font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; opacity: 0.7;">Propuesta recibida</div>
+                        <a class="offer-sender-link" href="{% url 'user_profile' first_msg.sender.username %}">
+                            Ver perfil de {{ first_msg.sender.username }}
+                        </a>
+                        <div style="font-size: 0.78rem; margin-bottom: 4px; opacity: 0.78;">Puedes responderle directamente en este chat.</div>
                         📣 {{ first_msg.text }}
                     </div>
                 {% else %}

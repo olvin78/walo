@@ -155,6 +155,134 @@ body.image-viewer-open {
     font-weight: 600;
 }
 
+.offer-modal[hidden] {
+    display: none !important;
+}
+
+body.offer-modal-open {
+    overflow: hidden;
+}
+
+.offer-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(3, 7, 18, 0.78);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+}
+
+.offer-modal-card {
+    position: relative;
+    width: min(100%, 440px);
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 22px;
+    background: linear-gradient(145deg, #172033, #0d1423);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.offer-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.offer-modal-eyebrow {
+    margin: 0 0 7px;
+    color: #60a5fa;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.offer-modal-card h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.65rem;
+}
+
+.offer-modal-help {
+    margin: 8px 0 22px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.9rem;
+}
+
+.offer-modal-card label {
+    display: block;
+    margin: 14px 0 7px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.offer-amount-field {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.offer-amount-field span {
+    padding-left: 13px;
+    color: #60a5fa;
+    font-weight: 800;
+}
+
+.offer-amount-field input,
+.offer-modal-card textarea {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    outline: 0;
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font: inherit;
+}
+
+.offer-amount-field input {
+    border: 0;
+    border-radius: 0;
+    padding: 12px 13px 12px 8px;
+}
+
+.offer-modal-card textarea {
+    display: block;
+    min-height: 84px;
+    padding: 11px 13px;
+    resize: vertical;
+}
+
+.offer-amount-field input:focus,
+.offer-modal-card textarea:focus {
+    border-color: #60a5fa;
+}
+
+.offer-submit {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px 18px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
 .gallery-dots-nav {
     position: absolute;
     bottom: 20px;
