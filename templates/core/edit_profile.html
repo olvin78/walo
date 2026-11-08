@@ -4,10 +4,8 @@
 {% block title %}{% if system_payments_enabled %}Configuración Pro{% else %}Configuración{% endif %} | Igualo{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}" />
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -608,6 +606,29 @@
         border-radius: 16px;
         margin-bottom: 30px;
         border: 1px solid rgba(255, 255, 255, 0.05);
+        background: #12141a;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .map-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 20px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        background: #12141a;
+        z-index: 500;
+    }
+
+    /* Fondo oscuro del contenedor Leaflet (evita el recuadro blanco) */
+    .fluid-map .leaflet-container {
+        background: #12141a;
+        font-family: inherit;
     }
 
     /* Footer */
@@ -1141,7 +1162,7 @@
         const tab = document.getElementById(`tab-${tabId}`);
         if (!tab) return;
         tab.classList.add('active');
-        if (tabId === 'general') setTimeout(() => map.invalidateSize(), 100);
+        if (tabId === 'general' && map) setTimeout(() => map.invalidateSize(), 100);
     }
 
     function switchTab(tabId) {
@@ -1193,27 +1214,65 @@
         }
     });
 
-    // Inicialización del Mapa (Misma lógica pero con tema oscuro en CartoDB)
+    // Inicialización del Mapa (Leaflet local + teselas con respaldo)
+    let map = null;
+    let marker = null;
     let initialLat = parseFloat("{{ profile.latitude|default:'12.115' }}");
     let initialLng = parseFloat("{{ profile.longitude|default:'-86.236' }}");
-    const map = L.map('profileMap', { maxZoom: 14, minZoom: 7 }).setView([initialLat, initialLng], 11);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB &copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 14
-    }).addTo(map);
-
-    let marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+    const mapEl = document.getElementById('profileMap');
 
     function updateInputs(lat, lng) {
         document.getElementById('latInput').value = lat.toFixed(6);
         document.getElementById('lngInput').value = lng.toFixed(6);
     }
-    marker.on('dragend', () => updateInputs(marker.getLatLng().lat, marker.getLatLng().lng));
-    map.on('click', e => { marker.setLatLng(e.latlng); updateInputs(e.latlng.lat, e.latlng.lng); });
+
+    function mapNotice(msg) {
+        if (!mapEl) return;
+        const div = document.createElement('div');
+        div.className = 'map-fallback';
+        div.textContent = msg;
+        mapEl.appendChild(div);
+    }
+
+    if (typeof L === 'undefined') {
+        mapNotice('No se pudo cargar el mapa. Recarga la página.');
+    } else {
+        map = L.map('profileMap', { maxZoom: 14, minZoom: 7 }).setView([initialLat, initialLng], 11);
+
+        const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CartoDB &copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 14
+        });
+        const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap', maxZoom: 19
+        });
+
+        // Si las teselas de CartoDB no cargan, cambia a OpenStreetMap
+        let cartoErrors = 0;
+        let usingFallback = false;
+        carto.on('tileerror', function () {
+            if (usingFallback) return;
+            cartoErrors += 1;
+            if (cartoErrors >= 3) {
+                usingFallback = true;
+                map.removeLayer(carto);
+                osm.addTo(map);
+            }
+        });
+        carto.addTo(map);
+
+        marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+        marker.on('dragend', () => updateInputs(marker.getLatLng().lat, marker.getLatLng().lng));
+        map.on('click', e => { marker.setLatLng(e.latlng); updateInputs(e.latlng.lat, e.latlng.lng); });
+
+        // Leaflet necesita saber su tamaño real cuando el layout ya está dibujado
+        window.addEventListener('load', () => setTimeout(() => map && map.invalidateSize(), 200));
+        setTimeout(() => map && map.invalidateSize(), 400);
+        map.whenReady(() => setTimeout(() => map && map.invalidateSize(), 100));
+    }
 
     async function searchLocation() {
         const query = document.getElementById('locationInput').value;
-        if (!query) return;
+        if (!query || !map) return;
         const fullQuery = query.toLowerCase().includes('nicaragua') ? query : query + ", Nicaragua";
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&countrycodes=ni&limit=1`);

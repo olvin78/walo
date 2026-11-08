@@ -5,7 +5,7 @@ from applications.core.models import SystemPaymentSetting, Message, SystemAlert
 def system_alert(request):
     """Expose active system alerts to templates."""
     try:
-        alerts = list(SystemAlert.objects.filter(active=True))
+        alerts = [a for a in SystemAlert.objects.filter(active=True) if a.visible_now]
     except Exception:
         alerts = []
     return {

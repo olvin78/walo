@@ -11,6 +11,9 @@
     --card-bg: rgba(255,255,255,0.04);
     --border: rgba(255,255,255,0.08);
 
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
     /* Mantener variables originales de diseño para compatibilidad inicial si es necesario */
     --accent: var(--primary);
     --accent-2: #5ae0ff;

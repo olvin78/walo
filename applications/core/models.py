@@ -644,6 +644,18 @@ class SystemAlert(models.Model):
     )
     title = models.CharField(max_length=120, verbose_name="Título del aviso")
     message = models.TextField(verbose_name="Mensaje")
+    starts_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Mostrar desde",
+        help_text="Fecha y hora de inicio. Vacío = sin inicio programado.",
+    )
+    ends_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Mostrar hasta",
+        help_text="Fecha y hora de fin. Vacío = sin fin programado.",
+    )
     order = models.PositiveIntegerField(default=100, verbose_name="orden")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado el")
 
@@ -655,6 +667,42 @@ class SystemAlert(models.Model):
     def __str__(self):
         estado = "🟢" if self.active else "⚪"
         return f"{estado} {self.name}"
+
+    @property
+    def visible_now(self):
+        """True si está activa y dentro del rango de fechas (si tiene)."""
+        from django.utils import timezone
+
+        if not self.active:
+            return False
+        now = timezone.now()
+        if self.starts_at and now < self.starts_at:
+            return False
+        if self.ends_at and now > self.ends_at:
+            return False
+        return True
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self._bust_public_cache()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self._bust_public_cache()
+
+    @staticmethod
+    def _bust_public_cache():
+        """Invalida la caché de páginas públicas al cambiar una alerta."""
+        import time
+
+        from django.core.cache import cache
+
+        try:
+            # nanosegundos: cada guardado genera un token único aunque
+            # ocurran varios en el mismo segundo
+            cache.set("alerts_bust", time.time_ns(), None)
+        except Exception:
+            pass
 
 class SearchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_history')

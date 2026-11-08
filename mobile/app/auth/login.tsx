@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 import { Image } from 'expo-image';
@@ -35,6 +36,7 @@ export default function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{login?: boolean; password?: boolean}>({});
   const { width } = useWindowDimensions();
 
   // Floating animation for logo
@@ -58,10 +60,15 @@ export default function LoginScreen() {
   });
 
   const handleSubmit = async () => {
-    if (!loginValue.trim() || !password) {
-      Alert.alert('Datos incompletos', 'Escribe tu usuario/correo y contraseña.');
+    const errors: {login?: boolean; password?: boolean} = {};
+    if (!loginValue.trim()) errors.login = true;
+    if (!password) errors.password = true;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
+    setFieldErrors({});
     setErrorMessage('');
     setIsSubmitting(true);
     try {
@@ -81,10 +88,14 @@ export default function LoginScreen() {
 
   const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
+  const redirectUri = AuthSession.makeRedirectUri();
+  console.log('[Igualo] Google redirectUri:', redirectUri);
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: googleClientId,
     androidClientId: googleClientId,
     iosClientId: googleClientId,
+    redirectUri,
   });
 
   useEffect(() => {
@@ -110,6 +121,17 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     try {
+      if (Platform.OS === 'web') {
+        const params = new URLSearchParams({
+          client_id: googleClientId,
+          redirect_uri: 'http://localhost:8081',
+          response_type: 'id_token',
+          scope: 'openid email profile',
+          nonce: 'igualo_' + Date.now(),
+        });
+        window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+        return;
+      }
       if (!request) {
         Alert.alert('Cargando', 'El servicio de Google se está inicializando, espera un segundo.');
         return;
@@ -117,7 +139,7 @@ export default function LoginScreen() {
       await promptAsync();
     } catch (error: any) {
       console.error(error);
-      Alert.alert('Error de Google', error?.message || 'Asegúrate de configurar los Client IDs de Android/iOS en login.tsx');
+      Alert.alert('Error de Google', error?.message || 'Asegúrate de configurar los Client IDs de Android/iOS');
     }
   };
 
@@ -176,7 +198,7 @@ export default function LoginScreen() {
               <Animated.View entering={FadeInUp.delay(300).duration(800).springify().damping(14)} style={styles.inputsBlock}>
                 {/* Username / Email Input */}
                 <View style={styles.inputContainer}>
-                  <View style={styles.inputWrapper}>
+                  <View style={[styles.inputWrapper, fieldErrors.login && styles.inputError]}>
                     <View style={styles.inputIconBox}>
                       <User size={18} color={colors.primary} strokeWidth={2.5} />
                     </View>
@@ -185,7 +207,7 @@ export default function LoginScreen() {
                       placeholder="Usuario o email"
                       placeholderTextColor="#94a3b8"
                       value={loginValue}
-                      onChangeText={setLoginValue}
+                      onChangeText={(t) => { setLoginValue(t); setFieldErrors(prev => ({...prev, login: false})); }}
                       autoCapitalize="none"
                       autoCorrect={false}
                     />
@@ -194,7 +216,7 @@ export default function LoginScreen() {
 
                 {/* Password Input */}
                 <View style={styles.inputContainer}>
-                  <View style={styles.inputWrapper}>
+                  <View style={[styles.inputWrapper, fieldErrors.password && styles.inputError]}>
                     <View style={styles.inputIconBox}>
                       <Lock size={18} color={colors.primary} strokeWidth={2.5} />
                     </View>
@@ -203,7 +225,7 @@ export default function LoginScreen() {
                       placeholder="Contraseña"
                       placeholderTextColor="#94a3b8"
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={(t) => { setPassword(t); setFieldErrors(prev => ({...prev, password: false})); }}
                       secureTextEntry={!showPassword}
                     />
                     <TouchableOpacity
@@ -430,6 +452,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  inputError: {
+    borderColor: '#047857',
+    backgroundColor: 'rgba(4, 120, 87, 0.06)',
+  },
   inputIconBox: {
     width: 52,
     height: '100%',
@@ -442,6 +468,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontWeight: '600',
     paddingRight: spacing.md,
+    outlineStyle: 'none',
   },
   eyeBtn: {
     width: 52,

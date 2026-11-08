@@ -22,9 +22,14 @@
             </div>
         </div>
 
-        <form method="POST" enctype="multipart/form-data" id="publish-form" onsubmit="disablePublishButton()">
+        <form method="POST" enctype="multipart/form-data" id="publish-form" novalidate onsubmit="return handlePublishSubmit(event)">
             {% csrf_token %}
-            <input type="hidden" name="publish_mode" id="publish-mode" value="free">
+            <input type="hidden" name="publish_mode" id="publish-mode" value="{% if form_data %}{{ form_data.publish_mode|default:'free' }}{% else %}free{% endif %}">
+            {% if form_errors.form %}
+            <div class="form-general-error" style="margin-bottom: 25px; padding: 15px 20px; border-radius: 14px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); color: #fecaca; font-weight: 700; font-size: 0.92rem;">
+                {{ form_errors.form }}
+            </div>
+            {% endif %}
             <div class="studio-layout" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: start;">
                 
                 <!-- Columna 1: Live Preview -->
@@ -76,7 +81,7 @@
                         <div id="image-management-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
                             {% if is_edit %}
                                 {% if listing.image %}
-                                <div class="image-slot existing-slot" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
+                                <div class="image-slot existing-slot" data-image-id="main" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
                                     <img src="{{ listing.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
                                     <div onclick="removeExistingImage('main', this)" style="position: absolute; top: 4px; right: 4px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.7rem; cursor: pointer;">×</div>
                                     <span style="position: absolute; bottom: 4px; left: 4px; background: var(--primary); color: #000; font-size: 0.5rem; font-weight: 900; padding: 2px 5px; border-radius: 4px;">PRINCIPAL</span>
@@ -84,26 +89,40 @@
                                 {% endif %}
                                 {% for extra in listing.images.all %}
                                     {% if extra.image.url != listing.image.url %}
-                                    <div class="image-slot existing-slot" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
+                                    <div class="image-slot existing-slot" data-image-id="{{ extra.id }}" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
                                         <img src="{{ extra.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
                                         <div onclick="removeExistingImage({{ extra.id }}, this)" style="position: absolute; top: 4px; right: 4px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.7rem; cursor: pointer;">×</div>
                                     </div>
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
+                            {% for url in pending_images %}
+                            <div class="image-slot pending-slot" data-pending-index="{{ forloop.counter0 }}" style="aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;">
+                                <img src="{{ url }}" alt="Imagen del anuncio" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div onclick="removePendingImage({{ forloop.counter0 }}, this)" style="position: absolute; top: 4px; right: 4px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.7rem; cursor: pointer;">×</div>
+                                <span style="position: absolute; bottom: 4px; left: 4px; background: var(--primary); color: #000; font-size: 0.5rem; font-weight: 900; padding: 2px 5px; border-radius: 4px;">SUBIDA</span>
+                            </div>
+                            {% endfor %}
                             <div class="image-slot add-slot" onclick="document.getElementById('image-input').click()" style="aspect-ratio: 1; border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: rgba(255,255,255,0.01);">
                                 <span style="font-size: 1.2rem; margin-bottom: 4px;">➕</span>
                                 <span style="font-size: 0.6rem; font-weight: 700; color: var(--text-muted);">Añadir</span>
                             </div>
                         </div>
                         <input type="file" name="images" id="image-input" accept="image/*" multiple style="display: none;" onchange="handleNewImages(this)">
-                        <input type="hidden" name="deleted_images" id="deleted-images-input" value="">
+                        <input type="hidden" name="deleted_images" id="deleted-images-input" value="{% if form_data %}{{ form_data.deleted_images|default:'' }}{% endif %}">
+                        <input type="hidden" name="pending_token" id="pending-token-input" value="{{ pending_token|default:'' }}">
+                        <input type="hidden" name="pending_keep" id="pending-keep-input" value="{% if pending_keep_default %}{{ pending_keep_default }}{% endif %}">
+                        {% if pending_images %}
+                        <p class="pending-images-note" style="margin: 10px 2px 0; font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">
+                            📎 {{ pending_images|length }} imagen{{ pending_images|length|pluralize:"es" }} de un intento anterior {{ pending_images|length|pluralize:"se conserva,se conservan" }} aquí hasta que publiques.
+                        </p>
+                        {% endif %}
                     </div>
 
                     <div class="form-section" style="margin-bottom: 40px;">
                         <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 25px; font-weight: 900;">02. Ficha Técnica</h4>
                         <div style="display: flex; flex-direction: column; gap: 25px;">
-                            <div class="studio-input-block">
+                            <div class="studio-input-block{% if form_errors.title %} has-error{% endif %}" id="block-title">
                                 <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
                                     Título
                                     <span class="info-tooltip-wrapper">
@@ -116,9 +135,10 @@
                                     </span>
                                 </label>
                                 <input type="text" name="title" id="form-title" required maxlength="200" placeholder="¿Qué vendes?" value="{% if form_data %}{{ form_data.title }}{% elif is_edit %}{{ listing.title }}{% endif %}" style="width: 100%; background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 2rem; font-weight: 900; color: #fff; padding: 10px 0; outline: none;" oninput="updateStudioPreview()">
+                                <div class="field-error-slot" id="error-slot-title">{% if form_errors.title %}{{ form_errors.title }}{% endif %}</div>
                             </div>
                             <div class="grid-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                                <div class="studio-input-block">
+                                <div class="studio-input-block{% if form_errors.price %} has-error{% endif %}" id="block-price">
                                     <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
                                         Precio (córdobas)
                                         <span class="info-tooltip-wrapper">
@@ -130,10 +150,10 @@
                                             </div>
                                         </span>
                                     </label>
-                                    <div style="display: flex; align-items: flex-end; gap: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 5px;">
+                                    <div class="price-input-wrap" style="display: flex; align-items: flex-end; gap: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 5px;">
                                         <input type="number" name="price" id="form-price" step="0.01" placeholder="0.00" value="{% if form_data %}{% if form_data.is_negotiable %}{% else %}{{ form_data.price }}{% endif %}{% elif is_edit and not listing.is_negotiable %}{{ listing.price|stringformat:".2f" }}{% endif %}" style="width: 100%; background: transparent; border: none; font-size: 1.6rem; font-weight: 900; color: var(--primary); outline: none;" oninput="updateStudioPreview()">
                                     </div>
-                                    
+                                    <div class="field-error-slot" id="error-slot-price">{% if form_errors.price %}{{ form_errors.price }}{% endif %}</div>
                                     <!-- Contenedor premium para el switch de negociable -->
                                     <div class="negotiable-toggle-card" style="margin-top: 15px; background: rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; transition: 0.3s; cursor: pointer;" onclick="toggleNegotiable()">
                                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -151,7 +171,7 @@
                                         </label>
                                     </div>
                                 </div>
-                                <div class="studio-input-block">
+                                <div class="studio-input-block{% if form_errors.category %} has-error{% endif %}" id="block-category">
                                     <label class="studio-label" style="display: inline-flex; align-items: center; gap: 6px; position: relative;">
                                         Clasificación
                                         <span class="info-tooltip-wrapper">
@@ -171,12 +191,13 @@
                                     </select>
                                     
                                     <!-- Botón disparador del selector de categorías -->
-                                    <div id="category-trigger" class="custom-select-trigger" onclick="openCategoryModal()">
+                                    <div id="category-trigger" class="custom-select-trigger{% if form_errors.category %} has-error{% endif %}" onclick="openCategoryModal()">
                                         <span class="trigger-placeholder" id="category-trigger-text">
                                             <i data-lucide="tag" class="trigger-icon"></i> Elegir clasificación...
                                         </span>
                                         <i data-lucide="chevron-down" class="trigger-chevron"></i>
                                     </div>
+                                    <div class="field-error-slot" id="error-slot-category">{% if form_errors.category %}{{ form_errors.category }}{% endif %}</div>
                                 </div>
                             </div>
                             <div class="studio-input-block">
@@ -272,15 +293,16 @@
                                 <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Si lo desactivas, nadie podrá verlo.</p>
                             </div>
                             <label class="switch">
-                                <input type="checkbox" name="is_active" {% if listing.is_active %}checked{% endif %}>
+                                <input type="checkbox" name="is_active" {% if form_data %}{% if form_data.is_active %}checked{% endif %}{% elif listing.is_active %}checked{% endif %}>
                                 <span class="slider round"></span>
                             </label>
                         </div>
                     </div>
                     {% endif %}
 
-                    <div style="margin-bottom: 50px;">
+                    <div style="margin-bottom: 50px;" id="block-description" class="{% if form_errors.description %}has-error{% endif %}">
                         <textarea name="description" id="form-description" required rows="4" placeholder="Detalles del producto..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; font-size: 1rem; color: #fff; padding: 20px; outline: none; resize: none;" oninput="updatePublishScore()">{% if form_data %}{{ form_data.description }}{% elif is_edit %}{{ listing.description }}{% endif %}</textarea>
+                        <div class="field-error-slot" id="error-slot-description">{% if form_errors.description %}{{ form_errors.description }}{% endif %}</div>
                     </div>
 
                     <div style="margin-bottom: 18px; display: grid; gap: 14px;">
@@ -331,13 +353,21 @@
 <script src="{% static 'js/category-icons.js' %}"></script>
 <script>
 let selectedFiles = [];
-let deletedImageIds = [];
 let currentSlide = 0;
 let originalSubcategories = null;
 let preselectedSubcategory = "{% if is_edit and listing.subcategory %}{{ listing.subcategory.id }}{% endif %}";
 
+// Imágenes subidas en un intento anterior y conservadas en el servidor
+const pendingImageUrls = [{% for url in pending_images %}"{{ url|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+let pendingImages = pendingImageUrls.map((url, index) => ({ url: url, index: index, kept: true }));
+const editMainImageUrl = "{% if is_edit and listing.image %}{{ listing.image.url|escapejs }}{% endif %}";
+
+// Imágenes existentes marcadas para eliminar en el envío anterior
+let deletedImageIds = (document.getElementById('deleted-images-input').value || '').split(',').filter(v => v !== '');
+
 document.addEventListener('DOMContentLoaded', function() {
     updateStudioPreview();
+    initFormFeedback();
 });
 
 function disablePublishButton() {
@@ -363,6 +393,189 @@ function setPublishMode(mode, btn) {
     if (btn) btn.classList.add('is-selected');
 }
 
+// --- Validación del formulario: marca el campo con error sin perder lo escrito ---
+const FIELD_BLOCKS = {
+    title: 'block-title',
+    price: 'block-price',
+    category: 'block-category',
+    description: 'block-description'
+};
+
+function handlePublishSubmit(event) {
+    const errors = collectFormErrors();
+    if (Object.keys(errors).length > 0) {
+        event.preventDefault();
+        showFormErrors(errors);
+        return false;
+    }
+    syncPendingKeep();
+    disablePublishButton();
+    return true;
+}
+
+function collectFormErrors() {
+    const errors = {};
+    const title = document.getElementById('form-title');
+    if (!title || title.value.trim().length < 3) {
+        errors.title = 'Escribe un título de al menos 3 caracteres.';
+    }
+
+    const description = document.getElementById('form-description');
+    if (!description || !description.value.trim()) {
+        errors.description = 'Agrega una descripción de tu producto o servicio.';
+    }
+
+    const category = document.getElementById('form-category');
+    if (!category || !category.value) {
+        errors.category = 'Selecciona una categoría.';
+    }
+
+    const negotiable = document.getElementById('form-negotiable');
+    const price = document.getElementById('form-price');
+    const isNegotiable = !!(negotiable && negotiable.checked);
+    if (!isNegotiable) {
+        const value = price ? price.value.trim() : '';
+        if (!value) {
+            errors.price = 'Indica un precio o activa «Precio Negociable».';
+        } else if (parseFloat(value) <= 0) {
+            errors.price = 'El precio debe ser mayor que cero.';
+        }
+    }
+    return errors;
+}
+
+function showFormErrors(errors) {
+    clearAllFormErrors();
+    Object.keys(errors).forEach(field => {
+        const slot = document.getElementById('error-slot-' + field);
+        if (slot) slot.textContent = errors[field];
+        const block = document.getElementById(FIELD_BLOCKS[field]);
+        if (block) block.classList.add('has-error');
+        if (field === 'category') {
+            const trigger = document.getElementById('category-trigger');
+            if (trigger) trigger.classList.add('has-error');
+        }
+        if (field === 'price') {
+            const wrap = document.querySelector('#block-price .price-input-wrap');
+            if (wrap) wrap.classList.add('has-error');
+        }
+    });
+
+    const first = document.querySelector('.has-error');
+    if (first) {
+        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const focusable = first.matches('input, textarea')
+            ? first
+            : first.querySelector('input:not([type="hidden"]), textarea');
+        if (focusable && focusable.offsetParent !== null) focusable.focus({ preventScroll: true });
+    }
+}
+
+function clearFieldError(field) {
+    const slot = document.getElementById('error-slot-' + field);
+    if (slot) slot.textContent = '';
+    const block = document.getElementById(FIELD_BLOCKS[field]);
+    if (block) block.classList.remove('has-error');
+    if (field === 'category') {
+        const trigger = document.getElementById('category-trigger');
+        if (trigger) trigger.classList.remove('has-error');
+    }
+    if (field === 'price') {
+        const wrap = document.querySelector('#block-price .price-input-wrap');
+        if (wrap) wrap.classList.remove('has-error');
+    }
+}
+
+function clearAllFormErrors() {
+    Object.keys(FIELD_BLOCKS).forEach(clearFieldError);
+    document.querySelectorAll('.field-error-slot').forEach(slot => { slot.textContent = ''; });
+}
+
+// --- Imágenes conservadas en el servidor tras un error de validación ---
+function keptPendingImages() {
+    return pendingImages.filter(p => p.kept);
+}
+
+function serverSlideUrls() {
+    const urls = [];
+    if (editMainImageUrl) urls.push(editMainImageUrl);
+    keptPendingImages().forEach(p => urls.push(p.url));
+    return urls;
+}
+
+function totalSlides() {
+    return serverSlideUrls().length + selectedFiles.length;
+}
+
+function syncPendingKeep() {
+    const keepInput = document.getElementById('pending-keep-input');
+    if (keepInput) {
+        keepInput.value = keptPendingImages().map(p => p.index).join(',');
+    }
+}
+
+function removePendingImage(index, el) {
+    const target = pendingImages.find(p => p.index === index);
+    if (!target || !target.kept) return;
+    if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) return;
+    target.kept = false;
+    syncPendingKeep();
+    renderImageGrid();
+    updatePreviewCarousel();
+}
+
+function renderPendingSlots() {
+    const grid = document.getElementById('image-management-grid');
+    const addSlot = grid.querySelector('.add-slot');
+    if (!grid || !addSlot) return;
+    Array.from(grid.querySelectorAll('.pending-slot')).forEach(slot => slot.remove());
+    keptPendingImages().forEach(p => {
+        const slot = document.createElement('div');
+        slot.className = 'image-slot pending-slot';
+        slot.setAttribute('data-pending-index', p.index);
+        slot.style.cssText = 'aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; background: #111;';
+        slot.innerHTML = '<img alt="Imagen del anuncio" style="width: 100%; height: 100%; object-fit: cover;">' +
+            '<div onclick="removePendingImage(' + p.index + ', this)" style="position: absolute; top: 4px; right: 4px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.7rem; cursor: pointer;">×</div>' +
+            '<span style="position: absolute; bottom: 4px; left: 4px; background: var(--primary); color: #000; font-size: 0.5rem; font-weight: 900; padding: 2px 5px; border-radius: 4px;">SUBIDA</span>';
+        slot.querySelector('img').src = p.url;
+        grid.insertBefore(slot, addSlot);
+    });
+}
+
+function initFormFeedback() {
+    // Restaurar imágenes existentes marcadas para eliminar en el envío anterior
+    document.querySelectorAll('.existing-slot[data-image-id]').forEach(slot => {
+        if (deletedImageIds.indexOf(slot.getAttribute('data-image-id')) !== -1) {
+            slot.style.display = 'none';
+        }
+    });
+
+    // Redibujar la galería si el servidor conservó imágenes del intento anterior
+    if (pendingImages.length > 0) {
+        renderImageGrid();
+        updatePreviewCarousel();
+    }
+
+    // Los errores se borran en cuanto se corrige el campo
+    const clearOnInput = {
+        'form-title': 'title',
+        'form-price': 'price',
+        'form-description': 'description'
+    };
+    Object.keys(clearOnInput).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => clearFieldError(clearOnInput[id]));
+    });
+    const category = document.getElementById('form-category');
+    if (category) category.addEventListener('change', () => clearFieldError('category'));
+    const negotiable = document.getElementById('form-negotiable');
+    if (negotiable) negotiable.addEventListener('change', () => clearFieldError('price'));
+
+    // Si el servidor devolvió errores, llevar la vista al primer campo marcado
+    const firstError = document.querySelector('.has-error');
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function removeExistingImage(id, btn) {
     if (confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
         const slot = btn.parentElement;
@@ -383,7 +596,7 @@ function handleNewImages(input) {
 
 function removeImage(index) {
     selectedFiles.splice(index, 1);
-    if (currentSlide >= selectedFiles.length) currentSlide = Math.max(0, selectedFiles.length - 1);
+    if (currentSlide >= totalSlides()) currentSlide = Math.max(0, totalSlides() - 1);
     renderImageGrid();
     updatePreviewCarousel();
     syncInputFiles();
@@ -400,6 +613,7 @@ function renderImageGrid() {
     const grid = document.getElementById('image-management-grid');
     const addSlot = grid.querySelector('.add-slot');
     Array.from(grid.querySelectorAll('.preview-slot')).forEach(slot => slot.remove());
+    renderPendingSlots();
     selectedFiles.forEach((file, index) => {
         const reader = new FileReader();
         const slot = document.createElement('div');
@@ -416,33 +630,52 @@ function updatePreviewCarousel() {
     const carousel = document.getElementById('preview-carousel');
     const dots = document.getElementById('carousel-dots');
     carousel.innerHTML = ''; dots.innerHTML = '';
-    
-    if (selectedFiles.length === 0) {
+
+    const serverUrls = serverSlideUrls();
+
+    if (serverUrls.length === 0 && selectedFiles.length === 0) {
         carousel.innerHTML = `<img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60" style="width: 100%; height: 100%; flex-shrink: 0; object-fit: cover; opacity: 0.6;">`;
+        dots.innerHTML = '';
+        currentSlide = 0;
         return;
     }
-    
-    selectedFiles.forEach((file, index) => {
-        const reader = new FileReader();
-        const img = document.createElement('img');
-        img.style.cssText = 'width: 100%; height: 100%; flex-shrink: 0; object-fit: cover;';
-        carousel.appendChild(img);
-        
+
+    const buildDot = (index) => {
         const dot = document.createElement('div');
         dot.className = 'preview-dot';
         dot.style.cssText = `width: 7px; height: 7px; border-radius: 50%; background: ${index === currentSlide ? 'var(--primary)' : 'rgba(255,255,255,0.2)'}; transition: 0.3s; cursor: pointer; border: 1px solid rgba(0,0,0,0.2);`;
         dot.onclick = () => goToSlide(index);
-        dots.appendChild(dot);
-        
+        return dot;
+    };
+
+    // Imágenes ya alojadas en el servidor (portada en edición + conservadas)
+    serverUrls.forEach((url, index) => {
+        const img = document.createElement('img');
+        img.style.cssText = 'width: 100%; height: 100%; flex-shrink: 0; object-fit: cover;';
+        img.src = url;
+        carousel.appendChild(img);
+        dots.appendChild(buildDot(index));
+    });
+
+    // Imágenes recién seleccionadas en este dispositivo
+    selectedFiles.forEach((file, index) => {
+        const img = document.createElement('img');
+        img.style.cssText = 'width: 100%; height: 100%; flex-shrink: 0; object-fit: cover;';
+        carousel.appendChild(img);
+        dots.appendChild(buildDot(serverUrls.length + index));
+
+        const reader = new FileReader();
         reader.onload = (e) => img.src = e.target.result;
         reader.readAsDataURL(file);
     });
-    goToSlide(currentSlide);
+
+    goToSlide(Math.min(currentSlide, totalSlides() - 1));
 }
 
 function goToSlide(index) {
     if (index < 0) index = 0;
-    if (selectedFiles.length > 0 && index >= selectedFiles.length) index = selectedFiles.length - 1;
+    const total = totalSlides();
+    if (total > 0 && index >= total) index = total - 1;
     currentSlide = index;
     const carousel = document.getElementById('preview-carousel');
     carousel.style.transform = `translateX(-${index * 100}%)`;
@@ -578,7 +811,7 @@ function updateStudioPreview() {
 function updatePublishScore() {
     const title = document.getElementById('form-title').value.length;
     const statusText = document.getElementById('publish-status');
-    if (statusText && selectedFiles.length > 0 && title > 5) {
+    if (statusText && totalSlides() > 0 && title > 5) {
         statusText.innerText = "¡Listo!"; 
         statusText.style.color = "var(--primary)";
     }
@@ -935,6 +1168,49 @@ document.addEventListener('click', () => {
 </div>
 
 <style>
+/* --- Validación por campo: el error se marca junto al campo y no borra nada --- */
+.field-error-slot { display: none; }
+.field-error-slot:not(:empty) {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    color: #f87171;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+    animation: fieldErrorIn 0.25s ease;
+}
+.field-error-slot:not(:empty)::before { content: "⚠"; font-size: 0.85rem; line-height: 1.2; }
+
+.studio-input-block.has-error > input,
+#block-description.has-error textarea {
+    border-color: #ef4444 !important;
+    border-bottom-color: #ef4444 !important;
+}
+.studio-input-block.has-error .price-input-wrap,
+.price-input-wrap.has-error {
+    border-bottom-color: #ef4444 !important;
+}
+.custom-select-trigger.has-error {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.07) !important;
+}
+.studio-input-block.has-error > .studio-label {
+    color: #f87171 !important;
+}
+.has-error { animation: fieldShake 0.3s ease; }
+@keyframes fieldErrorIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fieldShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+/* --- Fin validación por campo --- */
+
 .studio-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 5px; display: block; }
 .negotiable-toggle-card { transition: all 0.3s ease; }
 .negotiable-toggle-card:hover { background: rgba(255, 255, 255, 0.05) !important; border-color: rgba(34, 197, 94, 0.3) !important; }

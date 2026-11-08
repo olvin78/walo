@@ -11,9 +11,13 @@ type ManualMapProps = {
 };
 
 const ManualMap = ({ latitude, longitude, setLatitude, setLongitude, style }: ManualMapProps) => {
-  // We use an iframe for Google Maps on Web for free interactivity
-  // This avoids WebGL requirement issues that some users experience with OSM or other providers.
-  const mapUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&hl=es&z=15&output=embed`;
+  // OpenStreetMap embed: sin API key y sin dependencias externas
+  // (el iframe de Google Maps ahora exige API key y mostraba "API key required")
+  const lat = Number(latitude) || 12.1364;
+  const lng = Number(longitude) || -86.2514;
+  const d = 0.01;
+  const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`;
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
 
   return (
     <View style={[style, styles.container]}>

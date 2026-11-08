@@ -189,20 +189,36 @@ class SystemPaymentSettingAdmin(admin.ModelAdmin):
 
 @admin.register(SystemAlert)
 class SystemAlertAdmin(admin.ModelAdmin):
-    list_display = ("alert_status", "name", "title", "order", "updated_at")
+    list_display = ("alert_status", "name", "title", "display_schedule", "order", "updated_at")
     list_editable = ("order",)
-    fields = ("name", "active", "title", "message", "order")
+    fields = ("name", "active", "title", "message", "starts_at", "ends_at", "order")
     list_display_links = ("name",)
+    list_filter = ("active",)
 
     @admin.display(description="Estado")
     def alert_status(self, obj):
-        if obj.active:
+        if not obj.active:
             return mark_safe(
-                '<span style="background:#22c55e;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">🟢 ENCENDIDA</span>'
+                '<span style="background:#6b7280;color:#fff;padding:4px 12px;border-radius:20px;font-weight:700;">⚪ apagada</span>'
+            )
+        if not obj.visible_now:
+            return mark_safe(
+                '<span style="background:#f59e0b;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">⏳ fuera de fecha</span>'
             )
         return mark_safe(
-            '<span style="background:#6b7280;color:#fff;padding:4px 12px;border-radius:20px;font-weight:700;">⚪ apagada</span>'
+            '<span style="background:#22c55e;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;">🟢 ENCENDIDA</span>'
         )
+
+    @admin.display(description="Programación")
+    def display_schedule(self, obj):
+        if not obj.starts_at and not obj.ends_at:
+            return "siempre"
+        parts = []
+        if obj.starts_at:
+            parts.append(f"desde {obj.starts_at.strftime('%d/%m/%Y %H:%M')}")
+        if obj.ends_at:
+            parts.append(f"hasta {obj.ends_at.strftime('%d/%m/%Y %H:%M')}")
+        return " ".join(parts)
 
 
 @admin.register(SearchHistory)

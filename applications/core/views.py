@@ -1,8 +1,13 @@
 import json
 import math
 import os
+import re
+import shutil
+import time
 import unicodedata
+import uuid
 import requests
+from django.core.files import File
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import login
@@ -368,48 +373,242 @@ def city_category_landing(request, city_slug, category_slug):
     }
     return render(request, "core/city_landing.html", context)
 
+# --- Formulario de anuncios: validación por campo y conservación de imágenes ---
+
+_PENDING_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
+_PENDING_ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".heic", ".heif"}
+_PENDING_MAX_AGE = 60 * 60 * 24  # 24 horas
+_FIELD_LABELS = {
+    "title": "título",
+    "description": "descripción",
+    "price": "precio",
+    "category": "categoría",
+}
+
+
+def _pending_root():
+    return os.path.join(settings.MEDIA_ROOT, "listings", "pending")
+
+
+def _safe_pending_token(token):
+    return token if token and _PENDING_TOKEN_RE.match(str(token)) else None
+
+
+def _pending_files(token):
+    """Devuelve [(url, nombre)] de las imágenes conservadas para un token."""
+    token = _safe_pending_token(token)
+    if not token:
+        return []
+    target = os.path.join(_pending_root(), token)
+    if not os.path.isdir(target):
+        return []
+    names = sorted(n for n in os.listdir(target) if os.path.isfile(os.path.join(target, n)))
+    return [(settings.MEDIA_URL + "listings/pending/%s/%s" % (token, n), n) for n in names]
+
+
+def _cleanup_pending_files():
+    """Borra reservas de imágenes con más de 24 horas sin usarse."""
+    root = _pending_root()
+    if not os.path.isdir(root):
+        return
+    limit = time.time() - _PENDING_MAX_AGE
+    for name in os.listdir(root):
+        path = os.path.join(root, name)
+        try:
+            if os.path.isdir(path) and os.path.getmtime(path) < limit:
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
+
+
+def _stash_pending_images(token, kept_names, new_files):
+    """
+    Conserva las imágenes del formulario tras un error de validación para que
+    la galería multimedia no se vacíe en el siguiente intento.
+    Devuelve (token, nombres, urls).
+    """
+    _cleanup_pending_files()
+    token = _safe_pending_token(token) or uuid.uuid4().hex
+    target = os.path.join(_pending_root(), token)
+    os.makedirs(target, exist_ok=True)
+
+    kept = []
+    for name in kept_names or []:
+        base = os.path.basename(str(name))
+        if base and base not in kept and os.path.isfile(os.path.join(target, base)):
+            kept.append(base)
+
+    for existing in os.listdir(target):
+        if existing not in kept:
+            try:
+                os.remove(os.path.join(target, existing))
+            except OSError:
+                pass
+
+    for uploaded in new_files or []:
+        ext = os.path.splitext(os.path.basename(uploaded.name or ""))[1].lower()
+        if ext not in _PENDING_ALLOWED_EXT:
+            ext = ".jpg"
+        original = os.path.splitext(os.path.basename(uploaded.name or ""))[0]
+        original = re.sub(r"[^A-Za-z0-9_-]+", "_", original).strip("_")[:40] or "imagen"
+        index = len(kept)
+        while True:
+            name = "%02d_%s%s" % (index, original, ext)
+            if name not in kept and not os.path.exists(os.path.join(target, name)):
+                break
+            index += 1
+        with open(os.path.join(target, name), "wb") as handle:
+            for chunk in uploaded.chunks():
+                handle.write(chunk)
+        kept.append(name)
+
+    urls = [settings.MEDIA_URL + "listings/pending/%s/%s" % (token, n) for n in kept]
+    return token, kept, urls
+
+
+def _pending_state_from_post(post):
+    """Lee el token de imágenes en reserva y las que el usuario conservó."""
+    token = _safe_pending_token(post.get("pending_token"))
+    pending = _pending_files(token)
+    keep_raw = post.get("pending_keep")
+    if keep_raw is None:
+        names = [name for _, name in pending]
+    else:
+        indexes = [int(x) for x in str(keep_raw).split(",") if x.strip().isdigit()]
+        names = [pending[i][1] for i in indexes if 0 <= i < len(pending)]
+    return token, pending, names
+
+
+def _pending_file_objects(token, names):
+    """Abre las imágenes conservadas como archivos listos para los ImageField."""
+    token = _safe_pending_token(token)
+    files = []
+    if not token:
+        return files
+    for name in names or []:
+        path = os.path.join(_pending_root(), token, os.path.basename(str(name)))
+        if os.path.isfile(path):
+            files.append(File(open(path, "rb"), name=os.path.basename(path)))
+    return files
+
+
+def _drop_pending_files(token):
+    token = _safe_pending_token(token)
+    if token:
+        shutil.rmtree(os.path.join(_pending_root(), token), ignore_errors=True)
+
+
+def _close_files(files):
+    for handle in files:
+        try:
+            handle.close()
+        except Exception:
+            pass
+
+
+def _listing_form_errors(post):
+    """Valida los campos obligatorios y devuelve {campo: mensaje}."""
+    title = (post.get("title") or "").strip()
+    description = (post.get("description") or "").strip()
+    price = (post.get("price") or "").strip()
+    category_id = (post.get("category") or "").strip()
+    is_negotiable = post.get("is_negotiable") == "on"
+
+    errors = {}
+    if len(title) < 3:
+        errors["title"] = "Escribe un título de al menos 3 caracteres."
+    if not description:
+        errors["description"] = "Agrega una descripción de tu producto o servicio."
+    if not category_id or not category_id.isdigit() or not Category.objects.filter(pk=int(category_id)).exists():
+        errors["category"] = "Selecciona una categoría."
+    if not is_negotiable:
+        if not price:
+            errors["price"] = "Indica un precio o activa «Precio Negociable»."
+        else:
+            try:
+                if float(price) <= 0:
+                    errors["price"] = "El precio debe ser mayor que cero."
+            except ValueError:
+                errors["price"] = "El precio debe ser un número válido."
+    return errors
+
+
+def _render_listing_form(request, extra=None):
+    """Renderiza el formulario de anuncios con el contexto común."""
+    context = {
+        "categories": Category.objects.all(),
+        "subcategories": Subcategory.objects.select_related("category").all(),
+        "profile_is_pro": getattr(getattr(request.user, "profile", None), "is_pro", False),
+        "system_payments_enabled": SystemPaymentSetting.get_solo().enabled,
+    }
+    if extra:
+        context.update(extra)
+    return render(request, "core/create_listing.html", context)
+
+
+def _listing_form_error_response(request, form_data, errors, pending_token, kept_names, new_files,
+                                 listing=None, is_edit=False):
+    """Re-renderiza el formulario marcando los campos con error sin perder datos."""
+    pending_token, kept_names, pending_urls = _stash_pending_images(pending_token, kept_names, new_files)
+    if set(errors) == {"form"}:
+        messages.error(request, next(iter(errors.values())))
+    else:
+        labels = ", ".join(_FIELD_LABELS.get(field, field) for field in errors)
+        messages.error(request, "Revisa los campos marcados: %s." % labels)
+    extra = {
+        "form_data": form_data,
+        "form_errors": errors,
+        "pending_token": pending_token,
+        "pending_images": pending_urls,
+        "pending_keep_default": ",".join(str(i) for i in range(len(pending_urls))),
+    }
+    if is_edit and listing is not None:
+        extra["listing"] = listing
+        extra["is_edit"] = True
+    return _render_listing_form(request, extra)
+
+
 @login_required
 def create_listing(request):
     """
     Vista pro para la creación de anuncios con interfaz premium.
     """
     if request.method == 'POST':
-        title = request.POST.get('title')
-        description = request.POST.get('description')
-        price = request.POST.get('price')
+        title = (request.POST.get('title') or '').strip()
+        description = (request.POST.get('description') or '').strip()
+        price = (request.POST.get('price') or '').strip()
         is_negotiable = request.POST.get('is_negotiable') == 'on'
         category_id = request.POST.get('category')
         subcategory_id = request.POST.get('subcategory')
         location = request.POST.get('location', 'Nicaragua')
-        image = request.FILES.get('image')
         publish_mode = request.POST.get('publish_mode', 'free')
         payment_methods_list = request.POST.getlist('payment_methods')
         payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
-        
-        if not all([title, price, category_id]) and not is_negotiable:
-            messages.error(request, "Por favor completa todos los campos obligatorios.")
-            categories = Category.objects.all()
-            subcategories = Subcategory.objects.select_related('category').all()
-            return render(request, 'core/create_listing.html', {
-                'categories': categories,
-                'subcategories': subcategories,
-                'profile_is_pro': getattr(getattr(request.user, 'profile', None), 'is_pro', False),
-                'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
-                'form_data': {
-                    'title': title,
-                    'price': price,
-                    'is_negotiable': is_negotiable,
-                    'category_id': category_id,
-                    'subcategory_id': subcategory_id,
-                    'location': location,
-                    'description': description,
-                    'payment_methods': payment_methods_list,
-                },
-            })
+
+        pending_token, pending_urls, kept_names = _pending_state_from_post(request.POST)
+        new_images = request.FILES.getlist('images')
+
+        form_data = {
+            'title': title,
+            'price': price,
+            'is_negotiable': is_negotiable,
+            'category_id': category_id,
+            'subcategory_id': subcategory_id,
+            'location': location,
+            'description': description,
+            'payment_methods': payment_methods_list,
+            'publish_mode': publish_mode,
+        }
+
+        errors = _listing_form_errors(request.POST)
+        if errors:
+            return _listing_form_error_response(
+                request, form_data, errors, pending_token, kept_names, new_images,
+            )
 
         category = get_object_or_404(Category, id=category_id)
         subcategory = None
-        if subcategory_id:
+        if subcategory_id and str(subcategory_id).isdigit():
             subcategory = get_object_or_404(Subcategory, id=subcategory_id, category=category)
 
         # Evitar publicaciones duplicadas: si el mismo usuario ya publicó un
@@ -418,17 +617,18 @@ def create_listing(request):
         duplicate = Listing.objects.filter(
             user=request.user,
             title=title,
-            price=price,
+            price=price if price else None,
             category=category,
             created_at__gte=timezone.now() - datetime.timedelta(minutes=2),
         ).order_by('-created_at').first()
         if duplicate:
+            _drop_pending_files(pending_token)
             messages.info(request, "Ese anuncio ya fue publicado. No se creó un duplicado.")
             return redirect(duplicate.get_absolute_url())
 
+        # Imágenes conservadas de un intento anterior + recién subidas
+        images = _pending_file_objects(pending_token, kept_names) + list(new_images)
         try:
-            # Capturar múltiples imágenes
-            images = request.FILES.getlist('images')
             main_image = images[0] if images else None
             system_payments_enabled = SystemPaymentSetting.get_solo().enabled
             listing = Listing.objects.create(
@@ -444,42 +644,23 @@ def create_listing(request):
                 payment_methods=payment_methods,
                 is_featured_paid=(system_payments_enabled and publish_mode == 'promoted')
             )
-            
+
             # Guardar resto de imágenes en el modelo relacionado
             for img in images[1:]:
                 ListingImage.objects.create(listing=listing, image=img)
 
+            _drop_pending_files(pending_token)
             messages.success(request, "¡Tu anuncio ha sido publicado con éxito!")
             return redirect(listing.get_absolute_url())
         except Exception as e:
-            messages.error(request, f"Hubo un error al publicar: {str(e)}")
-            categories = Category.objects.all()
-            subcategories = Subcategory.objects.select_related('category').all()
-            return render(request, 'core/create_listing.html', {
-                'categories': categories,
-                'subcategories': subcategories,
-                'profile_is_pro': getattr(getattr(request.user, 'profile', None), 'is_pro', False),
-                'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
-                'form_data': {
-                    'title': title,
-                    'price': price,
-                    'is_negotiable': is_negotiable,
-                    'category_id': category_id,
-                    'subcategory_id': subcategory_id,
-                    'location': location,
-                    'description': description,
-                    'payment_methods': payment_methods_list,
-                },
-            })
-    
-    categories = Category.objects.all()
-    subcategories = Subcategory.objects.select_related('category').all()
-    return render(request, 'core/create_listing.html', {
-        'categories': categories,
-        'subcategories': subcategories,
-        'profile_is_pro': getattr(getattr(request.user, 'profile', None), 'is_pro', False),
-        'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
-    })
+            form_data_errors = {'form': f"Hubo un error al publicar: {str(e)}"}
+            return _listing_form_error_response(
+                request, form_data, form_data_errors, pending_token, kept_names, new_images,
+            )
+        finally:
+            _close_files(images)
+
+    return _render_listing_form(request)
 
 @cache_public_page(timeout=settings.CACHE_CATEGORY_TTL)
 def category_detail(request, slug):
@@ -1452,9 +1633,9 @@ def edit_listing(request, listing_id):
     listing = get_object_or_404(Listing, id=listing_id, user=request.user)
     
     if request.method == 'POST':
-        title = request.POST.get('title')
-        description = request.POST.get('description')
-        price = request.POST.get('price')
+        title = (request.POST.get('title') or '').strip()
+        description = (request.POST.get('description') or '').strip()
+        price = (request.POST.get('price') or '').strip()
         is_negotiable = request.POST.get('is_negotiable') == 'on'
         category_id = request.POST.get('category')
         subcategory_id = request.POST.get('subcategory')
@@ -1464,34 +1645,39 @@ def edit_listing(request, listing_id):
         payment_methods_list = request.POST.getlist('payment_methods')
         payment_methods = ", ".join(payment_methods_list) if payment_methods_list else "Efectivo"
         system_payments_enabled = SystemPaymentSetting.get_solo().enabled
-        
-        if not all([title, price, category_id]) and not is_negotiable:
-            messages.error(request, "Por favor completa todos los campos obligatorios.")
-            categories = Category.objects.all()
-            subcategories = Subcategory.objects.select_related('category').all()
-            return render(request, 'core/create_listing.html', {
-                'categories': categories,
-                'subcategories': subcategories,
-                'listing': listing,
-                'is_edit': True,
-                'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
-                'form_data': {
-                    'title': title,
-                    'price': price,
-                    'is_negotiable': is_negotiable,
-                    'category_id': category_id,
-                    'subcategory_id': subcategory_id,
-                    'location': location,
-                    'description': description,
-                    'payment_methods': payment_methods_list,
-                },
-            })
+        deleted_images = request.POST.get('deleted_images', '')
+
+        pending_token, pending_urls, kept_names = _pending_state_from_post(request.POST)
+        new_images = request.FILES.getlist('images')
+
+        form_data = {
+            'title': title,
+            'price': price,
+            'is_negotiable': is_negotiable,
+            'category_id': category_id,
+            'subcategory_id': subcategory_id,
+            'location': location,
+            'description': description,
+            'payment_methods': payment_methods_list,
+            'publish_mode': publish_mode,
+            'deleted_images': deleted_images,
+            'is_active': is_active,
+        }
+
+        errors = _listing_form_errors(request.POST)
+        if errors:
+            return _listing_form_error_response(
+                request, form_data, errors, pending_token, kept_names, new_images,
+                listing=listing, is_edit=True,
+            )
 
         category = get_object_or_404(Category, id=category_id)
         subcategory = None
-        if subcategory_id:
+        if subcategory_id and str(subcategory_id).isdigit():
             subcategory = Subcategory.objects.filter(id=subcategory_id, category=category).first()
-        
+
+        # Imágenes conservadas de un intento anterior + recién subidas
+        images = _pending_file_objects(pending_token, kept_names) + list(new_images)
         try:
             listing.title = title
             listing.description = description
@@ -1504,51 +1690,47 @@ def edit_listing(request, listing_id):
             listing.payment_methods = payment_methods
             if system_payments_enabled and publish_mode == 'promoted':
                 listing.is_featured_paid = True
-            
+
             # Gestionar eliminación de imágenes existentes
-            deleted_images = request.POST.get('deleted_images', '')
             if deleted_images:
                 ids_to_delete = [id_str for id_str in deleted_images.split(',') if id_str]
                 if 'main' in ids_to_delete:
                     listing.image = None
-                
+
                 other_ids = [int(i) for i in ids_to_delete if i.isdigit()]
                 ListingImage.objects.filter(id__in=other_ids, listing=listing).delete()
 
-            # Gestionar nuevas imágenes si se suben
-            new_images = request.FILES.getlist('images')
-            if new_images:
+            # Gestionar nuevas imágenes (conservadas + recién subidas)
+            if images:
                 start_idx = 0
                 # Si no hay imagen principal o se borró, la primera nueva es la principal
                 if not listing.image:
-                    listing.image = new_images[0]
+                    listing.image = images[0]
                     start_idx = 1
-                
-                for img in new_images[start_idx:]:
+
+                for img in images[start_idx:]:
                     ListingImage.objects.create(listing=listing, image=img)
-            
+
             # Fallback: Si se borró la principal y no hay nuevas, intentar promover una secundaria
             if not listing.image:
                 first_secondary = listing.images.first()
                 if first_secondary:
                     listing.image = first_secondary.image
-            
+
             listing.save()
+            _drop_pending_files(pending_token)
             messages.success(request, "¡Tu anuncio ha sido actualizado correctamente!")
             return redirect('my_listings')
         except Exception as e:
-            messages.error(request, f"Hubo un error al actualizar: {str(e)}")
-            return redirect('edit_listing', listing_id=listing.id)
-            
-    categories = Category.objects.all()
-    subcategories = Subcategory.objects.select_related('category').all()
-    return render(request, 'core/create_listing.html', {
-        'categories': categories, 
-        'subcategories': subcategories,
-        'listing': listing,
-        'is_edit': True,
-        'system_payments_enabled': SystemPaymentSetting.get_solo().enabled,
-    })
+            form_data_errors = {'form': f"Hubo un error al actualizar: {str(e)}"}
+            return _listing_form_error_response(
+                request, form_data, form_data_errors, pending_token, kept_names, new_images,
+                listing=listing, is_edit=True,
+            )
+        finally:
+            _close_files(images)
+
+    return _render_listing_form(request, {'listing': listing, 'is_edit': True})
 
 
 @login_required

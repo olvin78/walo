@@ -14,6 +14,11 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+
+WebBrowser.maybeCompleteAuthSession();
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -24,16 +29,71 @@ import { useAuth } from '../../src/services/auth';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{username?: boolean; email?: boolean; password?: boolean; password2?: boolean}>({});
   const { width } = useWindowDimensions();
 
-  // Floating animation for logo
+  const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+
+  const redirectUri = AuthSession.makeRedirectUri();
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: googleClientId,
+    androidClientId: googleClientId,
+    iosClientId: googleClientId,
+    redirectUri,
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success' && response.authentication?.idToken) {
+      handleServerGoogleRegister(response.authentication.idToken);
+    }
+  }, [response]);
+
+  const handleServerGoogleRegister = async (idToken: string) => {
+    setIsSubmitting(true);
+    try {
+      await loginWithGoogle(idToken);
+      router.replace('/(tabs)');
+    } catch {
+      Alert.alert('Error', 'No se pudo registrar con Google');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        const params = new URLSearchParams({
+          client_id: googleClientId,
+          redirect_uri: 'http://localhost:8081',
+          response_type: 'id_token',
+          scope: 'openid email profile',
+          nonce: 'igualo_' + Date.now(),
+        });
+        window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+        return;
+      }
+      if (!request) {
+        Alert.alert('Cargando', 'El servicio de Google se está inicializando, espera un segundo.');
+        return;
+      }
+      await promptAsync();
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert('Error de Google', error?.message || 'Error al conectar con Google');
+    }
+  };
+
+  const isWide = width >= 600;
+
   const floatAnim = useSharedValue(0);
 
   useEffect(() => {
@@ -54,10 +114,22 @@ export default function RegisterScreen() {
   });
 
   const handleSubmit = async () => {
-    if (!username.trim() || !email.trim() || !password || password !== password2) {
-      Alert.alert('Datos inválidos', 'Completa los campos y confirma que las contraseñas coinciden.');
+    const errors: {username?: boolean; email?: boolean; password?: boolean; password2?: boolean} = {};
+    if (!username.trim()) errors.username = true;
+    if (!email.trim()) errors.email = true;
+    if (!password) errors.password = true;
+    if (!password2) errors.password2 = true;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
+    if (password !== password2) {
+      setFieldErrors({ password: true, password2: true });
+      Alert.alert('Contraseñas no coinciden', 'Las contraseñas deben ser iguales.');
+      return;
+    }
+    setFieldErrors({});
     setIsSubmitting(true);
     try {
       await register({ username: username.trim(), email: email.trim(), password, password2 });
@@ -68,12 +140,6 @@ export default function RegisterScreen() {
       setIsSubmitting(false);
     }
   };
-
-  const handleGoogleRegister = () => {
-    Alert.alert('Proximamente', 'El registro con Google estara disponible pronto en la app.');
-  };
-
-  const isWide = width >= 600;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -128,7 +194,7 @@ export default function RegisterScreen() {
               <Animated.View entering={FadeInUp.delay(300).duration(800).springify().damping(14)} style={styles.inputsBlock}>
                 {/* Username Input */}
                 <View style={styles.inputContainer}>
-                  <View style={styles.inputWrapper}>
+                  <View style={[styles.inputWrapper, fieldErrors.username && styles.inputError]}>
                     <View style={styles.inputIconBox}>
                       <User size={18} color={colors.primary} strokeWidth={2.5} />
                     </View>
@@ -137,7 +203,7 @@ export default function RegisterScreen() {
                       placeholder="Nombre de usuario"
                       placeholderTextColor="#94a3b8"
                       value={username}
-                      onChangeText={setUsername}
+                      onChangeText={(t) => { setUsername(t); setFieldErrors(prev => ({...prev, username: false})); }}
                       autoCapitalize="none"
                       autoCorrect={false}
                     />
@@ -146,7 +212,7 @@ export default function RegisterScreen() {
 
                 {/* Email Input */}
                 <View style={styles.inputContainer}>
-                  <View style={styles.inputWrapper}>
+                  <View style={[styles.inputWrapper, fieldErrors.email && styles.inputError]}>
                     <View style={styles.inputIconBox}>
                       <Mail size={18} color={colors.primary} strokeWidth={2.5} />
                     </View>
@@ -155,7 +221,7 @@ export default function RegisterScreen() {
                       placeholder="Correo electrónico"
                       placeholderTextColor="#94a3b8"
                       value={email}
-                      onChangeText={setEmail}
+                      onChangeText={(t) => { setEmail(t); setFieldErrors(prev => ({...prev, email: false})); }}
                       autoCapitalize="none"
                       keyboardType="email-address"
                       autoCorrect={false}
@@ -165,7 +231,7 @@ export default function RegisterScreen() {
 
                 {/* Password Input */}
                 <View style={styles.inputContainer}>
-                  <View style={styles.inputWrapper}>
+                  <View style={[styles.inputWrapper, fieldErrors.password && styles.inputError]}>
                     <View style={styles.inputIconBox}>
                       <Lock size={18} color={colors.primary} strokeWidth={2.5} />
                     </View>
@@ -174,7 +240,7 @@ export default function RegisterScreen() {
                       placeholder="Contraseña"
                       placeholderTextColor="#94a3b8"
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={(t) => { setPassword(t); setFieldErrors(prev => ({...prev, password: false})); }}
                       secureTextEntry={!showPassword}
                     />
                     <TouchableOpacity
@@ -190,7 +256,7 @@ export default function RegisterScreen() {
 
                 {/* Confirm Password Input */}
                 <View style={styles.inputContainer}>
-                  <View style={styles.inputWrapper}>
+                  <View style={[styles.inputWrapper, fieldErrors.password2 && styles.inputError]}>
                     <View style={styles.inputIconBox}>
                       <ShieldCheck size={18} color={colors.primary} strokeWidth={2.5} />
                     </View>
@@ -199,7 +265,7 @@ export default function RegisterScreen() {
                       placeholder="Repetir contraseña"
                       placeholderTextColor="#94a3b8"
                       value={password2}
-                      onChangeText={setPassword2}
+                      onChangeText={(t) => { setPassword2(t); setFieldErrors(prev => ({...prev, password2: false})); }}
                       secureTextEntry={!showPassword}
                     />
                   </View>
@@ -234,8 +300,9 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.googleButton}
+                  style={[styles.googleButton, (!request || isSubmitting) && styles.buttonDisabled]}
                   onPress={handleGoogleRegister}
+                  disabled={!request || isSubmitting}
                   activeOpacity={0.8}
                 >
                   <Image 
@@ -414,6 +481,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  inputError: {
+    borderColor: '#047857',
+    backgroundColor: 'rgba(4, 120, 87, 0.06)',
+  },
   inputIconBox: {
     width: 52,
     height: '100%',
@@ -426,6 +497,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontWeight: '600',
     paddingRight: spacing.md,
+    outlineStyle: 'none',
   },
   eyeBtn: {
     width: 52,

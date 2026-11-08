@@ -1018,7 +1018,12 @@ class SystemAlertListAPIView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return SystemAlert.objects.filter(active=True).order_by("order", "name")
+        # "Navidad" es un modal exclusivo de la web, no se muestra en la app.
+        return [
+            a
+            for a in SystemAlert.objects.filter(active=True).exclude(name="Navidad").order_by("order", "name")
+            if a.visible_now
+        ]
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

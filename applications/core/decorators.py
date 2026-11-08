@@ -24,6 +24,11 @@ def cache_public_page(timeout=None, vary_on_query=False):
             key = f"pub:{request.resolver_match.view_name}:{request.path}"
             if vary_on_query:
                 key += f":{request.META.get('QUERY_STRING', '')}"
+            # Cambios en SystemAlert (admin) invalidan las páginas cacheadas
+            try:
+                key += f":a{cache.get('alerts_bust', 0)}"
+            except Exception:
+                pass
 
             cached = cache.get(key)
             if cached is not None:
