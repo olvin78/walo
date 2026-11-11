@@ -191,7 +191,10 @@ class SystemPaymentSettingAdmin(admin.ModelAdmin):
 class SystemAlertAdmin(admin.ModelAdmin):
     list_display = ("alert_status", "name", "title", "display_schedule", "order", "updated_at")
     list_editable = ("order",)
-    fields = ("name", "active", "title", "message", "starts_at", "ends_at", "order")
+    fields = (
+        "name", "active", "title", "message", "image", "link_url", "button_text",
+        "starts_at", "ends_at", "order",
+    )
     list_display_links = ("name",)
     list_filter = ("active",)
 

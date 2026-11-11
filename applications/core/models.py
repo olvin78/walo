@@ -644,6 +644,25 @@ class SystemAlert(models.Model):
     )
     title = models.CharField(max_length=120, verbose_name="Título del aviso")
     message = models.TextField(verbose_name="Mensaje")
+    image = models.ImageField(
+        upload_to="alerts/",
+        null=True,
+        blank=True,
+        verbose_name="Imagen promocional",
+        help_text="Imagen opcional para alertas promocionales.",
+    )
+    link_url = models.URLField(
+        blank=True,
+        default="",
+        verbose_name="Enlace del botón",
+        help_text="URL opcional para el botón principal.",
+    )
+    button_text = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        verbose_name="Texto del botón",
+    )
     starts_at = models.DateTimeField(
         null=True,
         blank=True,

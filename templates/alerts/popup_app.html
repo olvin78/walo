@@ -1,0 +1,79 @@
+<style>
+    .app-promo {
+        position: fixed;
+        inset: 0;
+        z-index: 10001;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(4, 8, 20, .78);
+        backdrop-filter: blur(10px);
+        animation: appPromoFade .35s ease both;
+    }
+    .app-promo-card {
+        position: relative;
+        width: min(500px, 100%);
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 30px;
+        background: linear-gradient(145deg, #121b46 0%, #28134f 48%, #0d6870 100%);
+        box-shadow: 0 30px 90px rgba(0,0,0,.65), 0 0 80px rgba(83, 235, 220, .16);
+        color: #fff;
+        text-align: center;
+        animation: appPromoPop .55s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    .app-promo-glow { position: absolute; inset: -35%; background: radial-gradient(circle, rgba(255,255,255,.18), transparent 54%); pointer-events: none; }
+    .app-promo-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; background: rgba(0,0,0,.2); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+    .app-promo-media { position: relative; margin: 26px 26px 0; height: 180px; overflow: hidden; border-radius: 22px; background: linear-gradient(135deg, #ffcf4a, #ff6b9d 45%, #7358ff); }
+    .app-promo-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .app-promo-fallback { display: grid; place-items: center; height: 100%; font-size: 5rem; filter: drop-shadow(0 10px 18px rgba(0,0,0,.25)); }
+    .app-promo-copy { position: relative; padding: 22px 32px 30px; }
+    .app-promo-kicker { margin: 0 0 10px; color: #8fffee; font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    .app-promo-copy h2 { margin: 0 0 12px; font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.7rem, 5vw, 2.25rem); line-height: 1.08; }
+    .app-promo-copy p { margin: 0 auto 20px; max-width: 390px; color: rgba(255,255,255,.78); font-size: .98rem; line-height: 1.6; white-space: pre-line; }
+    .app-promo-btn { display: inline-block; width: 100%; padding: 14px 22px; border: 0; border-radius: 15px; background: #fff; color: #17183b; font: 800 .95rem 'Space Grotesk', sans-serif; text-decoration: none; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.2); transition: transform .2s, box-shadow .2s; }
+    .app-promo-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,.3); }
+    @keyframes appPromoFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes appPromoPop { from { opacity: 0; transform: scale(.86) translateY(24px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @media (max-width: 480px) { .app-promo-media { height: 145px; margin: 20px 20px 0; } .app-promo-copy { padding: 20px 22px 24px; } }
+</style>
+
+<div id="app-promo-{{ app_alert.pk }}" class="app-promo" role="dialog" aria-modal="true" aria-labelledby="app-promo-title">
+    <div class="app-promo-card">
+        <div class="app-promo-glow" aria-hidden="true"></div>
+        <button class="app-promo-close" type="button" aria-label="Cerrar" onclick="closeAppPromo()">&times;</button>
+        <div class="app-promo-media">
+            {% if app_alert.image %}
+                <img src="{{ app_alert.image.url }}" alt="{{ app_alert.title }}">
+            {% else %}
+                <div class="app-promo-fallback" aria-hidden="true">📱✨</div>
+            {% endif %}
+        </div>
+        <div class="app-promo-copy">
+            <p class="app-promo-kicker">Nueva experiencia IGUALO</p>
+            <h2 id="app-promo-title">{{ app_alert.title }}</h2>
+            <p>{{ app_alert.message }}</p>
+            {% if app_alert.link_url %}
+                <a class="app-promo-btn" href="{{ app_alert.link_url }}">{{ app_alert.button_text|default:"Conocé la app" }} &rarr;</a>
+            {% else %}
+                <button class="app-promo-btn" type="button" onclick="closeAppPromo()">{{ app_alert.button_text|default:"¡Genial, quiero probarla!" }}</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script>
+    (function () {
+        const popup = document.getElementById('app-promo-{{ app_alert.pk }}');
+        if (!popup) return;
+        window.closeAppPromo = function () { popup.remove(); try { sessionStorage.setItem('app_promo_closed_{{ app_alert.pk }}', '1'); } catch (e) {} };
+        document.addEventListener('keydown', function (event) { if (event.key === 'Escape') window.closeAppPromo(); });
+        try {
+            if (typeof confetti === 'function') {
+                setTimeout(function () {
+                    confetti({ particleCount: 150, spread: 100, origin: { y: .55 }, zIndex: 10002, colors: ['#8fffee', '#ffcf4a', '#ff6b9d', '#a78bfa'] });
+                }, 350);
+            }
+        } catch (e) {}
+    })();
+</script>

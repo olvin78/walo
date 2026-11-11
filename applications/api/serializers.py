@@ -745,3 +745,6 @@ class SystemAlertSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
     message = serializers.CharField()
+    image = serializers.URLField(allow_null=True)
+    link_url = serializers.URLField(allow_blank=True)
+    button_text = serializers.CharField(allow_blank=True)

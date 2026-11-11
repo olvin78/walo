@@ -1018,11 +1018,11 @@ class SystemAlertListAPIView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        # "Navidad" y "Verificacion" son modales exclusivos de la web, no se muestran en la app.
+        # Los popups promocionales son exclusivos de la web, no se muestran en la app.
         return [
             a
             for a in SystemAlert.objects.filter(active=True)
-            .exclude(name__in=["Navidad", "Verificacion"])
+            .exclude(name__in=["Navidad", "Verificacion", "AppIgualo"])
             .order_by("order", "name")
             if a.visible_now
         ]
@@ -1030,7 +1030,14 @@ class SystemAlertListAPIView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         data = [
-            {"id": a.id, "title": a.title, "message": a.message}
+            {
+                "id": a.id,
+                "title": a.title,
+                "message": a.message,
+                "image": request.build_absolute_uri(a.image.url) if a.image else None,
+                "link_url": a.link_url,
+                "button_text": a.button_text,
+            }
             for a in queryset
         ]
         return Response(data)

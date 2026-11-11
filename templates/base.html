@@ -676,6 +676,10 @@
 
 <body class="{% block body_class %}page-home{% endblock %}">
   {% load system_alert_tags %}
+  {% get_app_alert as app_alert %}
+  {% if app_alert %}
+    {% include "alerts/popup_app.html" %}
+  {% endif %}
   {% get_system_alerts as system_alerts %}
   {% if system_alerts %}
   <style>
