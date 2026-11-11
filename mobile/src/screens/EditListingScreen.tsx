@@ -72,7 +72,7 @@ export const EditListingScreen: React.FC<EditListingScreenProps> = ({ listingId 
       setLocation(listingData.location || '');
       setDescription(listingData.description || '');
       setIsActive(listingData.is_active !== false);
-      setIsNegotiable(listingData.is_negotiable === true);
+      setIsNegotiable(listingData.is_negotiable === true || Number(listingData.price) === 0);
       
       if (listingData.category) {
         setCategory(listingData.category);

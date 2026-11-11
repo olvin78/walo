@@ -115,7 +115,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, numColumns, o
       </View>
       
       <View style={styles.content}>
-        {isListingSummary(product) && product.is_negotiable ? (
+        {(isListingSummary(product) && product.is_negotiable) || Number(product.price) === 0 ? (
           <Text style={styles.negotiableText}>🤝 Precio Negociable</Text>
         ) : (
           <Text style={styles.price}>{formatPrice(product.price, listing?.currency)}</Text>

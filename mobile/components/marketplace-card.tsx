@@ -17,6 +17,10 @@ function formatPrice(value: ListingSummary['price']) {
   return `C$ ${new Intl.NumberFormat('es-NI', { maximumFractionDigits: 0 }).format(numeric)}`;
 }
 
+function isNegotiable(listing: ListingSummary) {
+  return Boolean(listing.is_negotiable) || Number(listing.price) === 0;
+}
+
 export function MarketplaceCard({ listing, compact = false }: Props) {
   return (
     <Pressable style={({ pressed }) => [styles.card, compact && styles.cardCompact, pressed && styles.cardPressed]}>
@@ -38,7 +42,11 @@ export function MarketplaceCard({ listing, compact = false }: Props) {
         <Text numberOfLines={2} style={styles.title}>
           {listing.title}
         </Text>
-        <Text style={styles.price}>{formatPrice(listing.price)}</Text>
+        {isNegotiable(listing) ? (
+          <Text style={styles.negotiable}>🤝 Precio Negociable</Text>
+        ) : (
+          <Text style={styles.price}>{formatPrice(listing.price)}</Text>
+        )}
         <Text numberOfLines={1} style={styles.location}>
           📍 {listing.city || listing.location || 'Nicaragua'}
         </Text>
@@ -103,6 +111,11 @@ const styles = StyleSheet.create({
   price: {
     color: '#22c55e',
     fontSize: 15,
+    fontWeight: '900',
+  },
+  negotiable: {
+    color: '#22c55e',
+    fontSize: 14,
     fontWeight: '900',
   },
   location: {

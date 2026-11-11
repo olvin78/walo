@@ -154,7 +154,7 @@ export const FavoritesScreen = () => {
         )}
       </View>
       <View style={styles.infoBox}>
-        {item.is_negotiable ? (
+        {item.is_negotiable || Number(item.price) === 0 ? (
           <Text style={styles.negotiableText}>🤝 Precio Negociable</Text>
         ) : (
           <Text style={styles.priceText}>{formatPrice(item.price, item.currency)}</Text>

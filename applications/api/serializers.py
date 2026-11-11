@@ -682,7 +682,9 @@ class MobileTokenObtainPairSerializer(serializers.Serializer):
         if not login or not password:
             raise ValidationError("Credenciales inválidas.")
 
-        user = User.objects.filter(username__iexact=login).first() or User.objects.filter(email__iexact=login).first()
+        user = User.objects.filter(username=login).first()
+        user = user or User.objects.filter(username__iexact=login).first()
+        user = user or User.objects.filter(email__iexact=login).first()
         if not user:
             raise ValidationError("Credenciales inválidas.")
 

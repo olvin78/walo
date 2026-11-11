@@ -95,7 +95,11 @@ export const MyListingsScreen = () => {
       />
       <View style={styles.listingInfo}>
         <View style={styles.listingHeader}>
-          <Text style={styles.price}>{item.currency === 'USD' ? '$' : 'C$'} {item.price}</Text>
+          {item.is_negotiable || Number(item.price) === 0 ? (
+            <Text style={styles.negotiablePrice}>🤝 Precio Negociable</Text>
+          ) : (
+            <Text style={styles.price}>{item.currency === 'USD' ? '$' : 'C$'} {item.price}</Text>
+          )}
           <View style={[styles.statusBadge, { backgroundColor: item.is_active === false ? '#FEF2F2' : '#ECFDF5' }]}>
             <Text style={[styles.statusText, { color: item.is_active === false ? '#EF4444' : '#10B981' }]}>
               {item.is_active === false ? 'INACTIVO' : 'ACTIVO'}
@@ -255,6 +259,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     color: colors.text,
+  },
+  negotiablePrice: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: colors.primary,
   },
   statusBadge: {
     paddingHorizontal: 8,
